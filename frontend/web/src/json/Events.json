@@ -1,0 +1,65 @@
+[
+    {
+        "id": "1",
+        "imageUrl": "https://i.ibb.co/uvw123/1.jpg",
+        "name": "Food Fest",
+        "location": "Navi Mumbai",
+        "timing": "Jan 10 - 11 | 5:00 PM to 10:00 PM"
+    },
+    {
+        "id": "2",
+        "imageUrl": "https://i.ibb.co/xyz456/2.jpg",
+        "name": "Music Marathon",
+        "location": "Navi Mumbai",
+        "timing": "Feb 15 | 2:00 PM to 8:00 PM"
+    },
+    {
+        "id": "3",
+        "imageUrl": "https://i.ibb.co/abc789/3.jpg",
+        "name": "Tech Symposium",
+        "location": "Navi Mumbai",
+        "timing": "Mar 8 - 9 | 9:00 AM to 4:00 PM"
+    },
+    {
+        "id": "4",
+        "imageUrl": "https://i.ibb.co/uvw123/4.jpg",
+        "name": "Yoga Retreat",
+        "location": "Navi Mumbai",
+        "timing": "Apr 5 - 6 | 7:30 AM to 1:00 PM"
+    },
+    {
+        "id": "5",
+        "imageUrl": "https://i.ibb.co/xyz456/5.jpg",
+        "name": "Art Exhibition",
+        "location": "Navi Mumbai",
+        "timing": "May 20 - 21 | 10:00 AM to 6:00 PM"
+    },
+    {
+        "id": "6",
+        "imageUrl": "https://i.ibb.co/abc789/6.jpg",
+        "name": "Fitness Challenge",
+        "location": "Navi Mumbai",
+        "timing": "Jun 12 | 8:00 AM to 2:00 PM"
+    },
+    {
+        "id": "7",
+        "imageUrl": "https://i.ibb.co/uvw123/7.jpg",
+        "name": "Cooking Workshop",
+        "location": "Navi Mumbai",
+        "timing": "Jul 8 | 3:00 PM to 7:00 PM"
+    },
+    {
+        "id": "8",
+        "imageUrl": "https://i.ibb.co/xyz456/8.jpg",
+        "name": "Fashion Pop-Up",
+        "location": "Navi Mumbai",
+        "timing": "Aug 25 | 6:00 PM to 10:00 PM"
+    },
+    {
+        "id": "9",
+        "imageUrl": "https://i.ibb.co/abc789/9.jpg",
+        "name": "Film Festival",
+        "location": "Navi Mumbai",
+        "timing": "Sep 15 - 16 | 4:00 PM to 11:00 PM"
+    }
+]

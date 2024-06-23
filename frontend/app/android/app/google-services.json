@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "92765532974",
+    "project_id": "navixplore",
+    "storage_bucket": "navixplore.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:92765532974:android:8bc7a251c632e20afc40bf",
+        "android_client_info": {
+          "package_name": "com.navixplore.navixplore"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "92765532974-tbkfk30qnlfb8mc7tq4s4a6iitj2fdjo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_gtNtDg4-2kfc7ziZ0DDifB21U6_Evag"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "92765532974-tbkfk30qnlfb8mc7tq4s4a6iitj2fdjo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

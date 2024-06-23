@@ -1,0 +1,24 @@
+.place-card {
+  text-decoration: none;
+}
+
+.place-card > div {
+  width: 18rem;
+  border: solid 3px rgb(255, 128, 0);
+}
+
+.place-card div img {
+  height: 14rem;
+  padding: 20px;
+}
+
+.place-card div h2 {
+  text-decoration: underline;
+  text-decoration-color: rgb(255, 128, 0);
+}
+
+@media (max-width: 768px) {
+  .place-card div img {
+    height: 70vw;
+  }
+}

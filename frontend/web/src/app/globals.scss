@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-color: #ff6600;
+  --text-primary-color: #fff;
+  --text-secondary-color: #ff6600;
+}
+
+@font-face {
+  font-family: "Fredoka";
+  src: url("../fonts/Fredoka/static/Fredoka-Regular.ttf");
+}
+
+.page-heading-section {
+  padding: 50px;
+  background-color: #e9ecef;
+  .page-heading {
+    padding-left: 4vw;
+    font-family: "Fredoka";
+    font-weight: 500;
+    font-size: 5vh;
+    text-align: center;
+    color: rgb(255, 128, 0);
+  }
+}
+.page-description {
+  color: #808080;
+}
+.page-container {
+  padding: 0vw calc(4vw + 50px);
+}
+@media (max-width: 768px) {
+  .page-heading-section {
+    padding: 20px;
+    text-align: center;
+    .page-heading {
+      font-size: 4vh;
+    }
+  }
+  .page-container {
+    padding: 0vw calc(1vw + 50px);
+  }
+}

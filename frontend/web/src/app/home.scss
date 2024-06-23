@@ -1,0 +1,21 @@
+.custom-hero {
+  .content {
+    font-family: "Fredoka";
+    .text {
+      color: var(--text-secondary-color);
+    }
+  }
+  .download-options {
+    img {
+      border-radius: 12px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .custom-hero {
+    .content {
+      margin-top: 8vh;
+    }
+  }
+}
