@@ -14,18 +14,18 @@ class NMMTApiEndpoints{
 }
 
 class NM_MetroApiEndpoints{
-  static const String GetStations = "https://navixplore.onrender.com/api/nm-metro/get-stations";
+  static const String GetStations = "https://navixplore.onrender.com/api/nm-metro/stations";
   static String GetNearestStation (double latitude, double longitude) {
-    return "https://navixplore.onrender.com/api/nm-metro/get-nearest-station?latitude=$latitude&longitude=$longitude";
+    return "https://navixplore.onrender.com/api/nm-metro/stations/nearest?latitude=$latitude&longitude=$longitude";
   }
   static String SearchStation (String query) {
-    return "https://navixplore.onrender.com/api/nm-metro/search-station?query=$query";
+    return "https://navixplore.onrender.com/api/nm-metro/stations/search?query=$query";
   }
   static String GetUpcomingTrains (String lineID, String direction, String stationID){
-    return "https://navixplore.onrender.com/api/nm-metro/get-upcoming-trains?lineID=$lineID&direction=$direction&stationID=$stationID";
+    return "https://navixplore.onrender.com/api/nm-metro/trains/upcoming?lineID=$lineID&direction=$direction&stationID=$stationID";
   }
   static String GetMetroSchedule (String lineID, String direction, int trainNo) {
-    return "https://navixplore.onrender.com/api/nm-metro/get-metro-schedule?lineID=$lineID&direction=$direction&trainNo=$trainNo";
+    return "https://navixplore.onrender.com/api/nm-metro/trains/schedule?lineID=$lineID&direction=$direction&trainNo=$trainNo";
   }
   static String GetlineData (String lineID) {
     return "https://navixplore.onrender.com/api/nm-metro/lines?lineID=$lineID";
