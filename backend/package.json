@@ -1,5 +1,5 @@
 {
-  "name": "navixplore-backend",
+  "name": "backend",
   "version": "1.0.0",
   "description": "Backend for NaviXplore application",
   "main": "./src/app.js",
