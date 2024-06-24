@@ -14,21 +14,21 @@ class NMMTApiEndpoints{
 }
 
 class NM_MetroApiEndpoints{
-  static const String GetStations = "http://192.168.0.103:3000/api/nm-metro/get-stations";
+  static const String GetStations = "https://navixplore.onrender.com/api/nm-metro/get-stations";
   static String GetNearestStation (double latitude, double longitude) {
-    return "http://192.168.0.103:3000/api/nm-metro/get-nearest-station?latitude=$latitude&longitude=$longitude";
+    return "https://navixplore.onrender.com/api/nm-metro/get-nearest-station?latitude=$latitude&longitude=$longitude";
   }
   static String SearchStation (String query) {
-    return "http://192.168.0.103:3000/api/nm-metro/search-station?query=$query";
+    return "https://navixplore.onrender.com/api/nm-metro/search-station?query=$query";
   }
   static String GetUpcomingTrains (String lineID, String direction, String stationID){
-    return "http://192.168.0.103:3000/api/nm-metro/get-upcoming-trains?lineID=$lineID&direction=$direction&stationID=$stationID";
+    return "https://navixplore.onrender.com/api/nm-metro/get-upcoming-trains?lineID=$lineID&direction=$direction&stationID=$stationID";
   }
   static String GetMetroSchedule (String lineID, String direction, int trainNo) {
-    return "http://192.168.0.103:3000/api/nm-metro/get-metro-schedule?lineID=$lineID&direction=$direction&trainNo=$trainNo";
+    return "https://navixplore.onrender.com/api/nm-metro/get-metro-schedule?lineID=$lineID&direction=$direction&trainNo=$trainNo";
   }
   static String GetlineData (String lineID) {
-    return "http://192.168.0.103:3000/api/nm-metro/lines?lineID=$lineID";
+    return "https://navixplore.onrender.com/api/nm-metro/lines?lineID=$lineID";
   }
 }
 
