@@ -1,13 +1,11 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
-
-import 'package:navixplore/config/api_endpoints.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:navixplore/services/firestore_service.dart';
 
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
@@ -30,9 +28,9 @@ class NM_MetroRoutePage extends StatefulWidget {
 }
 
 class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
-  List<dynamic>? metroStationsList;
+  List<dynamic> metroStationsList = [];
+  List<dynamic> metroRouteLineDataList= [];
   List<dynamic>? metroScheduleList;
-  List<dynamic>? metroRouteLineDataList;
   Set<Marker> markers = {};
   Set<Polyline> _polylines = {};
   final PanelController panelController = PanelController();
@@ -42,48 +40,76 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
   @override
   void initState() {
     super.initState();
-    rootBundle.loadString('assets/map_style.txt').then((string) {
-      _mapStyle = string;
-    });
     initialize();
   }
 
   void initialize() async {
+    await rootBundle.loadString('assets/map_style.txt').then((string) {
+      _mapStyle = string;
+    });
     await _fetchMetroStations();
     await _fetchMetroSchedule();
-    await _fetchPolylinePoints();
-    _addPolyline();
   }
 
-  Future<void> _fetchMetroStations() async {
-    final response =
-    await http.get(Uri.parse(NM_MetroApiEndpoints.GetStations));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
+  Future<void> _fetchMetroStations() async{
+    final metroStations = await FirestoreService().getCollection(collection: 'NM-Metro-Stations');
+    metroStations.listen((event) {
       setState(() {
-        metroStationsList = data;
+        metroStationsList = event.docs;
+        metroStationsList.sort((a, b) {
+          // Extract numeric part from stationID (e.g., 'S001' -> 1)
+          int aNum = int.parse(a.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
+          int bNum = int.parse(b.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
+
+          // Compare numeric parts
+          return aNum.compareTo(bNum);
+        });
         _addMetroStationMarker();
+        _fetchPolylinePoints();
       });
-    } else {
-      throw Exception(
-          'Failed to load data. Status code: ${response.statusCode}');
-    }
+    });
   }
 
   Future<void> _fetchMetroSchedule() async {
-    final response = await http.get(Uri.parse(
-        NM_MetroApiEndpoints.GetMetroSchedule(
-            widget.lineID, widget.direction, widget.trainNo)));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body)["trainSchedule"];
-      setState(() {
-        metroScheduleList = addStationNameToSchedule(metroStationsList!, data);
-      });
-    } else {
-      throw Exception(
-          'Failed to load data. Status code: ${response.statusCode}');
+    try {
+      final metroSchedule = await FirestoreService().getDocumentWithMultipleFilter(
+        collection: 'NM-Metro-Schedules',
+        filters: [
+          {'field': 'lineID', 'value': widget.lineID},
+          {'field': 'direction', 'value': widget.direction},
+        ],
+      );
+
+      if (metroSchedule.docs.isNotEmpty) {
+        // Assuming metroSchedule.docs contains the fetched documents
+        final List<dynamic> schedules = metroSchedule.docs.first.get('schedules');
+
+        // Process the schedules data
+        List<dynamic> trainSchedule = [];
+        schedules.forEach((schedule) {
+          final trainTime = schedule['time'][widget.trainNo];
+          if (trainTime != null) {
+            trainSchedule.add({
+              'stationID': schedule['stationID'],
+              'time': trainTime,
+            });
+          }
+        });
+
+        // Now you can use trainSchedule as needed, e.g., update UI or store in state
+        setState(() {
+          metroScheduleList = trainSchedule;
+          metroScheduleList = addStationNameToSchedule(metroStationsList, metroScheduleList!);
+        });
+
+      }
+    } catch (e) {
+      // Handle errors, e.g., Firestore service errors
+      print('Error fetching metro schedule: $e');
     }
   }
+
+
 
   List<dynamic> addStationNameToSchedule(
       List<dynamic> stationsList, List<dynamic> scheduleList) {
@@ -103,19 +129,22 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
   }
 
   Future<void> _fetchPolylinePoints() async {
-    final response = await http.get(Uri.parse(
-        NM_MetroApiEndpoints.GetlineData(metroStationsList![0]["lineID"])));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body)["polylines"];
+    try {
+      final DocumentSnapshot snapshot = await FirestoreService().getDocument(
+        collection: 'NM-Metro-Lines',
+        docId: 'jDEMGPW2mPiReUTrWs15',
+      );
+      final data = snapshot.data() as Map<String, dynamic>;
+      final List<dynamic> routeLineData = data['polylines'];
+
       setState(() {
-        metroRouteLineDataList = data;
+        metroRouteLineDataList = routeLineData;
+        _addPolyline();
       });
-    } else {
-      throw Exception(
-          'Failed to load data. Status code: ${response.statusCode}');
+    } catch (e) {
+      print('Error fetching polyline points: $e');
     }
   }
-
   String _formatTime(String time24) {
     final DateFormat inputFormat = DateFormat.Hm(); // 24-hour format
     final DateFormat outputFormat =
@@ -126,8 +155,6 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
 
   // Function to add polyline based on latitude and longitude points
   void _addPolyline() {
-    if (metroRouteLineDataList == null) return;
-
     List<LatLng> polylinePoints = [];
 
     // Convert latitude and longitude points to LatLng objects

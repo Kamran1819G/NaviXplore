@@ -48,11 +48,16 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _fetchAllBusesData();
+    initialize();
+  }
+
+  void initialize() async{
+    await _fetchAllBusesData();
     _timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) {
       _fetchAllBusesData();
     });
   }
+
 
   @override
   void dispose() {
@@ -144,10 +149,6 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
 
   Future<void> _fetchAllBusesData() async {
     try {
-      setState(() {
-        isLoading = true;
-      });
-
       DateTime now = DateTime.now();
       String scheduleDate =
           "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";

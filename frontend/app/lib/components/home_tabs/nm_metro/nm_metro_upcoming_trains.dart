@@ -1,10 +1,10 @@
-import 'dart:convert';
-
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_route_page.dart';
-import 'package:navixplore/config/api_endpoints.dart';
+import 'package:navixplore/services/firestore_service.dart';
 
 class NM_MetroUpcomingTrains extends StatefulWidget {
   final String lineID;
@@ -33,23 +33,68 @@ class _NM_MetroUpcomingTrainsState extends State<NM_MetroUpcomingTrains> {
     _fetchUpcomingTrains();
   }
 
+
   Future<void> _fetchUpcomingTrains() async {
-    final response = await http.get(Uri.parse(
-        NM_MetroApiEndpoints.GetUpcomingTrains(
-            widget.lineID, direction, widget.stationID)));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
+    try {
+      final QuerySnapshot upcomingTrainsSnapshot = await FirestoreService().getDocumentWithMultipleFilter(
+        collection: "NM-Metro-Schedules",
+        filters: [
+          {'field': 'lineID', 'value': widget.lineID},
+          {'field': 'direction', 'value': direction},
+        ],
+      );
+
+      if (upcomingTrainsSnapshot.docs.isNotEmpty) {
+        final QueryDocumentSnapshot firstDocument = upcomingTrainsSnapshot.docs.first;
+        final Map<String, dynamic> data = firstDocument.data() as Map<String, dynamic>;
+
+        // Extract the specific schedule for the stationID
+        final List<dynamic> schedules = data['schedules'] as List<dynamic>;
+        final stationSchedule = schedules.firstWhere(
+              (s) => s['stationID'] == widget.stationID,
+          orElse: () => null,
+        );
+
+        if (stationSchedule != null) {
+          setState(() {
+            upcomingTrains = {
+              'lineID': data['lineID'],
+              'trainName': data['trainName'],
+              'stationID': stationSchedule['stationID'],
+              'upcomingTimes': stationSchedule['time'],
+            };
+          });
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollToNextMetro();
+          });
+        } else {
+          if (kDebugMode) {
+            print("No schedule found for the specified stationID.");
+          }
+          setState(() {
+            upcomingTrains = null;
+          });
+        }
+      } else {
+        if (kDebugMode) {
+          print("No schedules found for the specified lineID and direction.");
+        }
+        setState(() {
+          upcomingTrains = null;
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching upcoming trains: $e");
+      }
       setState(() {
-        upcomingTrains = data;
+        upcomingTrains = null;
       });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToNextMetro();
-      });
-    } else {
-      throw Exception(
-          'Failed to load data. Status code: ${response.statusCode}');
     }
   }
+
+
 
   String _formatTime(String time24) {
     final DateFormat inputFormat = DateFormat.Hm();

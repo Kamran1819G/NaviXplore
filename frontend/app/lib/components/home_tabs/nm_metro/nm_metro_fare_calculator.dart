@@ -1,9 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:navixplore/config/api_endpoints.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:navixplore/services/firestore_service.dart';
 
 class NM_MetroFareCalculator extends StatefulWidget {
   List<dynamic>? metroStationsList;
@@ -25,26 +22,38 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
   @override
   void initState() {
     super.initState();
-    _fetchMetroStations();
+    initialize();
   }
 
-  void _fetchMetroStations() async {
+  void initialize () async{
+    await _fetchMetroStations();
+  }
+
+  Future<void> _fetchMetroStations() async{
     if(widget.metroStationsList != null){
       setState(() {
         metroStationsList = widget.metroStationsList;
       });
-    } else {
-      final response = await http.get(
-          Uri.parse(NM_MetroApiEndpoints.GetStations));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+      return;
+    }
+    else {
+      final metroStations = await FirestoreService().getCollection(
+          collection: 'NM-Metro-Stations');
+      metroStations.listen((event) {
         setState(() {
-          metroStationsList = data;
+          metroStationsList = event.docs;
+          metroStationsList?.sort((a, b) {
+            // Extract numeric part from stationID (e.g., 'S001' -> 1)
+            int aNum = int.parse(
+                a.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
+            int bNum = int.parse(
+                b.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
+
+            // Compare numeric parts
+            return aNum.compareTo(bNum);
+          });
         });
-      } else {
-        throw Exception(
-            'Failed to load data. Status code: ${response.statusCode}');
-      }
+      });
     }
   }
 

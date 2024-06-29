@@ -30,8 +30,7 @@ class _ExploreScreenState extends State<ExploreScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
+    return Column(
         children: [
           Image.asset("assets/images/NaviMumbai_Illustration.jpg"),
           const SizedBox(height: 25),
@@ -85,7 +84,6 @@ class _ExploreScreenState extends State<ExploreScreen>
             ),
           )
         ],
-      ),
-    );
+      );
   }
 }

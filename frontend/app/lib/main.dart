@@ -1,24 +1,36 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:navixplore/dependency_injection.dart';
+import 'package:navixplore/controller/network_controller.dart';
 import 'package:navixplore/screens/splash_screen.dart';
+import 'package:navixplore/services/firebase_messaging_service.dart';
 import 'package:navixplore/theme/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  final fcmToken = await FirebaseMessaging.instance.getToken();
-  await FirebaseMessaging.instance.requestPermission();
-  await FirebaseMessaging.instance.setAutoInitEnabled(true);
-  print('FCM Token: $fcmToken');
+
+  FirebaseMessagingService messagingService = FirebaseMessagingService();
+  await messagingService.initialize();
+  if (kDebugMode) {
+    print('Firebase Messaging Service initialized : ${messagingService.getFCMToken()}');
+  }
+
+
+  // Initialize GetX controller
+  Get.put<NetworkController>(NetworkController(), permanent: true);
+
+  // Run the app
   runApp(const MyApp());
-  DependencyInjection.init();
 }
+
 
 
 class MyApp extends StatelessWidget {

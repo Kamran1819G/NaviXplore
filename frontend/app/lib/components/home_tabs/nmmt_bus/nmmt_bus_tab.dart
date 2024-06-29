@@ -36,7 +36,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
     super.initState();
     _getNearbyBusStops();
     _timer =
-        Timer.periodic(const Duration(minutes: 1, seconds: 30), (Timer timer) {
+        Timer.periodic(const Duration(minutes: 2), (Timer timer) {
       _getNearbyBusStops();
     });
     setCustomMarker();
@@ -74,7 +74,8 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
       setState(() {
         isLoading = true;
       });
-      final response = await http.get(Uri.parse(NMMTApiEndpoints.GetNearByBusStops(_latitude!, _longitude!)));
+      final response = await http.get(Uri.parse(
+          NMMTApiEndpoints.GetNearByBusStops(_latitude!, _longitude!)));
       if (response.statusCode == 200) {
         final List<dynamic> busStop =
             json.decode(XmlDocument.parse(response.body).innerText);
@@ -92,6 +93,26 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
         isLoading = false;
       });
     }
+  }
+
+  String formatDistance(String distanceInKm) {
+    double distance = double.parse(distanceInKm);
+
+    if (distance >= 1) {
+      return '${distance.toStringAsFixed(2)} km';
+    } else {
+      int meters = (distance * 1000).round();
+      return '$meters m';
+    }
+  }
+
+  String calculateTime(String distanceInKm) {
+    double distance = double.parse(distanceInKm);
+    double time = distance / 0.08;
+    if (time < 1) {
+      return '1 min';
+    }
+    return '${time.toStringAsFixed(0)} min';
   }
 
   @override
@@ -182,7 +203,11 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
               SizedBox(width: 10),
               Text(
                 "Nearest Bus Stop",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  letterSpacing: 1.2,
+                ),
               ),
               Spacer(),
               TextButton(
@@ -190,7 +215,9 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => AllNearestBusStop(),
+                      builder: (context) => AllNearestBusStop(
+                        nearbyBusStop: nearbyBusStop,
+                      ),
                     ),
                   );
                 },
@@ -286,12 +313,26 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                                 fontWeight: FontWeight.w400,
                                 color: Colors.grey),
                           ),
-                          trailing: Text("${busStopData["Distance"]} km",
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.orange,
-                                fontWeight: FontWeight.bold,
-                              )),
+                          trailing: Column(
+                            children: [
+                              Text(
+                                calculateTime(busStopData["Distance"]),
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                "~ ${formatDistance(busStopData["Distance"])}",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       },
                     ),
@@ -308,75 +349,83 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
               ),
               SizedBox(width: 10),
               Text(
-                "Bus Stops around you",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                "Bus Stops Around You",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  letterSpacing: 1.2,
+                ),
               ),
             ],
           ),
-          Card(
-            elevation: 3,
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
+          Container(
+            height: 200,
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.shade300,
+                  blurRadius: 5,
+                  spreadRadius: 2,
+                ),
+              ],
             ),
-            child: Container(
-              padding: EdgeInsets.all(10),
-              height: 200,
-              child: isLoading
-                  ? mapSkeleton(
-                      height: 200,
-                      width: MediaQuery.of(context).size.width,
-                    )
-                  : GoogleMap(
-                      mapType: MapType.terrain,
-                      myLocationEnabled: true,
-                      fortyFiveDegreeImageryEnabled: true,
-                      initialCameraPosition: CameraPosition(
-                        target: LatLng(_latitude ?? 0, _longitude ?? 0),
-                        zoom: 16,
-                      ),
-                      markers: markers,
-                      onTap: (latLng) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AllNearestBusStop(),
-                          ),
-                        );
-                      }),
-            ),
+            child: isLoading
+                ? mapSkeleton(
+                    height: 200,
+                    width: MediaQuery.of(context).size.width,
+                  )
+                : GoogleMap(
+                    mapType: MapType.terrain,
+                    myLocationEnabled: true,
+                    fortyFiveDegreeImageryEnabled: true,
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(_latitude ?? 0, _longitude ?? 0),
+                      zoom: 16,
+                    ),
+                    markers: markers,
+                    onTap: (latLng) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AllNearestBusStop(),
+                        ),
+                      );
+                    }),
           ),
           SizedBox(height: 15),
-          Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-              color: Colors.white,
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                child: Row(
-                  children: [
-                    Expanded(
-                        child: Text(
-                      "Make your everyday travel easy with NMMT and NaviXplore",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                    )),
-                    Container(
-                      padding: EdgeInsets.all(10),
-                      child: Image.asset(
-                        "assets/icons/NMMT.png",
-                        height: 50,
-                      ),
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade300,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "Make your everyday travel easy with NMMT and NaviXplore",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
                     ),
-                  ],
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
                 ),
-              ))
+                Container(
+                  padding: EdgeInsets.all(10),
+                  child: Image.asset(
+                    "assets/icons/NMMT.png",
+                    height: 50,
+                  ),
+                ),
+              ],
+            ),
+          )
         ],
       ),
     );

@@ -44,6 +44,29 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
       Completer<GoogleMapController>();
   PanelController panelController = PanelController();
 
+
+  @override
+  void initState() {
+    super.initState();
+    routeid = widget.routeid;
+    initialize();
+  }
+
+  void initialize () async {
+    await _fetchAllBusStopData();
+    await _fetchBusPositionData();
+    await setCustomMarker();
+    _timer = Timer.periodic(Duration(seconds: 15), (Timer timer) {
+      _fetchBusPositionData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   Future<void> setCustomMarker() async {
     final busStopMarker = await busStopMarkerWidget().toBitmapDescriptor(
       logicalSize: const Size(150, 150),
@@ -61,25 +84,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     });
   }
 
-  @override
-  void initState() {
-    super.initState();
-    routeid = widget.routeid;
-    _fetchBusPositionData();
-    setCustomMarker();
-    _fetchAllBusStopData();
-    _timer = Timer.periodic(Duration(seconds: 15), (Timer timer) {
-      _fetchBusPositionData();
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _fetchAllBusStopData() async {
+  Future<void> _fetchAllBusStopData() async {
     final response = await http
         .get(Uri.parse('$NMMTApiEndpoints.GetBusStopsFromRoute?routeid=${widget.routeid}'));
     if (response.statusCode == 200) {
@@ -109,7 +114,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     }
   }
 
-  void _fetchBusStopPositionData(
+  Future<void> _fetchBusStopPositionData(
       String firstStationID, String lastStationID) async {
     setState(() {
       isLoading = true;
@@ -137,7 +142,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     }
   }
 
-  void _fetchBusPositionData() async {
+  Future<void> _fetchBusPositionData() async {
     final response = await http.get(Uri.parse(
         '$NMMTApiEndpoints.GetBusTrackerDetails?TripId=${widget.busTripId}&TripStatus=1&TripStartTime=${widget.busArrivalTime}'));
     if (response.statusCode == 200) {

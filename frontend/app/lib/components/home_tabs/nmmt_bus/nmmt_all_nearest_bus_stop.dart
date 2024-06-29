@@ -15,7 +15,9 @@ import '../../../widgets/Skeleton.dart';
 import 'nmmt_depot_buses.dart';
 
 class AllNearestBusStop extends StatefulWidget {
-  const AllNearestBusStop({super.key});
+  List<dynamic>? nearbyBusStop;
+
+  AllNearestBusStop({Key? key, this.nearbyBusStop}) : super(key: key);
 
   @override
   State<AllNearestBusStop> createState() => _AllNearestBusStopState();
@@ -36,8 +38,18 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
   @override
   void initState() {
     super.initState();
-    setCustomMarker();
-    _getNearbyBusStops();
+    initialize();
+  }
+
+  void initialize() async {
+    await setCustomMarker();
+    await getCurrentLocation();
+    if(widget.nearbyBusStop != null) {
+      nearbyBusStop = widget.nearbyBusStop;
+      isLoading = false;
+    }else {
+      _getNearbyBusStops();
+    }
     _timer = Timer.periodic(const Duration(minutes: 2), (timer) {
       _getNearbyBusStops();
     });
@@ -59,7 +71,7 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
     });
   }
 
-  Future<void> _getNearbyBusStops() async {
+  Future<void> getCurrentLocation() async {
     try {
       if (await Permission.location.isGranted) {
         final position = await Geolocator.getCurrentPosition(
@@ -72,6 +84,14 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
       } else {
         await Permission.location.request();
       }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  Future<void> _getNearbyBusStops() async {
+    try {
+      await getCurrentLocation();
       setState(() {
         isLoading = true;
       });
@@ -93,6 +113,26 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
         isLoading = false;
       });
     }
+  }
+
+  String formatDistance(String distanceInKm) {
+    double distance = double.parse(distanceInKm);
+
+    if (distance >= 1) {
+      return '${distance.toStringAsFixed(2)} km';
+    } else {
+      int meters = (distance * 1000).round();
+      return '$meters m';
+    }
+  }
+
+  String calculateTime(String distanceInKm) {
+    double distance = double.parse(distanceInKm);
+    double time = distance / 0.08;
+    if (time < 1) {
+      return '1 min';
+    }
+    return '${time.toStringAsFixed(0)} min';
   }
 
   @override
@@ -294,12 +334,26 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
                   fontSize: 14,
                   color: Colors.grey),
             ),
-            trailing: Text("${busStopData["Distance"]} km",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.orange,
-                  fontWeight: FontWeight.bold,
-                )),
+            trailing: Column(
+              children: [
+                Text(
+                  calculateTime(busStopData["Distance"]),
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  "~ ${formatDistance(busStopData["Distance"])}",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

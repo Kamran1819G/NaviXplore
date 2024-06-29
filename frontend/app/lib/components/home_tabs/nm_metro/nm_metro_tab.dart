@@ -1,17 +1,14 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:math';
-
-import 'package:http/http.dart' as http;
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_upcoming_trains.dart';
-import 'package:navixplore/config/api_endpoints.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:navixplore/utils/geo_calculator.dart';
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_fare_calculator.dart';
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_map.dart';
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_penalties.dart';
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_search_page.dart';
+import 'package:navixplore/services/firestore_service.dart';
 import 'package:navixplore/widgets/Skeleton.dart';
 
 class NMMetroTab extends StatefulWidget {
@@ -36,8 +33,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
 
   Future<void> _initialize() async {
     await _getCurrentLocation();
-    await _fetchMetroStations();
-    await _fetchNearestStations();
+    await fetchMetroStations();
   }
 
   @override
@@ -55,35 +51,79 @@ class _NMMetroTabState extends State<NMMetroTab> {
     });
   }
 
-  Future<void> _fetchMetroStations() async {
-    final response = await http.get(Uri.parse(NM_MetroApiEndpoints.GetStations));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
+  Future<void> fetchMetroStations() async{
+    final metroStations =  FirestoreService().getCollection(collection: 'NM-Metro-Stations');
+    metroStations.listen((event) {
       setState(() {
-        metroStationsList = data;
-        isLoading = false;
-      });
-    } else {
-      throw Exception('Failed to load data. Status code: ${response.statusCode}');
-    }
-  }
+        metroStationsList = event.docs;
+        metroStationsList?.sort((a, b) {
+          // Extract numeric part from stationID (e.g., 'S001' -> 1)
+          int aNum = int.parse(a.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
+          int bNum = int.parse(b.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
 
-  Future<void> _fetchNearestStations() async {
-    if (_currentlatitude != null && _currentlongitude != null) {
-      final response = await http.get(Uri.parse(NM_MetroApiEndpoints.GetNearestStation(_currentlatitude!, _currentlongitude!)));
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        setState(() {
-          nearestStationsList = [data];
+          // Compare numeric parts
+          return aNum.compareTo(bNum);
         });
-      } else {
-        throw Exception('Failed to load data. Status code: ${response.statusCode}');
-      }
+      });
+      fetchNearestStations();
+    });
+  }
+
+  Future<void> fetchNearestStations() async {
+    if (_currentlatitude == null || _currentlongitude == null || metroStationsList == null) {
+      return;
+    }
+
+    final geoCalculator = GeoCalculator();
+    List<Map<String, dynamic>> stationsWithDistance = [];
+
+    for (var station in metroStationsList!) {
+      double stationLat = station['location']['latitude'];
+      double stationLon = station['location']['longitude'];
+
+      double distance = geoCalculator.getDistance(
+          _currentlatitude!,
+          _currentlongitude!,
+          stationLat,
+          stationLon
+      );
+
+
+      stationsWithDistance.add({
+        'stationID': station['stationID'],
+        'lineID': station['lineID'],
+        'stationName': station['stationName'],
+        'location': station['location'],
+        'distance': distance,
+      });
+    }
+
+    // Sort stations by distance
+    stationsWithDistance.sort((a, b) => a['distance'].compareTo(b['distance']));
+
+    setState(() {
+      nearestStationsList = stationsWithDistance;
+      isLoading = false;
+    });
+  }
+
+  String formatDistance(double distanceInKm) {
+    if (distanceInKm >= 1) {
+      return '${distanceInKm.toStringAsFixed(2)} km';
     } else {
-      throw Exception('Current location is not available.');
+      int meters = (distanceInKm * 1000).round();
+      return '$meters m';
     }
   }
 
+  String calculateTime(double distanceInKm) {
+    double time = distanceInKm / 0.08;
+    if(time < 1) {
+      return '1 min';
+    } else {
+      return '${time.toStringAsFixed(0)} min';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +222,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
             SizedBox(width: 10),
             const Text(
               "Nearest Metro Station",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.2),
             ),
           ],
         ),
@@ -192,7 +232,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
             child: isLoading
                 ? metroStationSkeleton()
                 : ListView.builder(
-                  itemCount: nearestStationsList!.length,
+                  itemCount: 1,
                   itemBuilder: (context, index) {
                     return ListTile(
                       onTap: () {
@@ -224,12 +264,23 @@ class _NMMetroTabState extends State<NMMetroTab> {
                             fontWeight: FontWeight.bold,
                             color: Colors.grey),
                       ),
-                      trailing: Text(
-                        "${nearestStationsList![index]["distance"]} km",
-                        style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey),
+                      trailing: Column(
+                        children: [
+                          Text(
+                            calculateTime(nearestStationsList![index]["distance"]),
+                            style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange),
+                          ),
+                          Text(
+                            '~ ${formatDistance(nearestStationsList![index]["distance"])}',
+                            style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey),
+                          ),
+                        ],
                       ),
                     );
                   },
@@ -253,7 +304,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
                 SizedBox(width: 10),
                 const Text("Related to Metro",
                     style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.2)),
               ],
             ),
             const SizedBox(height: 15),
@@ -275,6 +326,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
                       );
                     },
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
                           padding: const EdgeInsets.all(9),
@@ -302,6 +354,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
                       );
                     },
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
                           padding: const EdgeInsets.all(9),
@@ -313,7 +366,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          "Metro Penalties",
+                          "Penalties",
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -323,10 +376,13 @@ class _NMMetroTabState extends State<NMMetroTab> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => NM_MetroMap(metroStationsList: metroStationsList,)),
+                        MaterialPageRoute(builder: (context) => NM_MetroMap(
+                          metroStationsList: metroStationsList,
+                        )),
                       );
                     },
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
                           padding: const EdgeInsets.all(9),
@@ -338,7 +394,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          "Metro Railmap",
+                          "Map",
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],

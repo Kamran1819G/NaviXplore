@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:navixplore/screens/sign_up_screen.dart';
+import 'package:navixplore/services/firebase_auth_service.dart';
 import 'package:navixplore/screens/explore_screen.dart';
 import 'package:navixplore/screens/news_screen.dart';
+import 'package:navixplore/screens/sign_in_screen.dart';
 import 'package:navixplore/screens/transports_screen.dart';
 import 'package:navixplore/screens/suggest_feature_screen.dart';
 import 'package:navixplore/screens/report_issue_screen.dart';
+import 'package:navixplore/utils/color_utils.dart';
 import 'package:navixplore/widgets/webview_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -26,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: hexToColor('#F5F5F5'),
       // Header
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -191,6 +196,40 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontSize: 18,
                     )),
               ),
+              if (FirebaseAuthService().currentUser != null && !FirebaseAuthService().currentUser!.isAnonymous)
+                ListTile(
+                  leading: const Icon(Icons.logout, color: Colors.orange),
+                  title: const Text("Sign Out",
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.orange,
+                        fontFamily: "Fredoka",
+                        fontWeight: FontWeight.bold,
+                      )),
+                  onTap: () async {
+                    await FirebaseAuthService().signOut();
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SignInScreen()));
+                  },
+                ),
+              if (FirebaseAuthService().currentUser == null || FirebaseAuthService().currentUser!.isAnonymous)
+                ListTile(
+                  leading: const Icon(Icons.login, color: Colors.orange),
+                  title: const Text("Sign Up",
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.orange,
+                        fontFamily: "Fredoka",
+                        fontWeight: FontWeight.bold,
+                      )),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SignUpScreen(),
+                      ),
+                    );
+                  },
+                ),
             ],
           ),
         ),

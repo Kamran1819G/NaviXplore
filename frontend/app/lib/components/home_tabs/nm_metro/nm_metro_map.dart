@@ -1,17 +1,16 @@
 import 'dart:async';
-import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
-import 'package:http/http.dart' as http;
-import 'package:navixplore/config/api_endpoints.dart';
+import 'package:navixplore/services/firestore_service.dart';
 
 class NM_MetroMap extends StatefulWidget {
-  final List<dynamic>? metroStationsList;
+  List<dynamic>? metroStationsList;
 
-  NM_MetroMap({this.metroStationsList});
+  NM_MetroMap({Key? key, this.metroStationsList}) : super(key: key);
 
   @override
   State<NM_MetroMap> createState() => _NM_MetroMapState();
@@ -19,72 +18,85 @@ class NM_MetroMap extends StatefulWidget {
 
 class _NM_MetroMapState extends State<NM_MetroMap> {
   List<dynamic>? metroStationsList;
-  List<dynamic>? metroRouteLineDataList;
+  List<dynamic> metroRouteLineDataList= [];
   Set<Marker> markers = {};
   Set<Polyline> _polylines = {};
   final PanelController panelController = PanelController();
-  bool isLoading = true;
   final Completer<GoogleMapController> _controller = Completer();
   late String _mapStyle;
+
 
   @override
   void initState() {
     super.initState();
-    rootBundle.loadString('assets/map_style.txt').then((string) {
+    initialize();
+  }
+
+  void initialize ()async{
+    await rootBundle.loadString('assets/map_style.txt').then((string) {
       _mapStyle = string;
     });
-    _fetchMetroStations();
-    _fetchPolylinePoints();
+    await _fetchMetroStations();
   }
 
-  void _fetchMetroStations() async {
-    if (widget.metroStationsList != null) {
+  Future<void> _fetchMetroStations() async{
+    if(widget.metroStationsList != null){
       setState(() {
         metroStationsList = widget.metroStationsList;
-        _addMetroStationMarker();
       });
-    } else {
-      final response =
-          await http.get(Uri.parse(NM_MetroApiEndpoints.GetStations));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        setState(() {
-          metroStationsList = data;
-          _addMetroStationMarker();
-          isLoading = false;
-        });
-      } else {
-        throw Exception(
-            'Failed to load data. Status code: ${response.statusCode}');
+      _addMetroStationMarker();
+      if (metroStationsList!.isNotEmpty) {
+        _fetchPolylinePoints();
       }
+      return;
     }
-  }
+    else {
+      final metroStations = await FirestoreService().getCollection(
+          collection: 'NM-Metro-Stations');
+      metroStations.listen((event) {
+        setState(() {
+          metroStationsList = event.docs;
+          metroStationsList?.sort((a, b) {
+            // Extract numeric part from stationID (e.g., 'S001' -> 1)
+            int aNum = int.parse(
+                a.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
+            int bNum = int.parse(
+                b.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
 
-  void _fetchPolylinePoints() async {
-    final response = await http.get(Uri.parse(
-        NM_MetroApiEndpoints.GetlineData(metroStationsList![0]["lineID"])));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body)["polylines"];
-      setState(() {
-        metroRouteLineDataList = data;
+            // Compare numeric parts
+            return aNum.compareTo(bNum);
+          });
+          _addMetroStationMarker();
+          _fetchPolylinePoints();
+        });
       });
-    } else {
-      throw Exception(
-          'Failed to load data. Status code: ${response.statusCode}');
     }
-    _addPolyline();
   }
 
-  // Function to add polyline based on latitude and longitude points
-  void _addPolyline() {
-    List<LatLng> polylinePoints = [];
+  Future<void> _fetchPolylinePoints() async {
+    try {
+      final DocumentSnapshot snapshot = await FirestoreService().getDocument(
+        collection: 'NM-Metro-Lines',
+        docId: 'jDEMGPW2mPiReUTrWs15',
+      );
+      final data = snapshot.data() as Map<String, dynamic>;
+      final List<dynamic> routeLineData = data['polylines'];
 
-    // Convert latitude and longitude points to LatLng objects
-    for (var point in metroRouteLineDataList!) {
-      polylinePoints.add(LatLng(point['latitude'], point['longitude']));
+      setState(() {
+        metroRouteLineDataList = routeLineData;
+        _addPolyline();
+      });
+    } catch (e) {
+      print('Error fetching polyline points: $e');
     }
+  }
 
-    // Add polyline to the map
+
+  void _addPolyline() {
+    List<LatLng> polylinePoints = metroRouteLineDataList.map((point) {
+      return LatLng(point['latitude'], point['longitude']);
+    }).toList();
+
     setState(() {
       _polylines.add(
         Polyline(
@@ -97,7 +109,8 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
     });
   }
 
-  void _addMetroStationMarker() async {
+
+  Future<void> _addMetroStationMarker() async {
     for (var station in metroStationsList!) {
       final markerBitmap =
           await metroStationMarker(station['stationName']['English'])

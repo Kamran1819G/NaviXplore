@@ -30,8 +30,7 @@ class _TransportsScreenState extends State<TransportsScreen> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
+    return Column(
         children: [
           const SizedBox(height: 25),
           // Tabs
@@ -46,11 +45,12 @@ class _TransportsScreenState extends State<TransportsScreen> with TickerProvider
               controller: _tabController,
               unselectedLabelColor: Colors.black,
               labelColor: Colors.white,
+              dividerHeight: 0,
               indicator: BoxDecoration(
                 borderRadius: BorderRadius.circular(25),
                 color: Colors.orange.shade800,
               ),
-              indicatorPadding: const EdgeInsets.symmetric(horizontal: -40),
+              indicatorSize: TabBarIndicatorSize.tab,
               tabs: <Widget>[
                 Tab(
                   icon: Image.asset(
@@ -80,7 +80,7 @@ class _TransportsScreenState extends State<TransportsScreen> with TickerProvider
           //TabsView
           Expanded(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 25),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: TabBarView(
                 controller: _tabController,
                 physics: const NeverScrollableScrollPhysics(),
@@ -94,7 +94,6 @@ class _TransportsScreenState extends State<TransportsScreen> with TickerProvider
             ),
           )
         ],
-      ),
-    );
+      );
   }
 }
