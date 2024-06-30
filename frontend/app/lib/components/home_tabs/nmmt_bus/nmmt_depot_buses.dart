@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_bus_number_search_page.dart';
 import 'package:navixplore/config/api_endpoints.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,7 @@ import '../../../widgets/Skeleton.dart';
 import '../../../widgets/bus_marker.dart';
 
 class NMMTDepotBuses extends StatefulWidget {
-  final String stationid;
+  final int stationid;
   final String busStopName;
   final Map<String, dynamic> stationLocation;
 
@@ -80,8 +81,8 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
       Marker(
         markerId: MarkerId(widget.busStopName),
         position: LatLng(
-          widget.stationLocation['latitude'],
-          widget.stationLocation['longitude'],
+          widget.stationLocation['_latitude'],
+          widget.stationLocation['_longitude'],
         ),
         icon: busStopMarker ?? BitmapDescriptor.defaultMarker,
         infoWindow: InfoWindow(
@@ -295,8 +296,8 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
               zoomControlsEnabled: false,
               initialCameraPosition: CameraPosition(
                 target: LatLng(
-                  widget.stationLocation['latitude'],
-                  widget.stationLocation['longitude'],
+                  widget.stationLocation['_latitude'],
+                  widget.stationLocation['_longitude'],
                 ),
                 zoom: 15.0,
               ),
@@ -539,6 +540,10 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
     return PreferredSize(
       preferredSize: Size.fromHeight(0), // Set app bar height to zero
       child: AppBar(
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.orange,
+          statusBarIconBrightness: Brightness.light,
+        ),
         backgroundColor: Colors.transparent, // Make app bar transparent
         elevation: 0, // Remove app bar shadow
       ),

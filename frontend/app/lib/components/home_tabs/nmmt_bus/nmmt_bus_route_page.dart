@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_bus_number_schedules.dart';
@@ -196,10 +197,67 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     return PreferredSize(
       preferredSize: Size.fromHeight(0), // Set app bar height to zero
       child: AppBar(
-        backgroundColor: Colors.transparent, // Make app bar transparent
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.orange,
+          statusBarIconBrightness: Brightness.light,
+        ),
+        backgroundColor: Colors.transparent,
         elevation: 0, // Remove app bar shadow
       ),
     );
+  }
+
+  String getStatusText(int index) {
+    if (busPositionDataList == null ||
+        busPositionDataList!.isEmpty ||
+        busStopDataList == null ||
+        busStopDataList!.isEmpty ||
+        busStopDataList![index]['StationId'] !=
+            busPositionDataList![index]['STATIONID']) {
+      return "";
+    }
+
+    String coveredStatus = busPositionDataList![index]["CoveredStatus"];
+
+    if (coveredStatus == "covered") {
+      String arrivedTime = busPositionDataList![index]["ArrivedTime"];
+      if (arrivedTime.isNotEmpty) {
+        return "Reached at $arrivedTime";
+      } else {
+        return "Reached at ${_formatTime(busPositionDataList![index]["ETA"])};";
+      }
+    } else if (coveredStatus == "notcovered") {
+      return "on the way";
+    } else {
+      return "Unknown Status";
+    }
+  }
+
+
+  Color getStatusTextColor(int index) {
+    if (busPositionDataList == null ||
+        busPositionDataList!.isEmpty ||
+        busStopDataList == null ||
+        busStopDataList!.isEmpty) {
+      return Colors.black;
+    }
+
+    String coveredStatus = busPositionDataList![index]["CoveredStatus"];
+    if (coveredStatus == "covered" || coveredStatus == "nocovered") {
+      return Colors.green;
+    } else {
+      return Colors.red;
+    }
+  }
+
+
+
+  String _formatTime(String time) {
+    final parts = time.split(' ');
+    final timeParts = parts[0].split(':');
+    final hour = int.parse(timeParts[0]);
+    final minute = int.parse(timeParts[1]);
+    return '${hour}:${minute.toString().padLeft(2, '0')} ${parts[1]}';
   }
 
   Widget _buildLoadingScreen() {
@@ -215,8 +273,18 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
           Expanded(
             child: ListView.separated(
               itemCount: 6,
-              separatorBuilder: (context, index) => SizedBox(height: 40),
-              itemBuilder: (context, index) => busStopSkeleton(),
+              separatorBuilder: (BuildContext context, int index) =>
+                  Divider(),
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                  leading: Skeleton(height: 50, width: 50),
+                  title: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Skeleton(height: 8, width: 100),
+                  ),
+                  subtitle: Skeleton(height: 8, width: 50),
+                );
+              },
             ),
           ),
         ],
@@ -393,27 +461,8 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                                         .grey // Set grey color for notcovered
                                     : Colors.red
                             : Colors.grey,
-                        // Set grey color if no data or not matching
-                        padding: EdgeInsets.all(6),
                       ),
                       beforeLineStyle: LineStyle(
-                        color: busPositionDataList != null &&
-                                busPositionDataList!.isNotEmpty &&
-                                busStopDataList![index]['StationId'] ==
-                                    busPositionDataList![index]['STATIONID']
-                            ? busPositionDataList![index]["CoveredStatus"] ==
-                                    "covered"
-                                ? Colors.orange
-                                : busPositionDataList![index]
-                                            ["CoveredStatus"] ==
-                                        "notcovered"
-                                    ? Colors
-                                        .grey // Set grey color for notcovered
-                                    : Colors.red
-                            : Colors
-                                .grey, // Set grey color if no data or not matching
-                      ),
-                      afterLineStyle: LineStyle(
                         color: busPositionDataList != null &&
                                 busPositionDataList!.isNotEmpty &&
                                 busStopDataList![index]['StationId'] ==
@@ -451,38 +500,8 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                           children: [
                             Text(busStopData['stationname_m']),
                             Text(
-                              busPositionDataList != null &&
-                                      busPositionDataList!.isNotEmpty &&
-                                      busStopDataList![index]['StationId'] ==
-                                          busPositionDataList![index]
-                                              ['STATIONID']
-                                  ? busPositionDataList![index]
-                                              ["CoveredStatus"] ==
-                                          "covered"
-                                      ? "Arrived " +
-                                          busPositionDataList![index]
-                                              ["ArrivedTime"]
-                                      : busPositionDataList![index]
-                                                  ["CoveredStatus"] ==
-                                              "notcovered"
-                                          ? "on the way"
-                                          : "Unknown Status"
-                                  : "",
-                              style: TextStyle(
-                                color: busPositionDataList != null &&
-                                        busPositionDataList!.isNotEmpty &&
-                                        busPositionDataList![index]
-                                                ["CoveredStatus"] ==
-                                            "covered"
-                                    ? Colors.green
-                                    : busPositionDataList != null &&
-                                            busPositionDataList!.isNotEmpty &&
-                                            busPositionDataList![index]
-                                                    ["CoveredStatus"] ==
-                                                "nocovered"
-                                        ? Colors.green
-                                        : Colors.red,
-                              ),
+                              getStatusText(index),
+                              style: TextStyle(color: getStatusTextColor(index)),
                             ),
                           ],
                         ),
@@ -491,10 +510,13 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                           children: [
                             Text(
                               busPositionDataList != null
-                                  ? busPositionDataList![index]["ETA"]
+                                  ? _formatTime(busPositionDataList![index]["ETA"])
                                   : "",
                               style: TextStyle(
-                                  fontSize: 22, color: Colors.orange),
+                                fontSize: 20,
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             Text(
                               busPositionDataList != null

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -141,6 +142,10 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(0), // Set app bar height to zero
         child: AppBar(
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Colors.orange,
+            statusBarIconBrightness: Brightness.light,
+          ),
           backgroundColor: Colors.transparent,
           elevation: 0,
         ),
@@ -296,10 +301,10 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
                 MaterialPageRoute(
                   builder: (context) => NMMTDepotBuses(
                     busStopName: busStopData["StationName"],
-                    stationid: busStopData["StationId"],
+                    stationid: int.parse(busStopData["StationId"]),
                     stationLocation: {
-                      'latitude': double.parse(busStopData['Center_Lat']),
-                      'longitude': double.parse(busStopData['Center_Lon']),
+                      '_latitude': double.parse(busStopData['Center_Lat']),
+                      '_longitude': double.parse(busStopData['Center_Lon']),
                     },
                   ),
                 ),
