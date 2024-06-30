@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:navixplore/services/NM_Metro_Service.dart';
 import 'package:navixplore/services/firebase/firestore_service.dart';
+import 'package:navixplore/widgets/Skeleton.dart';
 
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
@@ -28,14 +30,15 @@ class NM_MetroRoutePage extends StatefulWidget {
 }
 
 class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
-  List<dynamic> metroStationsList = [];
-  List<dynamic> metroRouteLineDataList= [];
   List<dynamic>? metroScheduleList;
   Set<Marker> markers = {};
   Set<Polyline> _polylines = {};
   final PanelController panelController = PanelController();
   final Completer<GoogleMapController> _controller = Completer();
   late String _mapStyle;
+  bool isLoading = true;
+
+  final NM_MetroService _nmMetroService = NM_MetroService();
 
   @override
   void initState() {
@@ -47,28 +50,16 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
     await rootBundle.loadString('assets/map_style.txt').then((string) {
       _mapStyle = string;
     });
-    await _fetchMetroStations();
+    await _nmMetroService.fetchAllStations();
+    await _addMetroStationMarker();
     await _fetchMetroSchedule();
-  }
-
-  Future<void> _fetchMetroStations() async{
-    final metroStations = await FirestoreService().getCollection(collection: 'NM-Metro-Stations');
-    metroStations.listen((event) {
-      setState(() {
-        metroStationsList = event.docs;
-        metroStationsList.sort((a, b) {
-          // Extract numeric part from stationID (e.g., 'S001' -> 1)
-          int aNum = int.parse(a.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
-          int bNum = int.parse(b.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
-
-          // Compare numeric parts
-          return aNum.compareTo(bNum);
-        });
-        _addMetroStationMarker();
-        _fetchPolylinePoints();
-      });
+    await _nmMetroService.fetchPolylinePoints();
+    await _addPolyline();
+    setState(() {
+      isLoading = false;
     });
   }
+
 
   Future<void> _fetchMetroSchedule() async {
     try {
@@ -99,7 +90,7 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
         // Now you can use trainSchedule as needed, e.g., update UI or store in state
         setState(() {
           metroScheduleList = trainSchedule;
-          metroScheduleList = addStationNameToSchedule(metroStationsList, metroScheduleList!);
+          metroScheduleList = addStationNameToSchedule(_nmMetroService.allMetroStations, metroScheduleList!);
         });
 
       }
@@ -128,23 +119,6 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
     return scheduleList;
   }
 
-  Future<void> _fetchPolylinePoints() async {
-    try {
-      final DocumentSnapshot snapshot = await FirestoreService().getDocument(
-        collection: 'NM-Metro-Lines',
-        docId: 'jDEMGPW2mPiReUTrWs15',
-      );
-      final data = snapshot.data() as Map<String, dynamic>;
-      final List<dynamic> routeLineData = data['polylines'];
-
-      setState(() {
-        metroRouteLineDataList = routeLineData;
-        _addPolyline();
-      });
-    } catch (e) {
-      print('Error fetching polyline points: $e');
-    }
-  }
   String _formatTime(String time24) {
     final DateFormat inputFormat = DateFormat.Hm(); // 24-hour format
     final DateFormat outputFormat =
@@ -154,11 +128,11 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
   }
 
   // Function to add polyline based on latitude and longitude points
-  void _addPolyline() {
+  Future<void> _addPolyline() async {
     List<LatLng> polylinePoints = [];
 
     // Convert latitude and longitude points to LatLng objects
-    for (var point in metroRouteLineDataList!) {
+    for (var point in _nmMetroService.polylines) {
       polylinePoints.add(LatLng(point['latitude'], point['longitude']));
     }
 
@@ -176,7 +150,7 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
   }
 
   Future<void> _addMetroStationMarker() async {
-    for (var station in metroStationsList!) {
+    for (var station in _nmMetroService.allMetroStations) {
       final markerBitmap =
       await metroStationMarker(station['stationName']['English'])
           .toBitmapDescriptor(
@@ -212,7 +186,9 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
             backgroundColor: Colors.white,
           ),
         ),
-        body: Stack(
+        body: isLoading
+            ? _buildLoadingScreen()
+            : Stack(
           children: [
             SlidingUpPanel(
               defaultPanelState: PanelState.OPEN,
@@ -314,7 +290,7 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
               ),
             ),
           ],
-        ));
+        ),);
   }
 
   Widget metroStationMarker(String stationName) {
@@ -345,6 +321,45 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLoadingScreen() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          mapSkeleton(
+            height: 350,
+            width: MediaQuery.of(context).size.width,
+          ),
+          SizedBox(height: 20),
+          Expanded(
+            child: ListView.separated(
+              itemCount: 6,
+              separatorBuilder: (BuildContext context, int index) =>
+                  Divider(),
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                  leading: Skeleton(height: 50, width: 50),
+                  title: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Skeleton(height: 8, width: 100),
+                  ),
+                  subtitle: Skeleton(height: 8, width: 50),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget mapSkeleton({required double height, required double width}) {
+    return Skeleton(
+      height: height,
+      width: width,
     );
   }
 }

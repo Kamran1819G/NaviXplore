@@ -7,6 +7,7 @@ import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_fare_calculato
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_map.dart';
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_penalties.dart';
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_search_page.dart';
+import 'package:navixplore/services/NM_Metro_Service.dart';
 import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'package:navixplore/widgets/Skeleton.dart';
 
@@ -21,8 +22,9 @@ class _NMMetroTabState extends State<NMMetroTab> {
   bool isLoading = true;
   late double? _currentlatitude;
   late double? _currentlongitude;
-  List<dynamic>? metroStationsList;
   List<dynamic>? nearestStationsList;
+
+  final NM_MetroService _nmMetroService = NM_MetroService();
 
   @override
   void initState() {
@@ -30,9 +32,10 @@ class _NMMetroTabState extends State<NMMetroTab> {
     _initialize();
   }
 
-  Future<void> _initialize() async {
+  void _initialize() async {
     await _getCurrentLocation();
-    await fetchMetroStations();
+    await _nmMetroService.fetchAllStations();
+    await fetchNearestStations();
   }
 
   @override
@@ -50,32 +53,15 @@ class _NMMetroTabState extends State<NMMetroTab> {
     });
   }
 
-  Future<void> fetchMetroStations() async{
-    final metroStations =  FirestoreService().getCollection(collection: 'NM-Metro-Stations');
-    metroStations.listen((event) {
-      setState(() {
-        metroStationsList = event.docs;
-        metroStationsList?.sort((a, b) {
-          // Extract numeric part from stationID (e.g., 'S001' -> 1)
-          int aNum = int.parse(a.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
-          int bNum = int.parse(b.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
-
-          // Compare numeric parts
-          return aNum.compareTo(bNum);
-        });
-      });
-      fetchNearestStations();
-    });
-  }
 
   Future<void> fetchNearestStations() async {
-    if (_currentlatitude == null || _currentlongitude == null || metroStationsList == null) {
+    if (_currentlatitude == null || _currentlongitude == null) {
       return;
     }
 
     List<Map<String, dynamic>> stationsWithDistance = [];
 
-    for (var station in metroStationsList!) {
+    for (var station in _nmMetroService.allMetroStations) {
       double stationLat = station['location']['_latitude'];
       double stationLon = station['location']['_longitude'];
 
@@ -142,7 +128,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => NMMetroSearchPage(metroStationsList: metroStationsList),
+                builder: (context) => NMMetroSearchPage(),
               ),
             );
           },
@@ -177,26 +163,26 @@ class _NMMetroTabState extends State<NMMetroTab> {
                         AnimatedTextKit(
                           repeatForever: true,
                           pause: const Duration(milliseconds: 150),
-                            animatedTexts: metroStationsList != null
-                                ? [
-                                    for (var station in metroStationsList!)
-                                      RotateAnimatedText(
-                                        station["stationName"]["English"],
-                                        textStyle: const TextStyle(
-                                          color: Colors.orange,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                  ]
+                            animatedTexts: _nmMetroService.allMetroStations.isNotEmpty ? [
+                              for (var station in _nmMetroService.allMetroStations)
+                                RotateAnimatedText(
+                                  station["stationName"]["English"],
+                                  textStyle: const TextStyle(
+                                    color: Colors.orange,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                            ]
                                 : [
-                                    TyperAnimatedText(
-                                      "Loading...",
-                                      textStyle: const TextStyle(
-                                        color: Colors.orange,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ]
+                              TyperAnimatedText(
+                                "Loading...",
+                                textStyle: const TextStyle(
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ]
+
                         ),
                       ],
                     ),
@@ -327,7 +313,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => NM_MetroFareCalculator(metroStationsList: metroStationsList),
+                          builder: (context) => NM_MetroFareCalculator(),
                         ),
                       );
                     },
@@ -382,9 +368,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => NM_MetroMap(
-                          metroStationsList: metroStationsList,
-                        )),
+                        MaterialPageRoute(builder: (context) => NM_MetroMap()),
                       );
                     },
                     child: Column(

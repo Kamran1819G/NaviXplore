@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:navixplore/services/NM_Metro_Service.dart';
 import 'package:navixplore/services/firebase/firestore_service.dart';
+import 'package:navixplore/widgets/Skeleton.dart';
 import 'nm_metro_upcoming_trains.dart';
 
 class NMMetroSearchPage extends StatefulWidget {
-  List<dynamic>? metroStationsList;
-
-  NMMetroSearchPage({Key? key, required this.metroStationsList}) : super(key: key);
+  NMMetroSearchPage({Key? key}) : super(key: key);
 
   @override
   State<NMMetroSearchPage> createState() => _NMMetroSearchPageState();
 }
 
 class _NMMetroSearchPageState extends State<NMMetroSearchPage> {
-  List<dynamic>? metroStationsList;
+  bool isLoading = true;
+
+  final NM_MetroService _nmMetroService = NM_MetroService();
 
   @override
   void initState() {
@@ -20,36 +22,11 @@ class _NMMetroSearchPageState extends State<NMMetroSearchPage> {
     initialize();
   }
 
-  void initialize () async {
-    await _fetchMetroStations();
-  }
-
-  Future<void> _fetchMetroStations() async{
-    if(widget.metroStationsList != null){
-      setState(() {
-        metroStationsList = widget.metroStationsList;
-      });
-      return;
-    }
-    else {
-      final metroStations = await FirestoreService().getCollection(
-          collection: 'NM-Metro-Stations');
-      metroStations.listen((event) {
-        setState(() {
-          metroStationsList = event.docs;
-          metroStationsList?.sort((a, b) {
-            // Extract numeric part from stationID (e.g., 'S001' -> 1)
-            int aNum = int.parse(
-                a.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
-            int bNum = int.parse(
-                b.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
-
-            // Compare numeric parts
-            return aNum.compareTo(bNum);
-          });
-        });
-      });
-    }
+  void initialize() async {
+    await _nmMetroService.fetchAllStations();
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -65,76 +42,103 @@ class _NMMetroSearchPageState extends State<NMMetroSearchPage> {
             "You are at  ?",
             style: TextStyle(color: Colors.black),
           )),
-      body: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.orange,
-            ),
-            child: Row(
+      body: isLoading
+          ? _buildSkeleton()
+          : Column(
               children: [
-                Icon(
-                  Icons.rocket_launch,
-                  color: Colors.white,
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Discover the city with ease! Plan your metro journey and unlock the best routes and schedules for a seamless travel experience.',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: metroStationsList!.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  contentPadding: EdgeInsets.all(16.0),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => NM_MetroUpcomingTrains(lineID: metroStationsList![index]["lineID"], stationID: metroStationsList![index]["stationID"], stationName: metroStationsList![index]["stationName"]["English"]),
-                      ),
-                    );
-                  },
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(50),
-                    child: Image.asset(
-                      'assets/icons/NM_Metro.png',
-                      width: 50,
-                      height: 50,
-                    ),
-                  ),
-                  title: Text(
-                    metroStationsList![index]["stationName"]["English"],
-                    style:
-                    TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    metroStationsList![index]["stationName"]["Marathi"],
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey),
-                  ),
-                  trailing: Icon(
-                    Icons.arrow_forward_ios,
+                Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
                     color: Colors.orange,
                   ),
-                );
-              },
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.rocket_launch,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Discover the city with ease! Plan your metro journey and unlock the best routes and schedules for a seamless travel experience.',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _nmMetroService.allMetroStations.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        contentPadding: EdgeInsets.all(16.0),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NM_MetroUpcomingTrains(
+                                  lineID: _nmMetroService
+                                      .allMetroStations[index]["lineID"],
+                                  stationID: _nmMetroService
+                                      .allMetroStations[index]["stationID"],
+                                  stationName:
+                                      _nmMetroService.allMetroStations[index]
+                                          ["stationName"]["English"]),
+                            ),
+                          );
+                        },
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(50),
+                          child: Image.asset(
+                            'assets/icons/NM_Metro.png',
+                            width: 50,
+                            height: 50,
+                          ),
+                        ),
+                        title: Text(
+                          _nmMetroService.allMetroStations[index]["stationName"]
+                              ["English"],
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          _nmMetroService.allMetroStations[index]["stationName"]
+                              ["Marathi"],
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey),
+                        ),
+                        trailing: Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.orange,
+                        ),
+                      );
+                    },
+                  ),
+                )
+              ],
             ),
-          )
-        ],
-      ),
+    );
+  }
+
+  Widget _buildSkeleton() {
+    return ListView.builder(
+      itemCount: 10,
+      itemBuilder: (context, index) {
+        return ListTile(
+          leading: Skeleton(height: 50, width: 50),
+          title: Align(
+            alignment: Alignment.centerLeft,
+            child: Skeleton(height: 8, width: 100),
+          ),
+          subtitle: Skeleton(height: 8, width: 50),
+        );
+      },
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:http/http.dart' as http;
 import 'package:navixplore/config/api_endpoints.dart';
+import 'package:navixplore/services/NMMT_Service.dart';
 import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'package:navixplore/widgets/Skeleton.dart';
 import 'package:xml/xml.dart';
@@ -22,7 +23,6 @@ class NMMTBusSearchPage extends StatefulWidget {
 
 class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   List<dynamic>? busDataList;
-  List<dynamic>? busStopDataList;
   bool isLoading = true;
   Timer? _timer;
   final String busServiceTypeId = "0";
@@ -31,10 +31,16 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   int? sourceLocationId;
   int? destinationLocationId;
 
+  final NMMTService _nmmtService = NMMTService();
+
   @override
   void initState() {
     super.initState();
-    _fetchAllBusStopData();
+    initialize();
+  }
+
+  void initialize() async {
+    await _nmmtService.fetchAllStations();
     _timer = Timer.periodic(Duration(minutes: 2), (Timer timer) {
       _fetchRunningBusData(sourceLocationId, destinationLocationId);
     });
@@ -108,16 +114,6 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
         isLoading = false;
       });
     }
-  }
-
-  Future<void> _fetchAllBusStopData() async {
-    final busStops = await FirestoreService().getCollection(collection: 'NMMT-Stations');
-    busStops.listen((event) {
-      setState(() {
-        busStopDataList = event.docs;
-        isLoading = false;
-      });
-    });
   }
 
   @override
@@ -203,13 +199,13 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       ),
                     ),
                     suggestionsCallback: (pattern) {
-                      return busStopDataList
-                              ?.where((stop) =>
-                                  stop?['stationName']['English']
+                      return _nmmtService.allBusStops
+                              .where((stop) =>
+                                  stop['stationName']['English']
                                       ?.toLowerCase()
                                       ?.contains(pattern.toLowerCase()) ??
                                   false ||
-                                      stop?['stationName']['Marathi']
+                                      stop['stationName']['Marathi']
                                           ?.toLowerCase()
                                           ?.contains(pattern.toLowerCase()) ??
                                   false)
@@ -280,13 +276,13 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       ),
                     ),
                     suggestionsCallback: (pattern) {
-                      return busStopDataList
-                              ?.where((stop) =>
-                                  stop?['stationName']['English']
+                      return _nmmtService.allBusStops
+                              .where((stop) =>
+                                  stop['stationName']['English']
                                       ?.toLowerCase()
                                       ?.contains(pattern.toLowerCase()) ??
                                   false ||
-                                      stop?['stationName']['Marathi']
+                                      stop['stationName']['Marathi']
                                           ?.toLowerCase()
                                           ?.contains(pattern.toLowerCase()) ??
                                   false)

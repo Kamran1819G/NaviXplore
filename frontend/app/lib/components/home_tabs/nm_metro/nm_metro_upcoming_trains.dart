@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_route_page.dart';
 import 'package:navixplore/services/firebase/firestore_service.dart';
+import 'package:navixplore/widgets/Skeleton.dart';
 
 class NM_MetroUpcomingTrains extends StatefulWidget {
   final String lineID;
@@ -155,7 +156,7 @@ class _NM_MetroUpcomingTrainsState extends State<NM_MetroUpcomingTrains> {
           _buildDirectionSelector(),
           Expanded(
             child: upcomingTrains == null
-                ? Center(child: CircularProgressIndicator())
+                ? _buildSkeleton()
                 : ListView.builder(
               controller: _scrollController,
               itemCount: upcomingTrains!['upcomingTimes'].length,
@@ -258,6 +259,22 @@ class _NM_MetroUpcomingTrainsState extends State<NM_MetroUpcomingTrains> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSkeleton() {
+    return ListView.builder(
+      itemCount: 10,
+      itemBuilder: (context, index) {
+        return ListTile(
+          leading: Skeleton(height: 50, width: 50),
+          title: Align(
+            alignment: Alignment.centerLeft,
+            child: Skeleton(height: 8, width: 100),
+          ),
+          subtitle: Skeleton(height: 8, width: 50),
+        );
+      },
     );
   }
 }

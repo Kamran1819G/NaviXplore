@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:navixplore/services/NM_Metro_Service.dart';
 import 'package:navixplore/services/firebase/firestore_service.dart';
 
 class NM_MetroFareCalculator extends StatefulWidget {
-  List<dynamic>? metroStationsList;
 
-  NM_MetroFareCalculator({this.metroStationsList});
+  NM_MetroFareCalculator({Key? key}) : super(key: key);
 
   @override
   State<NM_MetroFareCalculator> createState() =>
@@ -13,11 +13,12 @@ class NM_MetroFareCalculator extends StatefulWidget {
 }
 
 class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
-  List<dynamic>? metroStationsList;
   TextEditingController sourceLocationController = TextEditingController();
   TextEditingController destinationLocationController = TextEditingController();
   String? sourceMetroStation;
   String? destinationMetroStation;
+
+  final NM_MetroService _nmMetroService = NM_MetroService();
 
   @override
   void initState() {
@@ -26,36 +27,9 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
   }
 
   void initialize () async{
-    await _fetchMetroStations();
+    await _nmMetroService.fetchAllStations();
   }
 
-  Future<void> _fetchMetroStations() async{
-    if(widget.metroStationsList != null){
-      setState(() {
-        metroStationsList = widget.metroStationsList;
-      });
-      return;
-    }
-    else {
-      final metroStations = await FirestoreService().getCollection(
-          collection: 'NM-Metro-Stations');
-      metroStations.listen((event) {
-        setState(() {
-          metroStationsList = event.docs;
-          metroStationsList?.sort((a, b) {
-            // Extract numeric part from stationID (e.g., 'S001' -> 1)
-            int aNum = int.parse(
-                a.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
-            int bNum = int.parse(
-                b.get('stationID').replaceAll(RegExp(r'[^\d]+'), ''));
-
-            // Compare numeric parts
-            return aNum.compareTo(bNum);
-          });
-        });
-      });
-    }
-  }
 
   double calculateFare(double distance) {
     if (distance <= 2) {
@@ -75,15 +49,11 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
 
   double calculateTotalDistanceBetweenStations(
       int sourceStationID, int destinationStationID) {
-    if (metroStationsList == null) {
-      return 0.0; // or handle this case according to your requirements
-    }
-
     double totalDistance = 0.0;
     bool countingDistance = false;
 
     if(sourceStationID > destinationStationID) {
-      for(var station in metroStationsList!.reversed) {
+      for(var station in _nmMetroService.allMetroStations.reversed) {
         if(int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) == sourceStationID || int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) == destinationStationID) {
           countingDistance = !countingDistance;
         }
@@ -97,7 +67,7 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
         }
       }
     }else{
-      for(var station in metroStationsList!) {
+      for(var station in _nmMetroService.allMetroStations) {
         if(int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) == sourceStationID || int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) == destinationStationID) {
           countingDistance = !countingDistance;
         }
@@ -175,18 +145,17 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                     ),
                   ),
                   suggestionsCallback: (pattern) {
-                    return metroStationsList
-                        ?.where((station) =>
-                    station?['stationName']['English']
+                    return _nmMetroService.allMetroStations
+                        .where((station) =>
+                    station['stationName']['English']
                         ?.toLowerCase()
                         ?.contains(pattern.toLowerCase()) ??
                         false ||
-                            station?['stationName']['Marathi']
+                            station['stationName']['Marathi']
                                 ?.toLowerCase()
                                 ?.contains(pattern.toLowerCase()) ??
                         false)
-                        .toList() ??
-                        [];
+                        .toList();
                   },
                   itemBuilder: (context, suggestion) {
                     return ListTile(
@@ -227,13 +196,13 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                     ),
                   ),
                   suggestionsCallback: (pattern) {
-                    return metroStationsList
-                        ?.where((station) =>
-                    station?['stationName']['English']
+                    return _nmMetroService.allMetroStations
+                        .where((station) =>
+                    station['stationName']['English']
                         ?.toLowerCase()
                         ?.contains(pattern.toLowerCase()) ??
                         false ||
-                            station?['stationName']['Marathi']
+                            station['stationName']['Marathi']
                                 ?.toLowerCase()
                                 ?.contains(pattern.toLowerCase()) ??
                         false)
@@ -267,11 +236,11 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
             onPressed: () {
               if (sourceMetroStation != null &&
                   destinationMetroStation != null) {
-                String sourceStationID = metroStationsList!
+                String sourceStationID = _nmMetroService.allMetroStations
                     .firstWhere((station) =>
                 station['stationName']['English'] == sourceMetroStation)['stationID'];
 
-                String destinationStationID = metroStationsList!
+                String destinationStationID = _nmMetroService.allMetroStations
                     .firstWhere((station) =>
                 station['stationName']['English'] == destinationMetroStation)['stationID'];
 

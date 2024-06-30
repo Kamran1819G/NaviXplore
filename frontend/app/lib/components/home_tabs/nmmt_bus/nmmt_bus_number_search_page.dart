@@ -1,11 +1,7 @@
-import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_bus_route_page.dart';
-import 'package:navixplore/config/api_endpoints.dart';
-import 'package:navixplore/services/firebase/firestore_service.dart';
-import 'package:xml/xml.dart';
+import 'package:navixplore/services/NMMT_Service.dart';
+
 import '../../../widgets/Skeleton.dart';
 
 class NMMTBusNumberSearchPage extends StatefulWidget {
@@ -18,14 +14,23 @@ class NMMTBusNumberSearchPage extends StatefulWidget {
 
 class _NMMTBusNumberSearchPageState extends State<NMMTBusNumberSearchPage> {
   bool isLoading = true;
-  List<dynamic>? busDataList;
   List<dynamic>? filteredBusData;
   TextEditingController _searchController = TextEditingController();
+
+  final NMMTService _nmmtService = NMMTService();
 
   @override
   void initState() {
     super.initState();
-    _fetchAllBusData();
+    initialize();
+  }
+
+  void initialize() async {
+    await _nmmtService.fetchAllBuses();
+    setState(() {
+      filteredBusData = _nmmtService.allBuses;
+      isLoading = false;
+    });
   }
 
   @override
@@ -34,27 +39,16 @@ class _NMMTBusNumberSearchPageState extends State<NMMTBusNumberSearchPage> {
     super.dispose();
   }
 
-  // Fetch the response body
-  void _fetchAllBusData() async {
-    final buses = await FirestoreService().getCollection(collection: 'NMMT-Buses');
-    buses.listen((event) {
-      setState(() {
-        busDataList = event.docs;
-        filteredBusData = busDataList;
-        isLoading = false;
-      });
-    });
-  }
 
   void _searchBusNumber(String query) {
     if (query.isEmpty) {
       setState(() {
-        filteredBusData = busDataList;
+        filteredBusData = _nmmtService.allBuses;
       });
     } else {
       setState(() {
-        filteredBusData = busDataList
-            ?.where((busStop) => busStop['routeName']['English']
+        filteredBusData = _nmmtService.allBuses
+            .where((busStop) => busStop['routeName']['English']
                 .toLowerCase()
                 .contains(query.toLowerCase()))
             .toList();
