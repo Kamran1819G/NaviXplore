@@ -3,12 +3,11 @@ import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_upcoming_train
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:navixplore/utils/geo_calculator.dart';
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_fare_calculator.dart';
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_map.dart';
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_penalties.dart';
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_search_page.dart';
-import 'package:navixplore/services/firestore_service.dart';
+import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'package:navixplore/widgets/Skeleton.dart';
 
 class NMMetroTab extends StatefulWidget {
@@ -74,14 +73,13 @@ class _NMMetroTabState extends State<NMMetroTab> {
       return;
     }
 
-    final geoCalculator = GeoCalculator();
     List<Map<String, dynamic>> stationsWithDistance = [];
 
     for (var station in metroStationsList!) {
       double stationLat = station['location']['latitude'];
       double stationLon = station['location']['longitude'];
 
-      double distance = geoCalculator.getDistance(
+      double distance = Geolocator.distanceBetween(
           _currentlatitude!,
           _currentlongitude!,
           stationLat,
@@ -107,23 +105,31 @@ class _NMMetroTabState extends State<NMMetroTab> {
     });
   }
 
-  String formatDistance(double distanceInKm) {
-    if (distanceInKm >= 1) {
+  String formatDistance(double distanceInMeters) {
+    if (distanceInMeters >= 1000) {
+      double distanceInKm = distanceInMeters / 1000;
       return '${distanceInKm.toStringAsFixed(2)} km';
     } else {
-      int meters = (distanceInKm * 1000).round();
-      return '$meters m';
+      return '${distanceInMeters.round()} m';
     }
   }
 
-  String calculateTime(double distanceInKm) {
-    double time = distanceInKm / 0.08;
-    if(time < 1) {
+  String calculateTime(double distanceInMeters) {
+    // Average walking speed: 5 km/h (0.0833 km/min)
+    double distanceInKm = distanceInMeters / 1000;
+    double timeInMinutes = distanceInKm / 0.0833;
+
+    if (timeInMinutes < 1) {
       return '1 min';
+    } else if (timeInMinutes < 60) {
+      return '${timeInMinutes.toStringAsFixed(0)} min';
     } else {
-      return '${time.toStringAsFixed(0)} min';
+      double timeInHours = timeInMinutes / 60;
+      return '${timeInHours.toStringAsFixed(1)} hr';
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {

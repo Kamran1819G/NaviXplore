@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:navixplore/screens/sign_up_screen.dart';
-import 'package:navixplore/services/firebase_auth_service.dart';
+import 'package:navixplore/services/firebase/firebase_auth_service.dart';
 import 'package:navixplore/screens/explore_screen.dart';
 import 'package:navixplore/screens/news_screen.dart';
 import 'package:navixplore/screens/sign_in_screen.dart';

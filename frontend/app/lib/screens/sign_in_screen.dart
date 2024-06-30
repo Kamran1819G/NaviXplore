@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:navixplore/services/firebase_auth_service.dart';
+import 'package:navixplore/services/firebase/firebase_auth_service.dart';
 import 'package:navixplore/screens/sign_up_screen.dart';
 
 import 'home_screen.dart';

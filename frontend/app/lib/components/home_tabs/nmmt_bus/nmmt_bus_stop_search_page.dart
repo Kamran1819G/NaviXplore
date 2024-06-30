@@ -2,10 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:xml/xml.dart';
-import 'package:navixplore/config/api_endpoints.dart';
-
+import 'package:navixplore/services/firebase/firestore_service.dart';
 import '../../../widgets/Skeleton.dart';
 import 'nmmt_depot_buses.dart';
 
@@ -25,29 +22,24 @@ class _NMMTBusStopSearchPageState extends State<NMMTBusStopSearchPage> {
   @override
   void initState() {
     super.initState();
-    // Fetch data when the widget is initialized
-    _fetchAllBusStopData();
+    initialize();
   }
 
-  // Fetch the response body
-  void _fetchAllBusStopData() async {
-    setState(() {
-      isLoading = true;
-    });
-    final response = await http.get(Uri.parse('$NMMTApiEndpoints.GetBusStop?StationName='));
-    if (response.statusCode == 200) {
-      final List<dynamic> busStops =
-          json.decode(XmlDocument.parse(response.body).innerText);
+  void initialize () async{
+    await _fetchAllBusStopData();
+  }
 
+
+  // Fetch the response body
+  Future<void> _fetchAllBusStopData() async {
+    final busStops = await FirestoreService().getCollection(collection: 'NMMT-Stations');
+    busStops.listen((event) {
       setState(() {
-        busStopDataList = busStops;
+        busStopDataList = event.docs;
         filteredBusStopData = busStopDataList;
         isLoading = false;
       });
-    } else {
-      print('Failed to fetch data. Status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
-    }
+    });
   }
 
   void _searchBusStops(String query) {
@@ -58,7 +50,7 @@ class _NMMTBusStopSearchPageState extends State<NMMTBusStopSearchPage> {
     } else {
       setState(() {
         filteredBusStopData = busStopDataList
-            ?.where((busStop) => busStop['StationName']
+            ?.where((busStop) => busStop['stationName']['English']
                 .toLowerCase()
                 .contains(query.toLowerCase()))
             .toList();
@@ -135,10 +127,9 @@ class _NMMTBusStopSearchPageState extends State<NMMTBusStopSearchPage> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => NMMTDepotBuses(
-                                busStopName: busStopData["StationName"],
-                                stationid: busStopData["StationId"],
-                                stationLatitude: busStopData["Latitude"],
-                                stationLongitude: busStopData["Longitude"],
+                                busStopName: busStopData["stationName"]["English"],
+                                stationid: busStopData["stationID"],
+                                stationLocation: busStopData["location"],
                               ),
                             ),
                           );
@@ -155,19 +146,19 @@ class _NMMTBusStopSearchPageState extends State<NMMTBusStopSearchPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              busStopData["StationName"],
+                              busStopData["stationName"]["English"],
                               style: TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              busStopData["StationName_M"],
+                              busStopData["stationName"]["Marathi"],
                               style: TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
                         subtitle: Text(
-                          busStopData["CityName"],
+                          busStopData["cityName"],
                           style: TextStyle(fontSize: 14),
                         ),
                         trailing: Icon(

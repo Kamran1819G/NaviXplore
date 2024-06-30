@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:navixplore/services/firestore_service.dart';
+import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'nm_metro_upcoming_trains.dart';
 
 class NMMetroSearchPage extends StatefulWidget {

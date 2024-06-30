@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_bus_route_page.dart';
 import 'package:navixplore/config/api_endpoints.dart';
+import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'package:xml/xml.dart';
 import '../../../widgets/Skeleton.dart';
 
@@ -35,23 +36,14 @@ class _NMMTBusNumberSearchPageState extends State<NMMTBusNumberSearchPage> {
 
   // Fetch the response body
   void _fetchAllBusData() async {
-    setState(() {
-      isLoading = true;
-    });
-    final response = await http.get(Uri.parse(NMMTApiEndpoints.GetRouteList));
-    if (response.statusCode == 200) {
-      final List<dynamic> buses =
-          json.decode(XmlDocument.parse(response.body).innerText);
-
+    final buses = await FirestoreService().getCollection(collection: 'NMMT-Buses');
+    buses.listen((event) {
       setState(() {
-        busDataList = buses;
+        busDataList = event.docs;
         filteredBusData = busDataList;
         isLoading = false;
       });
-    } else {
-      print('Failed to fetch data. Status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
-    }
+    });
   }
 
   void _searchBusNumber(String query) {
@@ -62,7 +54,7 @@ class _NMMTBusNumberSearchPageState extends State<NMMTBusNumberSearchPage> {
     } else {
       setState(() {
         filteredBusData = busDataList
-            ?.where((busStop) => busStop['RouteName']
+            ?.where((busStop) => busStop['routeName']['English']
                 .toLowerCase()
                 .contains(query.toLowerCase()))
             .toList();
@@ -140,8 +132,8 @@ class _NMMTBusNumberSearchPageState extends State<NMMTBusNumberSearchPage> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => NMMTBusRoutePage(
-                                  routeid: busData["RouteId"],
-                                  busName: busData["RouteName"]),
+                                  routeid: busData["routeID"],
+                                  busName: busData["routeName"]['English']),
                             ),
                           );
                         },
@@ -153,12 +145,12 @@ class _NMMTBusNumberSearchPageState extends State<NMMTBusNumberSearchPage> {
                           ),
                         ),
                         title: Text(
-                          busData["RouteName"],
+                          busData["routeName"]['English'],
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(
-                          busData["RouteName_M"],
+                          busData["routeName"]['Marathi'],
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                         ),

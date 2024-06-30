@@ -297,8 +297,10 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
                   builder: (context) => NMMTDepotBuses(
                     busStopName: busStopData["StationName"],
                     stationid: busStopData["StationId"],
-                    stationLatitude: busStopData['Center_Lat'],
-                    stationLongitude: busStopData["Center_Lon"],
+                    stationLocation: {
+                      'latitude': double.parse(busStopData['Center_Lat']),
+                      'longitude': double.parse(busStopData['Center_Lon']),
+                    },
                   ),
                 ),
               );

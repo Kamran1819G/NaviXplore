@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:navixplore/controller/network_controller.dart';
 import 'package:navixplore/screens/splash_screen.dart';
-import 'package:navixplore/services/firebase_messaging_service.dart';
+import 'package:navixplore/services/firebase/firebase_messaging_service.dart';
 import 'package:navixplore/theme/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';

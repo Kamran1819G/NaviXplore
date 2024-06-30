@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:navixplore/services/firebase_auth_service.dart';
+import 'package:navixplore/services/firebase/firebase_auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:navixplore/screens/sign_in_screen.dart';
 import 'package:navixplore/widget_tree.dart';

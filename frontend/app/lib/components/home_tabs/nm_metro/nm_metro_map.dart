@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
-import 'package:navixplore/services/firestore_service.dart';
+import 'package:navixplore/services/firebase/firestore_service.dart';
 
 class NM_MetroMap extends StatefulWidget {
   List<dynamic>? metroStationsList;

@@ -16,15 +16,13 @@ import '../../../widgets/bus_marker.dart';
 class NMMTDepotBuses extends StatefulWidget {
   final String stationid;
   final String busStopName;
-  final String stationLongitude;
-  final String stationLatitude;
+  final Map<String, dynamic> stationLocation;
 
   const NMMTDepotBuses({
     Key? key,
     required this.busStopName,
     required this.stationid,
-    required this.stationLatitude,
-    required this.stationLongitude,
+    required this.stationLocation,
   }) : super(key: key);
 
   @override
@@ -82,8 +80,8 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
       Marker(
         markerId: MarkerId(widget.busStopName),
         position: LatLng(
-          double.parse(widget.stationLatitude),
-          double.parse(widget.stationLongitude),
+          widget.stationLocation['latitude'],
+          widget.stationLocation['longitude'],
         ),
         icon: busStopMarker ?? BitmapDescriptor.defaultMarker,
         infoWindow: InfoWindow(
@@ -154,7 +152,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
           "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
       final response = await http.get(Uri.parse(
-          '$NMMTApiEndpoints.GetDepotBusesList?LocationId=${widget.stationid}&ScheduleDate=$scheduleDate'));
+          '${NMMTApiEndpoints.GetDepotBusesList}?LocationId=${widget.stationid}&ScheduleDate=$scheduleDate'));
 
       if (response.statusCode == 200) {
         if (XmlDocument.parse(response.body).innerText.trim().toUpperCase() ==
@@ -297,8 +295,8 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
               zoomControlsEnabled: false,
               initialCameraPosition: CameraPosition(
                 target: LatLng(
-                  double.parse(widget.stationLatitude),
-                  double.parse(widget.stationLongitude),
+                  widget.stationLocation['latitude'],
+                  widget.stationLocation['longitude'],
                 ),
                 zoom: 15.0,
               ),
@@ -416,7 +414,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                           context,
                           MaterialPageRoute(
                             builder: (context) => NMMTBusRoutePage(
-                              routeid: busData["RouteId"],
+                              routeid: int.parse(busData["RouteId"]),
                               busName: busData["RouteName"],
                               busTripId: busData["TripId"],
                               busArrivalTime: busData["ETATime"],

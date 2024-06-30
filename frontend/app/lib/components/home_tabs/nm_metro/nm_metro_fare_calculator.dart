@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:navixplore/services/firestore_service.dart';
+import 'package:navixplore/services/firebase/firestore_service.dart';
 
 class NM_MetroFareCalculator extends StatefulWidget {
   List<dynamic>? metroStationsList;

@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_route_page.dart';
-import 'package:navixplore/services/firestore_service.dart';
+import 'package:navixplore/services/firebase/firestore_service.dart';
 
 class NM_MetroUpcomingTrains extends StatefulWidget {
   final String lineID;

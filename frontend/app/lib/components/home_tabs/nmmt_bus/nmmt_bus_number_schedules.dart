@@ -6,7 +6,7 @@ import 'package:xml/xml.dart';
 import 'dart:convert';
 
 class NMMTBusNumberSchedules extends StatefulWidget {
-  final String routeid;
+  final int routeid;
   final String busName;
   final int stationid;
   final String busStopName;
@@ -56,7 +56,7 @@ class _NMMTBusNumberSchedulesState extends State<NMMTBusNumberSchedules> {
 
   void _fetchBusScheduleData() async {
     final response = await http.get(Uri.parse(
-        '$NMMTApiEndpoints.GetBusScheduleForRoute?RouteId=${widget.routeid}&StationID=${widget.stationid}'));
+        '${NMMTApiEndpoints.GetBusScheduleForRoute}?RouteId=${widget.routeid}&StationID=${widget.stationid}'));
     if (response.statusCode == 200) {
       if (XmlDocument.parse(response.body).innerText.trim().toUpperCase() ==
           "NO DATA FOUND") {

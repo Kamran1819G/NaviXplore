@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:http/http.dart' as http;
 import 'package:navixplore/config/api_endpoints.dart';
+import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'package:navixplore/widgets/Skeleton.dart';
 import 'package:xml/xml.dart';
 
@@ -27,14 +28,14 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   final String busServiceTypeId = "0";
   TextEditingController sourceLocationController = TextEditingController();
   TextEditingController destinationLocationController = TextEditingController();
-  String? sourceLocationId;
-  String? destinationLocationId;
+  int? sourceLocationId;
+  int? destinationLocationId;
 
   @override
   void initState() {
     super.initState();
     _fetchAllBusStopData();
-    _timer = Timer.periodic(Duration(minutes: 1), (Timer timer) {
+    _timer = Timer.periodic(Duration(minutes: 2), (Timer timer) {
       _fetchRunningBusData(sourceLocationId, destinationLocationId);
     });
   }
@@ -52,7 +53,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
       sourceLocationController.text = destinationLocationController.text;
       destinationLocationController.text = tempLocation;
 
-      String? tempLocationId = sourceLocationId;
+      int? tempLocationId = sourceLocationId;
       sourceLocationId = destinationLocationId;
       destinationLocationId = tempLocationId;
 
@@ -62,11 +63,14 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   }
 
   Future<void> _fetchRunningBusData(
-      String? sourceLocationId, String? destinationLocationId) async {
+      int? sourceLocationId, int? destinationLocationId) async {
     try {
       setState(() {
         isLoading = true;
       });
+
+      String? sourceLocation = sourceLocationId?.toString();
+      String? destinationLocation = destinationLocationId?.toString();
 
       DateTime now = DateTime.now();
       String scheduleDate =
@@ -75,7 +79,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
           "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
 
       final response = await http.get(Uri.parse(
-        '$NMMTApiEndpoints.GetBusFromSourceToDestination?FromLocId=$sourceLocationId&ToLocId=$destinationLocationId&BusServiceTypeId=$busServiceTypeId&ScheduleDate=$scheduleDate&JourneyTime=$currentTime',
+        '${NMMTApiEndpoints.GetBusFromSourceToDestination}?FromLocId=$sourceLocation&ToLocId=$destinationLocation&BusServiceTypeId=$busServiceTypeId&ScheduleDate=$scheduleDate&JourneyTime=$currentTime',
       ));
 
       if (response.statusCode == 200) {
@@ -107,30 +111,13 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   }
 
   Future<void> _fetchAllBusStopData() async {
-    try {
+    final busStops = await FirestoreService().getCollection(collection: 'NMMT-Stations');
+    busStops.listen((event) {
       setState(() {
-        isLoading = true;
+        busStopDataList = event.docs;
+        isLoading = false;
       });
-
-      final response = await http.get(Uri.parse(
-        '$NMMTApiEndpoints.GetBusStop?StationName=',
-      ));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> busStops =
-            json.decode(XmlDocument.parse(response.body).innerText);
-
-        setState(() {
-          busStopDataList = busStops;
-          isLoading = false;
-        });
-      } else {
-        print('Failed to fetch data. Status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
-      }
-    } catch (error) {
-      print('Error: $error');
-    }
+    });
   }
 
   @override
@@ -218,11 +205,11 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                     suggestionsCallback: (pattern) {
                       return busStopDataList
                               ?.where((stop) =>
-                                  stop?['StationName']
+                                  stop?['stationName']['English']
                                       ?.toLowerCase()
                                       ?.contains(pattern.toLowerCase()) ??
                                   false ||
-                                      stop?['StationName_M']
+                                      stop?['stationName']['Marathi']
                                           ?.toLowerCase()
                                           ?.contains(pattern.toLowerCase()) ??
                                   false)
@@ -241,14 +228,14 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                                 color: Colors.orange, size: 20),
                           ),
                         ),
-                        title: Text(suggestion['StationName']),
+                        title: Text(suggestion['stationName']['English']),
                       );
                     },
                     onSuggestionSelected: (suggestion) {
                       setState(() {
                         sourceLocationController.text =
-                            suggestion['StationName'];
-                        sourceLocationId = suggestion['StationId'];
+                            suggestion['stationName']['English'];
+                        sourceLocationId = suggestion['stationID'];
                       });
                     },
                   ),
@@ -295,11 +282,11 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                     suggestionsCallback: (pattern) {
                       return busStopDataList
                               ?.where((stop) =>
-                                  stop?['StationName']
+                                  stop?['stationName']['English']
                                       ?.toLowerCase()
                                       ?.contains(pattern.toLowerCase()) ??
                                   false ||
-                                      stop?['StationName_M']
+                                      stop?['stationName']['Marathi']
                                           ?.toLowerCase()
                                           ?.contains(pattern.toLowerCase()) ??
                                   false)
@@ -318,14 +305,14 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                                 color: Colors.orange, size: 20),
                           ),
                         ),
-                        title: Text(suggestion['StationName']),
+                        title: Text(suggestion['stationName']['English']),
                       );
                     },
                     onSuggestionSelected: (suggestion) {
                       setState(() {
                         destinationLocationController.text =
-                            suggestion['StationName'];
-                        destinationLocationId = suggestion['StationId'];
+                            suggestion['stationName']['English'];
+                        destinationLocationId = suggestion['stationID'];
                       });
                     },
                   ),
