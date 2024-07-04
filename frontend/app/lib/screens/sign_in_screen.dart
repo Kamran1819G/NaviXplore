@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:navixplore/services/firebase/firebase_auth_service.dart';
 import 'package:navixplore/screens/sign_up_screen.dart';
-
+import 'package:navixplore/utils/snackbar_util.dart';
+import 'package:navixplore/widget_tree.dart';
 import 'home_screen.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -12,122 +13,48 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
-  TextEditingController emailController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
+  TextEditingController _emailController = TextEditingController();
+  TextEditingController _passwordController = TextEditingController();
 
-  Future<void> signInWithEmailAndPassword() async {
+  Future<void> _handleSignInWithProvider(Future<void> Function() signUpMethod, String providerName) async {
     try {
-      await FirebaseAuthService().signInWithEmailAndPassword(
-        email: emailController.text,
-        password: passwordController.text,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Sign In Successful',
-            style: TextStyle(
-              color: Colors.white,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
+      showCustomSnackBar(context, 'Signing in with $providerName...', Colors.orange);
+
+      // Execute the provided sign-up method (Google or Apple)
+      await signUpMethod();
+
+      // Display success message
+      showCustomSnackBar(context, 'Signed in with $providerName successfully!', Colors.green);
+
+      // Navigate to home screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomeScreen(),
+          builder: (context) => WidgetTree(), // Replace with your desired home screen
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString(),
-            style: TextStyle(
-              color: Colors.white,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Display error message if sign-up fails
+      showCustomSnackBar(context, e.toString(), Colors.red);
     }
+  }
+
+  Future<void> signInWithEmailAndPassword() async {
+    await _handleSignInWithProvider(() => FirebaseAuthService().signInWithEmailAndPassword(
+      email: _emailController.text,
+      password: _passwordController.text,
+    ), 'Email and Password');
   }
 
   Future<void> signInWithGoogle() async {
-    try {
-      await FirebaseAuthService().signInWithGoogle();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Google Sign In Successful',
-            style: TextStyle(
-              color: Colors.white,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString(),
-            style: TextStyle(
-              color: Colors.white,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+    await _handleSignInWithProvider(() => FirebaseAuthService().signInWithGoogle(context), 'Google');
   }
 
   Future<void> signInWithApple() async {
-    try {
-      await FirebaseAuthService().signInWithApple();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Apple Sign In Successful',
-            style: TextStyle(
-              color: Colors.white,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString(),
-            style: TextStyle(
-              color: Colors.white,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+    await _handleSignInWithProvider(() => FirebaseAuthService().signInWithApple(context), 'Apple');
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -140,10 +67,10 @@ class _SignInScreenState extends State<SignInScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15.0),
               child: Row(
-                children:[
+                children: [
                   Spacer(),
                   TextButton(
-                    onPressed: () async{
+                    onPressed: () async {
                       await FirebaseAuthService().signInAnonymously();
                       Navigator.pushReplacement(
                         context,
@@ -151,36 +78,26 @@ class _SignInScreenState extends State<SignInScreen> {
                           builder: (context) => HomeScreen(),
                         ),
                       );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Signed in Anonymously',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
+                      showCustomSnackBar(context, 'Signed in Anonymously', Colors.green);
                     },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        backgroundColor: Colors.orange,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100),
                       ),
+                      backgroundColor: Colors.orange,
+                    ),
                     child: Text(
                       "Guest",
                       style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontFamily: "Fredoka",
-                          fontWeight: FontWeight.bold),
-                    )
-                  )
-                ]
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontFamily: "Fredoka",
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             SizedBox(height: MediaQuery.of(context).size.height * 0.1),
@@ -217,7 +134,7 @@ class _SignInScreenState extends State<SignInScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25.0),
               child: TextField(
-                controller: emailController,
+                controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
                   labelText: 'Email',
@@ -238,7 +155,7 @@ class _SignInScreenState extends State<SignInScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25.0),
               child: TextField(
-                controller: passwordController,
+                controller: _passwordController,
                 keyboardType: TextInputType.visiblePassword,
                 obscureText: true,
                 decoration: const InputDecoration(
@@ -263,8 +180,9 @@ class _SignInScreenState extends State<SignInScreen> {
                 children: [
                   Spacer(),
                   GestureDetector(
-                    onTap: (){
-                      FirebaseAuthService().sendPasswordResetEmail(email: emailController.text);
+                    onTap: () {
+                      FirebaseAuthService().sendPasswordResetEmail(email: _emailController.text);
+                      showCustomSnackBar(context, 'Password Reset Email Sent', Colors.orange);
                     },
                     child: Text(
                       "Forgot Password?",
