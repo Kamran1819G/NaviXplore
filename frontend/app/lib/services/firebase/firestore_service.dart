@@ -7,6 +7,17 @@ class FirestoreService {
     return _firestore.collection(collection).snapshots();
   }
 
+  Future<QuerySnapshot> getSortedCollection({
+    required String collection,
+    required String orderBy,
+    bool descending = false,
+  }) {
+    return _firestore
+        .collection(collection)
+        .orderBy(orderBy, descending: descending)
+        .get();
+  }
+
   Future<DocumentSnapshot> getDocument(
       {required String collection, required String docId}) async {
     return await _firestore.collection(collection).doc(docId).get();
