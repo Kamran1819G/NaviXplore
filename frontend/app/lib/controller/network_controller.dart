@@ -21,8 +21,8 @@ class NetworkController extends GetxController {
           colorText: Colors.white,
           icon: Icon(Icons.wifi_off, color: Colors.white),
           shouldIconPulse: true,
-          duration: Duration(days: 1),
-          isDismissible: false
+          duration: Duration(seconds: 5),
+          isDismissible: true
       );
     }else if(Get.isSnackbarOpen && (connectivityResultList.contains(ConnectivityResult.mobile) || connectivityResultList.contains(ConnectivityResult.wifi))){
       Get.closeCurrentSnackbar();
@@ -35,7 +35,7 @@ class NetworkController extends GetxController {
           icon: Icon(Icons.wifi, color: Colors.white),
           shouldIconPulse: false,
           duration: Duration(seconds: 5),
-          isDismissible: false
+          isDismissible: true
       );
     }
     else{
