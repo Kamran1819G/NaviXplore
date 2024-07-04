@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:navixplore/components/explore_tabs/place_detail_screen.dart';
-import 'package:navixplore/config/api_endpoints.dart';
+import 'package:navixplore/pages/place_detail_page.dart';
+import 'package:navixplore/services/NM_Places_Service.dart';
 import 'package:navixplore/widgets/image_container.dart';
 import '../../widgets/Skeleton.dart';
 
@@ -14,34 +12,23 @@ class FamousPlacesTab extends StatefulWidget {
 }
 
 class _FamousPlacesTabState extends State<FamousPlacesTab> {
-  List<Map<String, dynamic>> famousplaces = [];
   bool isLoading = true;
+
+  final NM_PlacesService nmPlacesService = NM_PlacesService();
 
   @override
   void initState() {
     super.initState();
-    fetchData();
+    initialize();
   }
 
-  Future<void> fetchData() async {
-      setState(() {
-        isLoading = true;
-      });
-
-      final response = await http.get(Uri.parse(PlacesApiEndpoints.FamousPlaces));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        setState(() {
-          famousplaces = List<Map<String, dynamic>>.from(data);
-          isLoading = false;
-        });
-      } else {
-        // Handle non-200 status codes
-        throw Exception(
-            'Failed to load data. Status code: ${response.statusCode}');
-      }
+  void initialize() async{
+    await nmPlacesService.fetchFamousPlaces();
+    setState(() {
+      isLoading = false;
+    });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -52,20 +39,15 @@ class _FamousPlacesTabState extends State<FamousPlacesTab> {
             separatorBuilder: (context, index) => const SizedBox(height: 20),
           )
         : ListView.builder(
-            itemCount: famousplaces.length,
+            itemCount: nmPlacesService.allFamousPlaces.length,
             itemBuilder: (context, index) {
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PlaceDetailScreen(
-                        placeName: famousplaces[index]['name'],
-                        placeImageUrl: famousplaces[index]['image_url'],
-                        placeLocation: famousplaces[index]['location'],
-                        placeDescription: famousplaces[index]['content'],
-                        placeLatitude: famousplaces[index]['coordinates']['latitude'],
-                        placeLongitude: famousplaces[index]['coordinates']['longitude'],
+                      builder: (context) => PlaceDetailPage(
+                        place: nmPlacesService.allFamousPlaces[index],
                       ),
                     ),
                   );
@@ -77,7 +59,7 @@ class _FamousPlacesTabState extends State<FamousPlacesTab> {
                       ImageContainer(
                         height: 125,
                         width: 125,
-                        imageUrl: famousplaces[index]['image_url'],
+                        imageUrl: nmPlacesService.allFamousPlaces[index]['images'][0],
                       ),
                       SizedBox(width: 15),
                       Expanded(
@@ -85,13 +67,13 @@ class _FamousPlacesTabState extends State<FamousPlacesTab> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              famousplaces[index]['name'],
+                              nmPlacesService.allFamousPlaces[index]['name'],
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text(famousplaces[index]['location']),
+                            Text(nmPlacesService.allFamousPlaces[index]['address']),
                           ],
                         ),
                       ),

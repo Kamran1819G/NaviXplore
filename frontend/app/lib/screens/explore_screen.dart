@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:navixplore/components/explore_tabs/famous_places_tab.dart';
 import 'package:navixplore/components/explore_tabs/tourist_destinations_tab.dart';
+import 'package:navixplore/services/NM_Places_Service.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({Key? key}) : super(key: key);
@@ -13,13 +14,20 @@ class _ExploreScreenState extends State<ExploreScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
 
+  NM_PlacesService nmPlacesService = NM_PlacesService();
+
   @override
   void initState() {
     super.initState();
+    initialize();
+  }
+
+  void initialize() async{
     _tabController = TabController(
         length: 2,
         initialIndex: 0,
-        vsync: this); // Change the length to match your number of tabs.
+        vsync: this);
+    await nmPlacesService.fetchAllPlaces();
   }
 
   @override

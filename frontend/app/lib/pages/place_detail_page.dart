@@ -2,21 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:navixplore/widgets/image_container.dart';
 
-class PlaceDetailScreen extends StatefulWidget {
-  String placeName;
-  String placeImageUrl;
-  String placeLocation;
-  String placeDescription;
-  double placeLatitude;
-  double placeLongitude;
+class PlaceDetailPage extends StatefulWidget {
+  final Map<String, dynamic> place;
 
-  PlaceDetailScreen({super.key, required this.placeName, required this.placeImageUrl,required this.placeLocation, required this.placeDescription, required this.placeLatitude, required this.placeLongitude});
+
+  PlaceDetailPage({required this.place});
 
   @override
-  State<PlaceDetailScreen> createState() => _PlaceDetailScreenState();
+  State<PlaceDetailPage> createState() => _PlaceDetailPageState();
 }
 
-class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
+class _PlaceDetailPageState extends State<PlaceDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,7 +38,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                 color: Colors.grey[200],
               ),
               child: Text(
-                  widget.placeName,
+                  widget.place['name'],
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.orange, fontSize: 30, fontWeight: FontWeight.bold,fontFamily: "Fredoka")
               ),
@@ -51,12 +47,12 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
             ImageContainer(
                 height:MediaQuery.sizeOf(context).height * 0.3,
                 width: MediaQuery.sizeOf(context).width * 0.95,
-                imageUrl: widget.placeImageUrl,
+                imageUrl: widget.place['images'][0],
             ),
             SizedBox(height: 10),
             Container(
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                child: Text(widget.placeDescription, textAlign: TextAlign.justify)
+                child: Text(widget.place['description'], textAlign: TextAlign.justify)
             ),
             Card(
               elevation: 3,
@@ -71,16 +67,16 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                   zoomControlsEnabled: false,
                     fortyFiveDegreeImageryEnabled: true,
                   initialCameraPosition: CameraPosition(
-                    target: LatLng(widget.placeLatitude, widget.placeLongitude),
+                    target: LatLng(widget.place['location']['latitude'], widget.place['location']['longitude']),
                     zoom: 15,
                   ),
                   markers: <Marker>{
                     Marker(
-                      markerId: MarkerId(widget.placeName),
-                      position: LatLng(widget.placeLatitude, widget.placeLongitude),
+                      markerId: MarkerId(widget.place['name']),
+                      position: LatLng(widget.place['location']['latitude'], widget.place['location']['longitude']),
                       infoWindow: InfoWindow(
-                        title: widget.placeName,
-                        snippet: widget.placeLocation,
+                        title: widget.place['name'],
+                        snippet: widget.place['address'],
                       ),
                     ),
                 }
