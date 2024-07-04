@@ -7,7 +7,11 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_all_nearest_bus_stop.dart';
 import 'package:navixplore/config/api_endpoints.dart';
+import 'package:navixplore/pages/announcement_detail_page.dart';
+import 'package:navixplore/services/NMMT_Service.dart';
 import 'package:navixplore/widgets/Skeleton.dart';
+import 'package:navixplore/widgets/announcement_card.dart';
+import 'package:navixplore/widgets/webview_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
 import 'package:xml/xml.dart';
@@ -26,25 +30,43 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
   List<dynamic>? nearbyBusStop;
   Set<Marker> markers = Set();
   bool isLoading = true;
+  bool isAnnouncementLoading = true;
   double? _latitude;
   double? _longitude;
   BitmapDescriptor? busStopMarker;
   Timer? _timer;
 
+  final NMMTService _nmmtService = NMMTService();
+
   @override
   void initState() {
     super.initState();
-    _getNearbyBusStops();
-    _timer = Timer.periodic(const Duration(minutes: 2), (Timer timer) {
-      _getNearbyBusStops();
-    });
-    setCustomMarker();
+    initialize();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
     super.dispose();
+  }
+
+  void initialize() async {
+    _getNearbyBusStops();
+    try {
+      await _nmmtService.fetchAnnouncements();
+      setState(() {
+        isAnnouncementLoading = false;
+      });
+    } catch (e) {
+      print('Error: $e');
+      setState(() {
+        isAnnouncementLoading = false;
+      });
+    }
+    _timer = Timer.periodic(const Duration(minutes: 2), (Timer timer) {
+      _getNearbyBusStops();
+    });
+    setCustomMarker();
   }
 
   Future<void> setCustomMarker() async {
@@ -271,10 +293,13 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                               MaterialPageRoute(
                                 builder: (context) => NMMTDepotBuses(
                                   busStopName: busStopData["StationName"],
-                                  stationid: int.parse(busStopData["StationId"]),
+                                  stationid:
+                                      int.parse(busStopData["StationId"]),
                                   stationLocation: {
-                                    '_latitude': double.parse(busStopData['Center_Lat']),
-                                    '_longitude': double.parse(busStopData['Center_Lon']),
+                                    '_latitude':
+                                        double.parse(busStopData['Center_Lat']),
+                                    '_longitude':
+                                        double.parse(busStopData['Center_Lon']),
                                   },
                                 ),
                               ),
@@ -337,6 +362,71 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                         );
                       },
                     ),
+          Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                margin: EdgeInsets.symmetric(vertical: 25),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade400,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+              SizedBox(width: 10),
+              Text(
+                "News & Updates",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 400,
+            child: isAnnouncementLoading
+                ? ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 2,
+                    itemBuilder: (context, index) => announcementSkeleton(),
+                    separatorBuilder: (context, index) => SizedBox(width: 10),
+                  )
+                : ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _nmmtService.announcements.length,
+                    itemBuilder: (context, index) {
+                      final announcement = _nmmtService.announcements[index];
+                      return GestureDetector(
+                        onTap: () {
+                          if (announcement['link'] != null) {
+                            WebView_Screen(
+                                url: announcement['link'],
+                                title: announcement['title']);
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AnnouncementDetailPage(
+                                  announcement: announcement,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: AnnouncementCard(
+                          imageUrl: announcement["imageUrl"],
+                          title: announcement["title"],
+                          description: announcement["description"],
+                          releaseAt: announcement["releaseAt"],
+                          source: announcement["source"],
+                        ),
+                      );
+                    },
+                    separatorBuilder: (context, index) => SizedBox(width: 10),
+                  ),
+          ),
           Row(
             children: [
               Container(
@@ -479,6 +569,65 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
         radius: 25.0,
         backgroundColor: Colors.white,
         child: Icon(Icons.directions_bus, color: Colors.orange, size: 30),
+      ),
+    );
+  }
+
+  Widget announcementSkeleton() {
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.7,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 250,
+            child: Skeleton(
+              height: 250,
+              width: MediaQuery.of(context).size.width * 0.7,
+            ),
+          ),
+          SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: Skeleton(
+              height: 15,
+              width: MediaQuery.of(context).size.width * 0.7,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Skeleton(
+              height: 15,
+              width: MediaQuery.of(context).size.width * 0.3,
+            ),
+          ),
+          SizedBox(height: 5),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: Skeleton(
+              height: 10,
+              width: MediaQuery.of(context).size.width * 0.7,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: Skeleton(
+              height: 10,
+              width: MediaQuery.of(context).size.width * 0.7,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: Skeleton(
+              height: 10,
+              width: MediaQuery.of(context).size.width * 0.3,
+            ),
+          ),
+        ],
       ),
     );
   }

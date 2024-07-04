@@ -4,6 +4,7 @@ import 'package:navixplore/services/firebase/firestore_service.dart';
 class NMMTService {
   List<Map<String, dynamic>> allBusStops = [];
   List<Map<String, dynamic>> allBuses = [];
+  List<Map<String, dynamic>> announcements = [];
 
   Future<void> fetchAllStations() async {
     if (allBusStops.isNotEmpty) {
@@ -32,5 +33,23 @@ class NMMTService {
         .toList();
 
     allBuses = busStops;
+  }
+
+  Future<void> fetchAnnouncements() async {
+    if (announcements.isNotEmpty) {
+      return;
+    }
+
+    QuerySnapshot querySnapshot = await FirestoreService().getSortedCollection(
+      collection: 'NMMT-Announcements',
+      orderBy: 'releaseAt',
+      descending: true,
+    );
+
+    List<Map<String, dynamic>> announcementsList = querySnapshot.docs
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
+
+    announcements = announcementsList;
   }
 }
