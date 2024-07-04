@@ -3,6 +3,7 @@ import 'package:navixplore/services/firebase/firestore_service.dart';
 
 class NM_MetroService {
   List<Map<String, dynamic>> allMetroStations = [];
+  List<Map<String, dynamic>> allUpcomingTrains = [];
   List<dynamic> polylines = [];
 
   Future<void> fetchAllStations() async {
@@ -25,6 +26,7 @@ class NM_MetroService {
 
     allMetroStations = stations;
   }
+
 
   Future<void> fetchPolylinePoints() async {
     if (polylines.isNotEmpty) {
