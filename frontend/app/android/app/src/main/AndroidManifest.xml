@@ -10,6 +10,7 @@
         android:label="NaviXplore"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
+        android:enableOnBackInvokedCallback="true">
         android:usesCleartextTraffic="true"
         >
         <activity

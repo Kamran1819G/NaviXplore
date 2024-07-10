@@ -362,6 +362,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                         );
                       },
                     ),
+          const SizedBox(height: 15),
           Row(
             children: [
               Container(
@@ -524,32 +525,35 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
 
   Widget busStopSkeleton() {
     return Center(
-        child:
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Skeleton(
-        height: 40,
-        width: 40,
-      ),
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Skeleton(
-            height: 20,
-            width: MediaQuery.of(context).size.width * 0.5,
+            height: 40,
+            width: 40,
           ),
-          SizedBox(height: 5),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Skeleton(
+                height: 20,
+                width: MediaQuery.of(context).size.width * 0.5,
+              ),
+              SizedBox(height: 5),
+              Skeleton(
+                height: 15,
+                width: MediaQuery.of(context).size.width * 0.3,
+              ),
+            ],
+          ),
           Skeleton(
-            height: 15,
-            width: MediaQuery.of(context).size.width * 0.3,
+            height: 30,
+            width: MediaQuery.of(context).size.width * 0.2,
           ),
         ],
       ),
-      Skeleton(
-        height: 30,
-        width: MediaQuery.of(context).size.width * 0.2,
-      ),
-    ]));
+    );
   }
 
   Widget mapSkeleton({required double height, required double width}) {

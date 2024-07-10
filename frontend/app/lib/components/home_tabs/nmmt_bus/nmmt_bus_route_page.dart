@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_bus_number_schedules.dart';
 import 'package:navixplore/config/api_endpoints.dart';
 import 'package:navixplore/services/firebase/firestore_service.dart';
+import 'package:navixplore/utils/color_utils.dart';
 import 'package:navixplore/widgets/Skeleton.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:timeline_tile/timeline_tile.dart';
@@ -185,7 +186,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(),
-      body: busStopDataList == null
+      body: isLoading
           ? _buildLoadingScreen()
           : busStopDataList!.isEmpty
               ? _buildNoDataScreen()
@@ -205,49 +206,6 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
         elevation: 0, // Remove app bar shadow
       ),
     );
-  }
-
-  String getStatusText(int index) {
-    if (busPositionDataList == null ||
-        busPositionDataList!.isEmpty ||
-        busStopDataList == null ||
-        busStopDataList!.isEmpty ||
-        busStopDataList![index]['StationId'] !=
-            busPositionDataList![index]['STATIONID']) {
-      return "";
-    }
-
-    String coveredStatus = busPositionDataList![index]["CoveredStatus"];
-
-    if (coveredStatus == "covered") {
-      String arrivedTime = busPositionDataList![index]["ArrivedTime"];
-      if (arrivedTime.isNotEmpty) {
-        return "Reached at $arrivedTime";
-      } else {
-        return "Reached at ${_formatTime(busPositionDataList![index]["ETA"])};";
-      }
-    } else if (coveredStatus == "notcovered") {
-      return "on the way";
-    } else {
-      return "Unknown Status";
-    }
-  }
-
-
-  Color getStatusTextColor(int index) {
-    if (busPositionDataList == null ||
-        busPositionDataList!.isEmpty ||
-        busStopDataList == null ||
-        busStopDataList!.isEmpty) {
-      return Colors.black;
-    }
-
-    String coveredStatus = busPositionDataList![index]["CoveredStatus"];
-    if (coveredStatus == "covered" || coveredStatus == "nocovered") {
-      return Colors.green;
-    } else {
-      return Colors.red;
-    }
   }
 
 
@@ -385,6 +343,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
           parallaxOffset: 0.5,
           panelSnapping: false,
           controller: panelController,
+          color: hexToColor('#F5F5F5'),
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20.0),
             topRight: Radius.circular(20.0),
@@ -442,42 +401,45 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                     final busStopData = busStopDataList![index];
                     return TimelineTile(
                       alignment: TimelineAlign.manual,
-                      lineXY: 0.05,
+                      lineXY: 0.075,
                       isFirst: index == 0,
                       isLast: index == busStopDataList!.length - 1,
                       indicatorStyle: IndicatorStyle(
                         width: 20,
-                        color: busPositionDataList != null &&
-                                busPositionDataList!.isNotEmpty &&
-                                busStopDataList![index]['StationId'] ==
-                                    busPositionDataList![index]['STATIONID']
-                            ? busPositionDataList![index]["CoveredStatus"] ==
-                                    "covered"
-                                ? Colors.orange
-                                : busPositionDataList![index]
-                                            ["CoveredStatus"] ==
-                                        "notcovered"
-                                    ? Colors
-                                        .grey // Set grey color for notcovered
-                                    : Colors.red
-                            : Colors.grey,
+                        iconStyle: IconStyle(
+                          iconData: Icons.check,
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                        indicator: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: busPositionDataList != null &&
+                                    busPositionDataList!.isNotEmpty &&
+                                    busStopDataList![index]['StationId'] ==
+                                        busPositionDataList![index]['STATIONID']
+                                ? busPositionDataList![index]["CoveredStatus"] ==
+                                        "covered"
+                                    ? Colors.orange
+                                    : busPositionDataList![index]
+                                                ["CoveredStatus"] ==
+                                            "notcovered"
+                                        ? Colors
+                                            .white // Set grey color for notcovered
+                                        : Colors.red
+                                : Colors.white,
+                          ),
+                        ),
                       ),
                       beforeLineStyle: LineStyle(
-                        color: busPositionDataList != null &&
-                                busPositionDataList!.isNotEmpty &&
-                                busStopDataList![index]['StationId'] ==
-                                    busPositionDataList![index]['STATIONID']
-                            ? busPositionDataList![index]["CoveredStatus"] ==
-                                    "covered"
-                                ? Colors.orange
-                                : busPositionDataList![index]
-                                            ["CoveredStatus"] ==
-                                        "notcovered"
-                                    ? Colors
-                                        .grey // Set grey color for notcovered
-                                    : Colors.red
-                            : Colors
-                                .grey, // Set grey color if no data or not matching
+                        thickness: 20,
+                        color: Colors.grey.shade300,
+                      ),
+                      afterLineStyle: LineStyle(
+                        thickness: 20,
+                        color: Colors.grey.shade300,
                       ),
                       endChild: ListTile(
                         contentPadding: EdgeInsets.all(16),
@@ -495,16 +457,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                           );
                         },
                         title: Text(busStopData['stationname']),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(busStopData['stationname_m']),
-                            Text(
-                              getStatusText(index),
-                              style: TextStyle(color: getStatusTextColor(index)),
-                            ),
-                          ],
-                        ),
+                        subtitle: Text(busStopData['stationname_m']),
                         trailing: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [

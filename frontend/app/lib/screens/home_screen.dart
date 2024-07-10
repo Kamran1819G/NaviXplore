@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:navixplore/screens/profile_screen.dart';
 import 'package:navixplore/screens/sign_up_screen.dart';
 import 'package:navixplore/services/firebase/firebase_auth_service.dart';
 import 'package:navixplore/screens/explore_screen.dart';
@@ -24,7 +26,8 @@ class _HomeScreenState extends State<HomeScreen> {
   static final List<Widget> _widgetOptions = <Widget>[
     const TransportsScreen(),
     const ExploreScreen(),
-    const NewsScreen()
+    const NewsScreen(),
+    ProfileScreen(),
   ];
 
   @override
@@ -58,6 +61,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontSize: 20)),
           ],
         ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.orange),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        actions: [
+          // notification icon
+          IconButton(
+            icon: const Icon(CupertinoIcons.cube_box_fill, color: Colors.orange),
+            onPressed: () {},
+          ),
+        ],
       ),
 
       // Main body
@@ -196,7 +212,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontSize: 18,
                     )),
               ),
-              if (FirebaseAuthService().currentUser != null && !FirebaseAuthService().currentUser!.isAnonymous)
+              if (FirebaseAuthService().currentUser != null &&
+                  !FirebaseAuthService().currentUser!.isAnonymous)
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.orange),
                   title: const Text("Sign Out",
@@ -208,10 +225,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       )),
                   onTap: () async {
                     await FirebaseAuthService().signOut();
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SignInScreen()));
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const SignInScreen()));
                   },
                 ),
-              if (FirebaseAuthService().currentUser == null || FirebaseAuthService().currentUser!.isAnonymous)
+              if (FirebaseAuthService().currentUser == null ||
+                  FirebaseAuthService().currentUser!.isAnonymous)
                 ListTile(
                   leading: const Icon(Icons.login, color: Colors.orange),
                   title: const Text("Sign Up",
@@ -237,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Bottom Navigation
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         child: GNav(
           color: Colors.black,
           activeColor: Colors.white,
@@ -267,6 +288,11 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icons.newspaper,
               text: "News",
             ),
+            GButton(
+              gap: 10,
+              icon: Icons.person,
+              text: "Profile",
+            )
           ],
         ),
       ),
