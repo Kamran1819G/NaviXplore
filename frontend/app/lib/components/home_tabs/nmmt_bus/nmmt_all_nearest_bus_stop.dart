@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:navixplore/config/api_endpoints.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:navixplore/services/permission_handler_service.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
-import 'package:xml/xml.dart';
+import 'package:dio/dio.dart';
+import 'package:xml/xml.dart' as xml;
 
 import '../../../widgets/Skeleton.dart';
 import 'nmmt_depot_buses.dart';
@@ -35,6 +35,8 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
   final Completer<GoogleMapController> mapController =
       Completer<GoogleMapController>();
   PanelController panelController = PanelController();
+
+  final PermissionHandlerService _permissionHandlerService = PermissionHandlerService();
 
   @override
   void initState() {
@@ -74,7 +76,8 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
 
   Future<void> getCurrentLocation() async {
     try {
-      if (await Permission.location.isGranted) {
+      bool isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (isLocationServiceEnabled) {
         final position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high,
         );
@@ -83,7 +86,8 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
           _longitude = position.longitude;
         });
       } else {
-        await Permission.location.request();
+        await _permissionHandlerService.requestLocationPermission();
+        await getCurrentLocation();
       }
     } catch (e) {
       print('Error: $e');
@@ -96,20 +100,27 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
       setState(() {
         isLoading = true;
       });
-      final response = await http.get(Uri.parse(NMMTApiEndpoints.GetNearByBusStops(_latitude!, _longitude!)));
+
+      final dio = Dio();
+      final response = await dio.get(
+        NMMTApiEndpoints.GetNearByBusStops(_latitude!, _longitude!),
+      );
+
       if (response.statusCode == 200) {
         final List<dynamic> busStop =
-            json.decode(XmlDocument.parse(response.body).innerText);
+        json.decode(xml.XmlDocument.parse(response.data).innerText);
+
         setState(() {
           nearbyBusStop = busStop;
           isLoading = false;
         });
       } else {
         print('Failed to fetch data. Status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('Response body: ${response.data}');
       }
     } catch (e) {
       print('Error: $e');
+    } finally {
       setState(() {
         isLoading = false;
       });

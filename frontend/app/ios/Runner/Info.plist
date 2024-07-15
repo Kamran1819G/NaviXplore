@@ -2,6 +2,38 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+     <!-- Camera usage description -->
+        <key>NSCameraUsageDescription</key>
+        <string>This app needs access to the camera to take photos.</string>
+
+        <!-- Location usage descriptions -->
+        <key>NSLocationWhenInUseUsageDescription</key>
+        <string>This app needs access to location when open.</string>
+        <key>NSLocationAlwaysUsageDescription</key>
+        <string>This app needs access to location when in the background.</string>
+
+        <!-- Photo library usage description -->
+        <key>NSPhotoLibraryUsageDescription</key>
+        <string>This app needs access to the photo library to save and select photos.</string>
+
+        <!-- Microphone usage description -->
+        <key>NSMicrophoneUsageDescription</key>
+        <string>This app needs access to microphone for audio recording.</string>
+
+        <!-- Notification usage descriptions -->
+            <key>NSNotificationUsageDescription</key>
+            <string>This app needs to send notifications to keep you updated.</string>
+
+            <!-- Push Notifications -->
+            <key>UIBackgroundModes</key>
+            <array>
+                <string>fetch</string>
+                <string>remote-notification</string>
+            </array>
+
+            <!-- For Firebase Cloud Messaging -->
+            <key>FirebaseAppDelegateProxyEnabled</key>
+            <false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

@@ -37,7 +37,7 @@ class _NM_MetroUpcomingTrainsState extends State<NM_MetroUpcomingTrains> {
 
   Future<void> _fetchUpcomingTrains() async {
     try {
-      final QuerySnapshot upcomingTrainsSnapshot = await FirestoreService().getDocumentWithMultipleFilter(
+      final QuerySnapshot upcomingTrainsSnapshot = await FirestoreService().getDocumentsWithFilters(
         collection: "NM-Metro-Schedules",
         filters: [
           {'field': 'lineID', 'value': widget.lineID},

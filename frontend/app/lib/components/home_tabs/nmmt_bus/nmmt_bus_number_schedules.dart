@@ -1,8 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:navixplore/config/api_endpoints.dart';
-import 'package:navixplore/widgets/Skeleton.dart';
-import 'package:xml/xml.dart';
+import 'package:xml/xml.dart' as xml;
 import 'dart:convert';
 
 class NMMTBusNumberSchedules extends StatefulWidget {
@@ -55,43 +54,50 @@ class _NMMTBusNumberSchedulesState extends State<NMMTBusNumberSchedules> {
   }
 
   void _fetchBusScheduleData() async {
-    final response = await http.get(Uri.parse(
-        '${NMMTApiEndpoints.GetBusScheduleForRoute}?RouteId=${widget.routeid}&StationID=${widget.stationid}'));
-    if (response.statusCode == 200) {
-      if (XmlDocument.parse(response.body).innerText.trim().toUpperCase() ==
-          "NO DATA FOUND") {
-        setState(() {
-          busScheduleDataList = [];
-        });
-      } else {
-        final List<dynamic> busSchedule =
-        json.decode(XmlDocument.parse(response.body).innerText);
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        '${NMMTApiEndpoints.GetBusScheduleForRoute}?RouteId=${widget.routeid}&StationID=${widget.stationid}',
+      );
 
-        busSchedule.sort((a, b) {
-          final timeA = parseTime(a['TripStartTime']);
-          final timeB = parseTime(b['TripStartTime']);
-          return timeA.compareTo(timeB);
-        });
+      if (response.statusCode == 200) {
+        if (xml.XmlDocument.parse(response.data).innerText.trim().toUpperCase() ==
+            "NO DATA FOUND") {
+          setState(() {
+            busScheduleDataList = [];
+          });
+        } else {
+          final List<dynamic> busSchedule =
+          json.decode(xml.XmlDocument.parse(response.data).innerText);
 
-        final uniqueBusSchedule = <dynamic>[];
-        for (final schedule in busSchedule) {
-          if (!uniqueBusSchedule.any(
-                  (item) => item['TripStartTime'] == schedule['TripStartTime'])) {
-            uniqueBusSchedule.add(schedule);
+          busSchedule.sort((a, b) {
+            final timeA = parseTime(a['TripStartTime']);
+            final timeB = parseTime(b['TripStartTime']);
+            return timeA.compareTo(timeB);
+          });
+
+          final uniqueBusSchedule = <dynamic>[];
+          for (final schedule in busSchedule) {
+            if (!uniqueBusSchedule.any(
+                    (item) => item['TripStartTime'] == schedule['TripStartTime'])) {
+              uniqueBusSchedule.add(schedule);
+            }
           }
+
+          setState(() {
+            busScheduleDataList = uniqueBusSchedule;
+          });
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollToNextBus();
+          });
         }
-
-        setState(() {
-          busScheduleDataList = uniqueBusSchedule;
-        });
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToNextBus();
-        });
+      } else {
+        print('Failed to fetch data. Status code: ${response.statusCode}');
+        print('Response body: ${response.data}');
       }
-    } else {
-      print('Failed to fetch data. Status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
+    } catch (error) {
+      print('Error: $error');
     }
   }
 

@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_bus_number_schedules.dart';
 import 'package:navixplore/config/api_endpoints.dart';
 import 'package:navixplore/services/firebase/firestore_service.dart';
@@ -13,7 +12,8 @@ import 'package:navixplore/widgets/Skeleton.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:timeline_tile/timeline_tile.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
-import 'package:xml/xml.dart';
+import 'package:xml/xml.dart' as xml;
+import 'package:dio/dio.dart';
 
 class NMMTBusRoutePage extends StatefulWidget {
   final int routeid;
@@ -89,7 +89,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
 
 
   Future<void> _fetchAllBusStopData() async {
-    final busStopQuery = await FirestoreService().getDocumentWithMultipleFilter(
+    final busStopQuery = await FirestoreService().getDocumentsWithFilters(
       collection: 'NMMT-Buses',
       filters: [
         {
@@ -115,70 +115,91 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
 
   Future<void> _fetchBusStopPositionData(
       int firstStationID, int lastStationID) async {
-    String routeIDString = routeid.toString();
-    String firstStationIDString = firstStationID.toString();
-    String lastStationIDString = lastStationID.toString();
-    setState(() {
-      isLoading = true;
-    });
-    final response = await http.get(Uri.parse(
-        '${NMMTApiEndpoints.GetBusStopsBetweenSoureDestination}?RouteId=$routeIDString&FromStaionId=$firstStationIDString&ToStaionId=$lastStationIDString'));
-    if (response.statusCode == 200) {
-      if (XmlDocument.parse(response.body).innerText.trim().toUpperCase() ==
-          "NO DATA FOUND") {
-        setState(() {
-          busStopPositionDataList = [];
-        });
-      } else {
-        final List<dynamic> busStopPosition =
-            json.decode(XmlDocument.parse(response.body).innerText);
+    try {
+      String routeIDString = routeid.toString();
+      String firstStationIDString = firstStationID.toString();
+      String lastStationIDString = lastStationID.toString();
 
-        setState(() {
-          busStopPositionDataList = busStopPosition;
-          isLoading = false;
-        });
+      setState(() {
+        isLoading = true;
+      });
+
+      final dio = Dio();
+      final response = await dio.get(
+        '${NMMTApiEndpoints.GetBusStopsBetweenSoureDestination}?RouteId=$routeIDString&FromStaionId=$firstStationIDString&ToStaionId=$lastStationIDString',
+      );
+
+      if (response.statusCode == 200) {
+        if (xml.XmlDocument.parse(response.data).innerText.trim().toUpperCase() ==
+            "NO DATA FOUND") {
+          setState(() {
+            busStopPositionDataList = [];
+          });
+        } else {
+          final List<dynamic> busStopPosition =
+          json.decode(xml.XmlDocument.parse(response.data).innerText);
+
+          setState(() {
+            busStopPositionDataList = busStopPosition;
+            isLoading = false;
+          });
+        }
+      } else {
+        print('Failed to fetch data. Status code: ${response.statusCode}');
+        print('Response body: ${response.data}');
       }
-    } else {
-      print('Failed to fetch data. Status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
+    } catch (error) {
+      print('Error: $error');
     }
   }
 
   Future<void> _fetchBusPositionData() async {
-    if(widget.busTripId == null || widget.busArrivalTime == null) {
-      return;
-    }
-    final response = await http.get(Uri.parse(
-        '${NMMTApiEndpoints.GetBusTrackerDetails}?TripId=${widget.busTripId}&TripStatus=1&TripStartTime=${widget.busArrivalTime}'));
-    if (response.statusCode == 200) {
-      if (XmlDocument.parse(response.body).innerText.trim().toUpperCase() ==
-          "NO DATA FOUND") {
-        setState(() {
-          busPositionDataList = [];
-        });
-      } else {
-        final List<dynamic> busPosition =
-            json.decode(XmlDocument.parse(response.body).innerText);
-
-        setState(() {
-          busPositionDataList = busPosition;
-          isLoading = false;
-        });
-        // Update the map camera to the current bus position
-        if (busPositionDataList != null &&
-            busPositionDataList!.isNotEmpty) {
-          final busLatitude =
-              double.parse(busPositionDataList![0]["CurrentLat"] ?? '0');
-          final busLongitude =
-              double.parse(busPositionDataList![0]["CurrentLong"] ?? '0');
-          (await mapController.future).animateCamera(
-            CameraUpdate.newLatLng(LatLng(busLatitude, busLongitude)),
-          );
-        }
+    try {
+      if (widget.busTripId == null || widget.busArrivalTime == null) {
+        return;
       }
-    } else {
-      print('Failed to fetch data. Status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
+
+      final dio = Dio();
+      final response = await dio.get(
+        '${NMMTApiEndpoints.GetBusTrackerDetails}?TripId=${widget.busTripId}&TripStatus=1&TripStartTime=${widget.busArrivalTime}',
+      );
+
+      if (response.statusCode == 200) {
+        if (xml.XmlDocument.parse(response.data).innerText.trim().toUpperCase() ==
+            "NO DATA FOUND") {
+          setState(() {
+            busPositionDataList = [];
+          });
+        } else {
+          final List<dynamic> busPosition =
+          json.decode(xml.XmlDocument.parse(response.data).innerText);
+
+          setState(() {
+            busPositionDataList = busPosition;
+            isLoading = false;
+          });
+
+          // Update the map camera to the current bus position
+          if (busPositionDataList != null && busPositionDataList!.isNotEmpty) {
+            final busLatitude =
+            double.parse(busPositionDataList![0]["CurrentLat"] ?? '0');
+            final busLongitude =
+            double.parse(busPositionDataList![0]["CurrentLong"] ?? '0');
+            (await mapController.future).animateCamera(
+              CameraUpdate.newLatLng(LatLng(busLatitude, busLongitude)),
+            );
+          }
+        }
+      } else {
+        print('Failed to fetch data. Status code: ${response.statusCode}');
+        print('Response body: ${response.data}');
+      }
+    } catch (error) {
+      print('Error: $error');
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 

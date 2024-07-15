@@ -17,40 +17,47 @@ class FirebaseAuthService {
     await _auth.sendPasswordResetEmail(email: email);
   }
 
-  Future<void> signInAnonymously() async {
-    await _auth.signInAnonymously();
+  Future<User?> signInAnonymously() async {
+    final userCredential = await _auth.signInAnonymously();
+    return userCredential.user;
   }
 
-  Future<void> signInWithEmailAndPassword(
-      {required String email, required String password}) async {
-    await _auth.signInWithEmailAndPassword(email: email, password: password);
+  Future<User?> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    final userCredential = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    return userCredential.user;
   }
 
-  Future<void> signUpWithEmailAndPassword(
-      {required String email, required String password, required String fullName}) async {
+  Future<User?> signUpWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
     final currentUser = _auth.currentUser;
 
     if (currentUser != null && currentUser.isAnonymous) {
-      final credential =
-      EmailAuthProvider.credential(email: email, password: password);
-      await currentUser.linkWithCredential(credential);
-
-      await _firestore.collection('users').doc(currentUser.uid).set({
-        'name': fullName,
-        'email': email,
-      });
+      final credential = EmailAuthProvider.credential(email: email, password: password);
+      final userCredential = await currentUser.linkWithCredential(credential);
+      return userCredential.user;
     } else {
-      await _auth.createUserWithEmailAndPassword(
-          email: email, password: password);
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return userCredential.user;
     }
   }
 
-  Future<void> signInWithGoogle(BuildContext context) async {
+  Future<User?> signInWithGoogle(BuildContext context) async {
     try {
       final googleSignInAccount = await GoogleSignIn().signIn();
 
       if (googleSignInAccount == null) {
-        return; // User canceled the sign-in
+        return null; // User canceled the sign-in
       }
 
       final googleSignInAuthentication = await googleSignInAccount.authentication;
@@ -69,35 +76,36 @@ class FirebaseAuthService {
         if (!docSnapshot.exists) {
           showCustomSnackBar(context, 'User does not exist. Please sign up first.', Colors.red);
           await _auth.signOut();
+          return null;
         }
       }
+
+      return user;
     } catch (e) {
       showCustomSnackBar(context, e.toString(), Colors.red);
+      return null;
     }
   }
 
-  Future<void> signUpWithGoogle() async {
+  Future<User?> signUpWithGoogle() async {
     final googleSignInAccount = await GoogleSignIn().signIn();
 
-    final googleSignInAuthentication = await googleSignInAccount?.authentication;
+    if (googleSignInAccount == null) {
+      return null; // User canceled the sign-up
+    }
+
+    final googleSignInAuthentication = await googleSignInAccount.authentication;
 
     final credential = GoogleAuthProvider.credential(
-      accessToken: googleSignInAuthentication?.accessToken,
-      idToken: googleSignInAuthentication?.idToken,
+      accessToken: googleSignInAuthentication.accessToken,
+      idToken: googleSignInAuthentication.idToken,
     );
 
     final userCredential = await _auth.signInWithCredential(credential);
-    final user = userCredential.user;
-
-    if (user != null) {
-      await _firestore.collection('users').doc(user.uid).set({
-        'name': user.displayName,
-        'email': user.email,
-      });
-    }
+    return userCredential.user;
   }
 
-  Future<void> signInWithApple(BuildContext context) async {
+  Future<User?> signInWithApple(BuildContext context) async {
     try {
       final appleCredential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -121,15 +129,18 @@ class FirebaseAuthService {
         if (!docSnapshot.exists) {
           showCustomSnackBar(context, 'User does not exist. Please sign up first.', Colors.red);
           await _auth.signOut();
+          return null;
         }
       }
+
+      return user;
     } catch (e) {
       showCustomSnackBar(context, e.toString(), Colors.red);
+      return null;
     }
   }
 
-
-  Future<void> signUpWithApple() async {
+  Future<User?> signUpWithApple() async {
     final appleCredential = await SignInWithApple.getAppleIDCredential(
       scopes: [
         AppleIDAuthorizationScopes.email,
@@ -144,14 +155,7 @@ class FirebaseAuthService {
     );
 
     final userCredential = await _auth.signInWithCredential(credential);
-    final user = userCredential.user;
-
-    if (user != null) {
-      await _firestore.collection('users').doc(user.uid).set({
-        'name': user.displayName,
-        'email': user.email,
-      });
-    }
+    return userCredential.user;
   }
 
   Future<void> signOut() async {

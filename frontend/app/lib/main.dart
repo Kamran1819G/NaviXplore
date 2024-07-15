@@ -4,13 +4,18 @@ import 'package:get/get.dart';
 import 'package:navixplore/controller/network_controller.dart';
 import 'package:navixplore/screens/splash_screen.dart';
 import 'package:navixplore/services/firebase/firebase_messaging_service.dart';
+import 'package:navixplore/services/permission_handler_service.dart';
 import 'package:navixplore/theme/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'firebase_options.dart';
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final PermissionHandlerService _permissionHandler = PermissionHandlerService();
+  await _permissionHandler.requestMultiplePermissions();
 
   // Initialize Firebase
   await Firebase.initializeApp(
@@ -22,7 +27,6 @@ void main() async {
   if (kDebugMode) {
     print('Firebase Messaging Service initialized : ${messagingService.getFCMToken()}');
   }
-
 
   // Initialize GetX controller
   Get.put<NetworkController>(NetworkController(), permanent: true);

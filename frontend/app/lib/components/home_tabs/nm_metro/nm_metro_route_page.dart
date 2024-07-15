@@ -63,7 +63,7 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
 
   Future<void> _fetchMetroSchedule() async {
     try {
-      final metroSchedule = await FirestoreService().getDocumentWithMultipleFilter(
+      final metroSchedule = await FirestoreService().getDocumentsWithFilters(
         collection: 'NM-Metro-Schedules',
         filters: [
           {'field': 'lineID', 'value': widget.lineID},

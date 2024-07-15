@@ -4,17 +4,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_all_nearest_bus_stop.dart';
 import 'package:navixplore/config/api_endpoints.dart';
 import 'package:navixplore/pages/announcement_detail_page.dart';
 import 'package:navixplore/services/NMMT_Service.dart';
+import 'package:navixplore/services/permission_handler_service.dart';
 import 'package:navixplore/widgets/Skeleton.dart';
 import 'package:navixplore/widgets/announcement_card.dart';
 import 'package:navixplore/widgets/webview_screen.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
-import 'package:xml/xml.dart';
+import 'package:xml/xml.dart' as xml;
 
 import 'nmmt_bus_search_page.dart';
 import 'nmmt_depot_buses.dart';
@@ -37,6 +37,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
   Timer? _timer;
 
   final NMMTService _nmmtService = NMMTService();
+  final PermissionHandlerService _permissionHandlerService = PermissionHandlerService();
 
   @override
   void initState() {
@@ -81,7 +82,8 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
 
   Future<void> _getNearbyBusStops() async {
     try {
-      if (await Permission.location.isGranted) {
+      bool isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (isLocationServiceEnabled) {
         final position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high,
         );
@@ -90,23 +92,32 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
           _longitude = position.longitude;
         });
       } else {
-        await Permission.location.request();
+        await _permissionHandlerService.requestLocationPermission();
+        await _getNearbyBusStops();
+        return;
       }
+
       setState(() {
         isLoading = true;
       });
-      final response = await http.get(Uri.parse(
-          NMMTApiEndpoints.GetNearByBusStops(_latitude!, _longitude!)));
+
+      final dio = Dio();
+      final response = await dio.get(
+        NMMTApiEndpoints.GetNearByBusStops(_latitude!, _longitude!),
+      );
+
       if (response.statusCode == 200) {
-        final List<dynamic> busStop =
-            json.decode(XmlDocument.parse(response.body).innerText);
+        final List<dynamic> busStop = json.decode(xml.XmlDocument.parse(response.data).innerText);
         setState(() {
           nearbyBusStop = busStop;
           isLoading = false;
         });
       } else {
         print('Failed to fetch data. Status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('Response body: ${response.data}');
+        setState(() {
+          isLoading = false;
+        });
       }
     } catch (e) {
       print('Error: $e');

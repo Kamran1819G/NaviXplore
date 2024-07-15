@@ -1,14 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:http/http.dart' as http;
 import 'package:navixplore/config/api_endpoints.dart';
 import 'package:navixplore/services/NMMT_Service.dart';
-import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'package:navixplore/widgets/Skeleton.dart';
-import 'package:xml/xml.dart';
+import 'package:xml/xml.dart' as xml;
 
 import 'nmmt_bus_number_search_page.dart';
 import 'nmmt_bus_route_page.dart';
@@ -84,28 +83,28 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
       String currentTime =
           "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
 
-      final response = await http.get(Uri.parse(
+      final dio = Dio();
+      final response = await dio.get(
         '${NMMTApiEndpoints.GetBusFromSourceToDestination}?FromLocId=$sourceLocation&ToLocId=$destinationLocation&BusServiceTypeId=$busServiceTypeId&ScheduleDate=$scheduleDate&JourneyTime=$currentTime',
-      ));
+      );
 
       if (response.statusCode == 200) {
-        if (XmlDocument.parse(response.body).innerText.trim().toUpperCase() ==
+        if (xml.XmlDocument.parse(response.data).innerText.trim().toUpperCase() ==
             "NO BUS AVAILABLE") {
           setState(() {
             busDataList = [];
           });
         } else {
           final List<dynamic> buses =
-              json.decode(XmlDocument.parse(response.body).innerText);
+          json.decode(xml.XmlDocument.parse(response.data).innerText);
 
           setState(() {
             busDataList = buses;
-            isLoading = false;
           });
         }
       } else {
         print('Failed to fetch data. Status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('Response body: ${response.data}');
       }
     } catch (error) {
       print('Error: $error');

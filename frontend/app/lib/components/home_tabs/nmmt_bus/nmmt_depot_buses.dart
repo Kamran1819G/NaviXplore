@@ -5,11 +5,11 @@ import 'package:navixplore/config/api_endpoints.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_bus_route_page.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
-import 'package:xml/xml.dart';
+import 'package:dio/dio.dart';
+import 'package:xml/xml.dart' as xml;
 import 'dart:convert';
 import '../../../widgets/Skeleton.dart';
 import '../../../widgets/bus_marker.dart';
@@ -84,7 +84,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
           widget.stationLocation['_latitude'],
           widget.stationLocation['_longitude'],
         ),
-        icon: busStopMarker ?? BitmapDescriptor.defaultMarker,
+        icon: busStopMarker,
         infoWindow: InfoWindow(
           title: widget.busStopName,
         ),
@@ -93,13 +93,13 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
 
     // Add markers for running buses using WidgetToMarker
     for (final busData in allBuses!) {
-      final lattitude = busData['lattitude'] as String?;
+      final latitude = busData['lattitude'] as String?;
       final longitude = busData['longitude'] as String?;
-      if (lattitude != null &&
+      if (latitude != null &&
           longitude != null &&
-          lattitude.isNotEmpty &&
+          latitude.isNotEmpty &&
           longitude.isNotEmpty) {
-        final busLatitude = double.parse(lattitude);
+        final busLatitude = double.parse(latitude);
         final busLongitude = double.parse(longitude);
 
         // Check if the marker already exists
@@ -152,17 +152,19 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
       String scheduleDate =
           "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
-      final response = await http.get(Uri.parse(
-          '${NMMTApiEndpoints.GetDepotBusesList}?LocationId=${widget.stationid}&ScheduleDate=$scheduleDate'));
+      final dio = Dio();
+      final response = await dio.get(
+        '${NMMTApiEndpoints.GetDepotBusesList}?LocationId=${widget.stationid}&ScheduleDate=$scheduleDate',
+      );
 
       if (response.statusCode == 200) {
-        if (XmlDocument.parse(response.body).innerText.trim().toUpperCase() ==
+        if (xml.XmlDocument.parse(response.data).innerText.trim().toUpperCase() ==
             "NO BUS AVAILABLE") {
           setState(() {
             allBuses = [];
           });
         } else {
-          allBuses = json.decode(XmlDocument.parse(response.body).innerText);
+          allBuses = json.decode(xml.XmlDocument.parse(response.data).innerText);
 
           setState(() {
             runningBuses = allBuses
@@ -176,10 +178,11 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
         }
       } else {
         print('Failed to fetch data. Status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('Response body: ${response.data}');
       }
     } catch (e) {
       print('Error: $e');
+    } finally {
       setState(() {
         isLoading = false;
       });

@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:navixplore/pages/place_detail_page.dart';
-import 'package:navixplore/config/api_endpoints.dart';
 import 'package:navixplore/services/NM_Places_Service.dart';
 import 'package:navixplore/widgets/image_container.dart';
-import 'package:navixplore/widgets/webview_screen.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 import '../../widgets/Skeleton.dart';
 
