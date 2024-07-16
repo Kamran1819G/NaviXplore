@@ -154,7 +154,7 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
         preferredSize: Size.fromHeight(0), // Set app bar height to zero
         child: AppBar(
           systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: Colors.orange,
+            statusBarColor: Theme.of(context).primaryColor,
             statusBarIconBrightness: Brightness.light,
           ),
           backgroundColor: Colors.transparent,
@@ -182,9 +182,9 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
                     onTap: () {
                       Navigator.pop(context);
                     },
-                    child: const CircleAvatar(
+                    child: CircleAvatar(
                         radius: 25.0,
-                        backgroundColor: Colors.orange,
+                        backgroundColor: Theme.of(context).primaryColor,
                         child: BackButton(
                           color: Colors.white,
                         )),
@@ -198,7 +198,7 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
                         _getNearbyBusStops();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            backgroundColor: Colors.orange,
+                            backgroundColor: Theme.of(context).primaryColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.only(
                                 topLeft: Radius.circular(18),
@@ -217,7 +217,7 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
                       child: CircleAvatar(
                           radius: 25.0,
                           backgroundColor: Colors.white,
-                          child: Icon(Icons.refresh, color: Colors.orange))),
+                          child: Icon(Icons.refresh, color: Theme.of(context).primaryColor))),
                 ),
               ],
             ),
@@ -279,7 +279,7 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
               height: 4,
               margin: const EdgeInsets.symmetric(vertical: 15),
               decoration: BoxDecoration(
-                color: Colors.orange.shade400,
+                color: Theme.of(context).primaryColor.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(5),
               ),
             ),
@@ -323,11 +323,11 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
             },
             leading: CircleAvatar(
               radius: 20.0,
-              backgroundColor: Colors.orange,
+              backgroundColor: Theme.of(context).primaryColor,
               child: CircleAvatar(
                 radius: 15.0,
                 backgroundColor: Colors.white,
-                child: Icon(Icons.directions_bus, color: Colors.orange, size: 20),
+                child: Icon(Icons.directions_bus, color: Theme.of(context).primaryColor, size: 20),
               ),
             ),
             title: Column(
@@ -358,7 +358,7 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
                   calculateTime(busStopData["Distance"]),
                   style: TextStyle(
                     fontSize: 18,
-                    color: Colors.orange,
+                    color: Theme.of(context).primaryColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -447,11 +447,11 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
   Widget busStopMarkerWidget() {
     return CircleAvatar(
       radius: 30.0,
-      backgroundColor: Colors.orange,
+      backgroundColor: Theme.of(context).primaryColor,
       child: CircleAvatar(
         radius: 25.0,
         backgroundColor: Colors.white,
-        child: Icon(Icons.directions_bus, color: Colors.orange, size: 30),
+        child: Icon(Icons.directions_bus, color: Theme.of(context).primaryColor, size: 30),
       ),
     );
   }

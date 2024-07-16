@@ -260,7 +260,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                   ),
@@ -320,7 +320,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                       height: 4,
                       margin: const EdgeInsets.symmetric(vertical: 15),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade400,
+                        color: Theme.of(context).primaryColor.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(5),
                       ),
                     ),
@@ -336,7 +336,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                 const SizedBox(height: 10),
                 TabBar(
                   controller: _tabController,
-                  indicatorColor: Colors.orange,
+                  indicatorColor: Theme.of(context).primaryColor,
                   labelColor: Colors.black,
                   tabs: [
                     Tab(text: 'Running'),
@@ -362,9 +362,9 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
               onTap: () {
                 Navigator.pop(context);
               },
-              child: const CircleAvatar(
+              child: CircleAvatar(
                   radius: 25.0,
-                  backgroundColor: Colors.orange,
+                  backgroundColor: Theme.of(context).primaryColor,
                   child: BackButton(
                     color: Colors.white,
                   )),
@@ -378,7 +378,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                   _fetchAllBusesData();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      backgroundColor: Colors.orange,
+                      backgroundColor: Theme.of(context).primaryColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -394,7 +394,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                 child: CircleAvatar(
                     radius: 25.0,
                     backgroundColor: Colors.white,
-                    child: Icon(Icons.refresh, color: Colors.orange))),
+                    child: Icon(Icons.refresh, color: Theme.of(context).primaryColor))),
           ),
         ],
       ),
@@ -439,9 +439,9 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                                   onPressed: () {
                                     Navigator.pop(context);
                                   },
-                                  child: const Text(
+                                  child: Text(
                                     'Okay, View Route',
-                                    style: TextStyle(color: Colors.orange),
+                                    style: TextStyle(color: Theme.of(context).primaryColor),
                                   ),
                                 ),
                               ],
@@ -466,13 +466,13 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                         children: [
                           Icon(
                             CupertinoIcons.bus,
-                            color: Colors.orange,
+                            color: Theme.of(context).primaryColor,
                           ),
                           Container(
                             padding: EdgeInsets.symmetric(
                                 vertical: 2, horizontal: 2),
                             decoration: BoxDecoration(
-                              color: Colors.orange,
+                              color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),
                             ),
                             child: Text(
@@ -527,7 +527,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                           '${busData['ETATimeMinute']} min',
                           style: TextStyle(
                             fontSize: 22,
-                            color: Colors.orange,
+                            color: Theme.of(context).primaryColor,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -544,7 +544,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
       preferredSize: Size.fromHeight(0), // Set app bar height to zero
       child: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.orange,
+          statusBarColor: Theme.of(context).primaryColor,
           statusBarIconBrightness: Brightness.light,
         ),
         backgroundColor: Colors.transparent, // Make app bar transparent
@@ -604,11 +604,11 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
   Widget busStopMarkerWidget() {
     return CircleAvatar(
       radius: 30.0,
-      backgroundColor: Colors.orange,
+      backgroundColor: Theme.of(context).primaryColor,
       child: CircleAvatar(
         radius: 25.0,
         backgroundColor: Colors.white,
-        child: Icon(Icons.directions_bus, color: Colors.orange, size: 30),
+        child: Icon(Icons.directions_bus, color: Theme.of(context).primaryColor, size: 30),
       ),
     );
   }

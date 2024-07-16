@@ -85,7 +85,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Color _getPasswordStrengthColor() {
     if (_passwordStrength <= 0.3) return Colors.red;
-    if (_passwordStrength <= 0.6) return Colors.orange;
+    if (_passwordStrength <= 0.6) return Theme.of(context).primaryColor;
     return Colors.green;
   }
 
@@ -93,7 +93,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       Future<User?> Function() signUpMethod, String providerName) async {
     try {
       showCustomSnackBar(
-          context, 'Signing up with $providerName...', Colors.orange);
+          context, 'Signing up with $providerName...', Theme.of(context).primaryColor);
 
       // Execute the provided sign-up method (Google, Apple, or Email/Password)
       User? user = await signUpMethod();
@@ -165,7 +165,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     Text(
                       "Navi",
                       style: TextStyle(
-                        color: Colors.orange,
+                        color: Theme.of(context).primaryColor,
                         fontSize: 60,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold,
@@ -174,7 +174,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     Text(
                       "X",
                       style: TextStyle(
-                        color: Colors.orange,
+                        color: Theme.of(context).primaryColor,
                         fontSize: 75,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold,
@@ -183,7 +183,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     Text(
                       "plore",
                       style: TextStyle(
-                        color: Colors.orange,
+                        color: Theme.of(context).primaryColor,
                         fontSize: 60,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold,
@@ -194,7 +194,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 Text(
                   "Navi Mumbai Guide App",
                   style: TextStyle(
-                    color: Colors.orange,
+                    color: Theme.of(context).primaryColor,
                     fontSize: 28,
                     fontFamily: "Fredoka",
                     fontWeight: FontWeight.bold,
@@ -351,7 +351,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    backgroundColor: Colors.orange,
+                    backgroundColor: Theme.of(context).primaryColor,
                   ),
                   child: const Text(
                     "Sign Up",
@@ -364,10 +364,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-                const Text(
+                Text(
                   'Or Sign Up With',
                   style: TextStyle(
-                    color: Colors.orange,
+                    color: Theme.of(context).primaryColor,
                     fontSize: 16,
                     fontFamily: "Fredoka",
                     fontWeight: FontWeight.bold,
@@ -427,10 +427,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         );
                       },
-                      child: const Text(
+                      child: Text(
                         "Sign In",
                         style: TextStyle(
-                          color: Colors.orange,
+                          color: Theme.of(context).primaryColor,
                           fontSize: 16,
                           fontFamily: "Fredoka",
                           fontWeight: FontWeight.bold,

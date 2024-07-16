@@ -147,7 +147,7 @@ class _NMMTBusNumberSchedulesState extends State<NMMTBusNumberSchedules> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CircularProgressIndicator(
-                color: Colors.orange,
+                color: Theme.of(context).primaryColor,
               ),
               const SizedBox(height: 10),
               Text(
@@ -198,13 +198,13 @@ class _NMMTBusNumberSchedulesState extends State<NMMTBusNumberSchedules> {
             final schedule = busScheduleDataList![index];
             final isNextBus = index == nextBusIndex;
             return ListTile(
-              tileColor: isNextBus ? Colors.orange.withOpacity(0.2) : null,
+              tileColor: isNextBus ? Theme.of(context).primaryColor.withOpacity(0.2) : null,
               contentPadding: EdgeInsets.all(10),
               visualDensity: VisualDensity.compact,
               leading: Container(
                 width: 5,
                 decoration: BoxDecoration(
-                  color: Colors.orange,
+                  color: Theme.of(context).primaryColor,
                   borderRadius: BorderRadius.circular(5),
                 ),
               ),
@@ -215,7 +215,7 @@ class _NMMTBusNumberSchedulesState extends State<NMMTBusNumberSchedules> {
                     schedule['TripStartTime'],
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.orange,
+                      color: Theme.of(context).primaryColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

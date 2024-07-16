@@ -48,9 +48,9 @@ class ImageContainer extends StatelessWidget {
           borderRadius: BorderRadius.circular(borderRadius),
           color: Colors.grey, // Placeholder color
         ),
-        child: const Center(
+        child: Center(
           child: CircularProgressIndicator(
-            color: Colors.orange,
+            color: Theme.of(context).primaryColor,
           ),
         ),
       ),

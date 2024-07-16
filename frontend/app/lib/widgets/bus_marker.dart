@@ -12,7 +12,7 @@ class BusMarker extends StatelessWidget {
         horizontal: 12,
       ),
       decoration: BoxDecoration(
-        color: Colors.orange,
+        color: Theme.of(context).primaryColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(

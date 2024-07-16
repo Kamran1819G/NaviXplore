@@ -48,9 +48,9 @@ class _ExpressTabState extends State<ExpressTab> {
                          ),
                        ],
                      ),
-                     const Text(
+                     Text(
                        "Open IRCTC App",
-                       style: TextStyle(fontSize: 14, color: Colors.orange),
+                       style: TextStyle(fontSize: 14, color: Theme.of(context).primaryColor),
                      ),
                    ],
                  )),

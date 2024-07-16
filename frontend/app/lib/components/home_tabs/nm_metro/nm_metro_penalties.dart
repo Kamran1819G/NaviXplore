@@ -18,16 +18,16 @@ class _NM_MetroPenaltiesState extends State<NM_MetroPenalties> {
           leading: const BackButton(
             color: Colors.black,
           ),
-          title: const Text(
+          title: Text(
             "Metro Offences & Penalties",
-            style: TextStyle(color: Colors.orange),
+            style: TextStyle(color: Theme.of(context).primaryColor),
           )),
       body: Column(
         children: [
           Container(
             padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.orange,
+              color: Theme.of(context).primaryColor,
             ),
             child: Row(
               children: [

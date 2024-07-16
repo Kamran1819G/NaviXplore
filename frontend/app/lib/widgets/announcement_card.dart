@@ -59,7 +59,7 @@ class AnnouncementCard extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 decoration: TextDecoration.underline,
-                decorationColor: Colors.orange,
+                decorationColor: Theme.of(context).primaryColor,
                 decorationThickness: 3,
               ),
               maxLines: 2,

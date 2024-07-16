@@ -16,25 +16,25 @@ class AnnouncementDetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        foregroundColor: Colors.orange,
+        foregroundColor: Theme.of(context).primaryColor,
         elevation: 3,
-        title: const Row(
+        title: Row(
           children: [
             Text("Navi",
                 style: TextStyle(
-                    color: Colors.orange,
+                    color: Theme.of(context).primaryColor,
                     fontFamily: "Fredoka",
                     fontWeight: FontWeight.bold,
                     fontSize: 20)),
             Text("X",
                 style: TextStyle(
-                    color: Colors.orange,
+                    color: Theme.of(context).primaryColor,
                     fontFamily: "Fredoka",
                     fontWeight: FontWeight.bold,
                     fontSize: 25)),
             Text("plore",
                 style: TextStyle(
-                    color: Colors.orange,
+                    color: Theme.of(context).primaryColor,
                     fontFamily: "Fredoka",
                     fontWeight: FontWeight.bold,
                     fontSize: 20)),
@@ -62,7 +62,7 @@ class AnnouncementDetailPage extends StatelessWidget {
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   decoration: TextDecoration.underline,
-                  decorationColor: Colors.orange,
+                  decorationColor: Theme.of(context).primaryColor,
                   decorationThickness: 3,
                 ),
                 maxLines: 2,

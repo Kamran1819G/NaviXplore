@@ -189,7 +189,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
               padding: const EdgeInsets.all(4.0),
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
-                border: Border.all(width: 1, color: Colors.orange.shade900),
+                border: Border.all(width: 1, color: Theme.of(context).primaryColor),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -214,7 +214,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                   ),
                   Icon(
                     Icons.search,
-                    color: Colors.orange.shade800,
+                    color: Theme.of(context).primaryColor.withOpacity(0.9),
                   ),
                 ],
               ),
@@ -228,7 +228,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                 height: 10,
                 margin: EdgeInsets.symmetric(vertical: 25),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade400,
+                  color: Theme.of(context).primaryColor.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(5),
                 ),
               ),
@@ -256,7 +256,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                 child: Text(
                   "View All",
                   style: TextStyle(
-                    color: Colors.orange.shade700,
+                    color: Theme.of(context).primaryColor.withOpacity(0.8),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -318,12 +318,12 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                           },
                           leading: CircleAvatar(
                             radius: 20.0,
-                            backgroundColor: Colors.orange,
+                            backgroundColor: Theme.of(context).primaryColor,
                             child: CircleAvatar(
                               radius: 15.0,
                               backgroundColor: Colors.white,
                               child: Icon(Icons.directions_bus,
-                                  color: Colors.orange, size: 20),
+                                  color: Theme.of(context).primaryColor, size: 20),
                             ),
                           ),
                           title: Column(
@@ -356,7 +356,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                                 calculateTime(busStopData["Distance"]),
                                 style: TextStyle(
                                   fontSize: 18,
-                                  color: Colors.orange,
+                                  color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -381,7 +381,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                 height: 10,
                 margin: EdgeInsets.symmetric(vertical: 25),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade400,
+                  color: Theme.of(context).primaryColor.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(5),
                 ),
               ),
@@ -446,7 +446,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                 height: 10,
                 margin: EdgeInsets.symmetric(vertical: 25),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade400,
+                  color: Theme.of(context).primaryColor.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(5),
                 ),
               ),
@@ -502,7 +502,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
           Container(
             padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.orange.shade300,
+              color: Theme.of(context).primaryColor.withOpacity(0.5),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -579,11 +579,11 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
   Widget busStopMarkerWidget() {
     return CircleAvatar(
       radius: 30.0,
-      backgroundColor: Colors.orange,
+      backgroundColor: Theme.of(context).primaryColor,
       child: CircleAvatar(
         radius: 25.0,
         backgroundColor: Colors.white,
-        child: Icon(Icons.directions_bus, color: Colors.orange, size: 30),
+        child: Icon(Icons.directions_bus, color: Theme.of(context).primaryColor, size: 30),
       ),
     );
   }

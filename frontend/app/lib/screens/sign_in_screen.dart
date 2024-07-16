@@ -53,7 +53,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
   Future<void> _handleSignInWithProvider(Future<void> Function() signUpMethod, String providerName) async {
     try {
-      showCustomSnackBar(context, 'Signing in with $providerName...', Colors.orange);
+      showCustomSnackBar(context, 'Signing in with $providerName...', Theme.of(context).primaryColor);
 
       // Execute the provided sign-up method (Google or Apple)
       await signUpMethod();
@@ -126,7 +126,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(100),
                           ),
-                          backgroundColor: Colors.orange,
+                          backgroundColor: Theme.of(context).primaryColor,
                         ),
                         child: Text(
                           "Guest",
@@ -147,19 +147,19 @@ class _SignInScreenState extends State<SignInScreen> {
                   children: [
                     Text("Navi",
                         style: TextStyle(
-                            color: Colors.orange,
+                            color: Theme.of(context).primaryColor,
                             fontSize: 60,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold)),
                     Text("X",
                         style: TextStyle(
-                            color: Colors.orange,
+                            color: Theme.of(context).primaryColor,
                             fontSize: 75,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold)),
                     Text("plore",
                         style: TextStyle(
-                            color: Colors.orange,
+                            color: Theme.of(context).primaryColor,
                             fontSize: 60,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold)),
@@ -167,7 +167,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 ),
                 Text("Navi Mumbai Guide App",
                     style: TextStyle(
-                        color: Colors.orange,
+                        color: Theme.of(context).primaryColor,
                         fontSize: 28,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold)),
@@ -249,12 +249,12 @@ class _SignInScreenState extends State<SignInScreen> {
                       GestureDetector(
                         onTap: () {
                           FirebaseAuthService().sendPasswordResetEmail(email: _emailController.text);
-                          showCustomSnackBar(context, 'Password Reset Email Sent', Colors.orange);
+                          showCustomSnackBar(context, 'Password Reset Email Sent', Theme.of(context).primaryColor);
                         },
                         child: Text(
                           "Forgot Password?",
                           style: TextStyle(
-                              color: Colors.orange,
+                              color: Theme.of(context).primaryColor,
                               fontSize: 16,
                               fontFamily: "Fredoka",
                               fontWeight: FontWeight.bold),
@@ -271,7 +271,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    backgroundColor: Colors.orange,
+                    backgroundColor: Theme.of(context).primaryColor,
                   ),
                   child: Text(
                     "Sign In",
@@ -286,7 +286,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 SizedBox(height: MediaQuery.of(context).size.height * 0.1),
                 Text('Or Sign In With',
                     style: TextStyle(
-                        color: Colors.orange,
+                        color: Theme.of(context).primaryColor,
                         fontSize: 16,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold)),
@@ -346,7 +346,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       child: Text(
                         "Sign Up",
                         style: TextStyle(
-                            color: Colors.orange,
+                            color: Theme.of(context).primaryColor,
                             fontSize: 16,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold),

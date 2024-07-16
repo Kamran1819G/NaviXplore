@@ -220,7 +220,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
       preferredSize: Size.fromHeight(0), // Set app bar height to zero
       child: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.orange,
+          statusBarColor: Theme.of(context).primaryColor,
           statusBarIconBrightness: Brightness.light,
         ),
         backgroundColor: Colors.transparent,
@@ -281,9 +281,9 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
             onTap: () {
               Navigator.pop(context);
             },
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 25.0,
-              backgroundColor: Colors.orange,
+              backgroundColor: Theme.of(context).primaryColor,
               child: BackButton(
                 color: Colors.white,
               ),
@@ -401,7 +401,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                     height: 4,
                     margin: const EdgeInsets.symmetric(vertical: 15),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade400,
+                      color: Theme.of(context).primaryColor.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(5),
                     ),
                   ),
@@ -443,7 +443,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                                         busPositionDataList![index]['STATIONID']
                                 ? busPositionDataList![index]["CoveredStatus"] ==
                                         "covered"
-                                    ? Colors.orange
+                                    ? Theme.of(context).primaryColor
                                     : busPositionDataList![index]
                                                 ["CoveredStatus"] ==
                                             "notcovered"
@@ -488,7 +488,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                                   : "",
                               style: TextStyle(
                                 fontSize: 20,
-                                color: Colors.orange,
+                                color: Theme.of(context).primaryColor,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -517,11 +517,11 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
             onTap: () {
               Navigator.pop(context);
             },
-            child: const CircleAvatar(
+            child: CircleAvatar(
                 radius: 25.0,
                 backgroundColor: Colors.white,
                 child: BackButton(
-                  color: Colors.orange,
+                  color: Theme.of(context).primaryColor,
                 )),
           ),
         ),
@@ -533,7 +533,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                 _fetchBusPositionData();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    backgroundColor: Colors.orange,
+                    backgroundColor: Theme.of(context).primaryColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(18),
@@ -552,7 +552,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
               child: CircleAvatar(
                   radius: 25.0,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.refresh, color: Colors.orange))),
+                  child: Icon(Icons.refresh, color: Theme.of(context).primaryColor))),
         ),
       ],
     );
@@ -605,11 +605,11 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
   Widget busStopMarkerWidget() {
     return CircleAvatar(
       radius: 30.0,
-      backgroundColor: Colors.orange,
+      backgroundColor: Theme.of(context).primaryColor,
       child: CircleAvatar(
         radius: 25.0,
         backgroundColor: Colors.white,
-        child: Icon(Icons.directions_bus, color: Colors.orange, size: 30),
+        child: Icon(Icons.directions_bus, color: Theme.of(context).primaryColor, size: 30),
       ),
     );
   }
@@ -617,7 +617,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
   Widget busMarkerWidget() {
     return CircleAvatar(
         radius: 30.0,
-        backgroundColor: Colors.orange,
+        backgroundColor: Theme.of(context).primaryColor,
         child: Icon(Icons.directions_bus, color: Colors.white, size: 40));
   }
 }

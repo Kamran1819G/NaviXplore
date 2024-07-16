@@ -40,7 +40,7 @@ class PenaltieCard extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   margin: EdgeInsets.only(right: 10),
                   decoration: BoxDecoration(
-                    color: Colors.orange,
+                    color: Theme.of(context).primaryColor,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text("Penalty", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),

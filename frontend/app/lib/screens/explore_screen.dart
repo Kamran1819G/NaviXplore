@@ -63,8 +63,8 @@ class _ExploreScreenState extends State<ExploreScreen>
             controller: _tabController,
             isScrollable: false,
             unselectedLabelColor: Colors.grey,
-            labelColor: Colors.orange,
-            indicatorColor: Colors.orange,
+            labelColor: Theme.of(context).primaryColor,
+            indicatorColor: Theme.of(context).primaryColor,
             indicatorWeight: 5,
             tabs: <Widget>[
               Tab(

@@ -97,7 +97,7 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
           Container(
             padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.orange,
+              color: Theme.of(context).primaryColor,
             ),
             child: Row(
               children: [
@@ -129,7 +129,7 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                     decoration: InputDecoration(
                       prefixIcon: Icon(
                         Icons.location_on,
-                        color: Colors.orange,
+                        color: Theme.of(context).primaryColor,
                       ),
                       suffixIcon: IconButton(
                         onPressed: () {
@@ -180,7 +180,7 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                     decoration: InputDecoration(
                       prefixIcon: Icon(
                         Icons.location_on,
-                        color: Colors.orange,
+                        color: Theme.of(context).primaryColor,
                       ),
                       suffixIcon: IconButton(
                         onPressed: () {
@@ -230,7 +230,7 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
+              backgroundColor: Theme.of(context).primaryColor,
               padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
             ),
             onPressed: () {
@@ -283,7 +283,7 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.orange,
+                                  color: Theme.of(context).primaryColor,
                                 ),
                               ),
                             ),
@@ -298,7 +298,7 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                                 Navigator.of(context).pop();
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange,
+                                backgroundColor: Theme.of(context).primaryColor,
                               ),
                               child: Text('OK', style: TextStyle(color: Colors.white)),
                             ),

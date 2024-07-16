@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:navixplore/screens/profile_screen.dart';
 import 'package:navixplore/screens/sign_up_screen.dart';
+import 'package:navixplore/screens/user_profile_screen.dart';
 import 'package:navixplore/services/firebase/firebase_auth_service.dart';
 import 'package:navixplore/screens/explore_screen.dart';
-import 'package:navixplore/screens/news_screen.dart';
+import 'package:navixplore/screens/xplorefeed_screen.dart';
 import 'package:navixplore/screens/sign_in_screen.dart';
 import 'package:navixplore/screens/transports_screen.dart';
 import 'package:navixplore/screens/suggest_feature_screen.dart';
@@ -26,60 +26,19 @@ class _HomeScreenState extends State<HomeScreen> {
   static final List<Widget> _widgetOptions = <Widget>[
     const TransportsScreen(),
     const ExploreScreen(),
-    const NewsScreen(),
-    ProfileScreen(),
+    const XploreFeedScreen(),
+    UserProfileScreen(userId: FirebaseAuthService().currentUser?.uid ?? "", isMyProfile: true),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: hexToColor('#F5F5F5'),
-      // Header
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.orange,
-        elevation: 3,
-        title: const Row(
-          children: [
-            Text("Navi",
-                style: TextStyle(
-                    color: Colors.orange,
-                    fontFamily: "Fredoka",
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20)),
-            Text("X",
-                style: TextStyle(
-                    color: Colors.orange,
-                    fontFamily: "Fredoka",
-                    fontWeight: FontWeight.bold,
-                    fontSize: 25)),
-            Text("plore",
-                style: TextStyle(
-                    color: Colors.orange,
-                    fontFamily: "Fredoka",
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20)),
-          ],
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.orange),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        actions: [
-          // notification icon
-          IconButton(
-            icon: const Icon(CupertinoIcons.cube_box_fill, color: Colors.orange),
-            onPressed: () {},
-          ),
-        ],
-      ),
-
       // Main body
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _widgetOptions,
+      body: SafeArea(
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: _widgetOptions,
+        ),
       ),
 
       // Side Menu
@@ -88,25 +47,25 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Colors.white,
           child: ListView(
             children: [
-              const DrawerHeader(
+              DrawerHeader(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text("Navi",
                         style: TextStyle(
-                            color: Colors.orange,
+                            color: Theme.of(context).primaryColor,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold,
                             fontSize: 45)),
                     Text("X",
                         style: TextStyle(
-                            color: Colors.orange,
+                            color: Theme.of(context).primaryColor,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold,
                             fontSize: 60)),
                     Text("plore",
                         style: TextStyle(
-                            color: Colors.orange,
+                            color: Theme.of(context).primaryColor,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold,
                             fontSize: 45)),
@@ -215,11 +174,11 @@ class _HomeScreenState extends State<HomeScreen> {
               if (FirebaseAuthService().currentUser != null &&
                   !FirebaseAuthService().currentUser!.isAnonymous)
                 ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.orange),
-                  title: const Text("Sign Out",
+                  leading: Icon(Icons.logout, color: Theme.of(context).primaryColor),
+                  title: Text("Sign Out",
                       style: TextStyle(
                         fontSize: 18,
-                        color: Colors.orange,
+                        color: Theme.of(context).primaryColor,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold,
                       )),
@@ -234,11 +193,11 @@ class _HomeScreenState extends State<HomeScreen> {
               if (FirebaseAuthService().currentUser == null ||
                   FirebaseAuthService().currentUser!.isAnonymous)
                 ListTile(
-                  leading: const Icon(Icons.login, color: Colors.orange),
-                  title: const Text("Sign Up",
+                  leading: Icon(Icons.login, color: Theme.of(context).primaryColor),
+                  title: Text("Sign Up",
                       style: TextStyle(
                         fontSize: 18,
-                        color: Colors.orange,
+                        color: Theme.of(context).primaryColor,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold,
                       )),
@@ -262,8 +221,8 @@ class _HomeScreenState extends State<HomeScreen> {
         child: GNav(
           color: Colors.black,
           activeColor: Colors.white,
-          tabBackgroundColor: Colors.orange.shade800,
-          hoverColor: Colors.orange.shade700,
+          tabBackgroundColor: Theme.of(context).primaryColor,
+          hoverColor: Theme.of(context).primaryColor,
           gap: 0,
           iconSize: 24,
           selectedIndex: _selectedIndex,
@@ -285,8 +244,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             GButton(
               gap: 10,
-              icon: Icons.newspaper,
-              text: "News",
+              icon: Icons.dynamic_feed,
+              text: "XploreFeed",
             ),
             GButton(
               gap: 10,

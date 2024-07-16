@@ -63,8 +63,8 @@ class _WebView_ScreenState extends State<WebView_Screen> {
               ),
               if (loadingPercentage < 100)
                 LinearProgressIndicator(
-                  color: Colors.orange.shade800,
-                  backgroundColor: Colors.orange.shade200,
+                  color: Theme.of(context).primaryColor.withOpacity(0.9),
+                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.3),
                   value: loadingPercentage / 100.0,
                 ),
             ],

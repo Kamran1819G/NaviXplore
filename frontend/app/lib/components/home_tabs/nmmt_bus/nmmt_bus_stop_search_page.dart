@@ -84,17 +84,17 @@ class _NMMTBusStopSearchPageState extends State<NMMTBusStopSearchPage> {
               decoration: InputDecoration(
                 hintText: "Enter Bus Stop Name",
                 prefixIcon: Icon(Icons.directions_bus,
-                    color: Colors.orange, size: 20),
+                    color: Theme.of(context).primaryColor, size: 20),
                 suffixIcon: IconButton(
                   onPressed: () {
                     _searchController.clear();
                     _searchBusStops('');
                   },
                   icon: _searchController.text.isNotEmpty
-                      ? Icon(Icons.clear, color: Colors.orange.shade800)
+                      ? Icon(Icons.clear, color: Theme.of(context).primaryColor.withOpacity(0.9))
                       : Icon(
                           Icons.search,
-                          color: Colors.orange.shade800,
+                          color: Theme.of(context).primaryColor.withOpacity(0.9),
                         ),
                 ),
                 border: InputBorder.none,
@@ -133,7 +133,7 @@ class _NMMTBusStopSearchPageState extends State<NMMTBusStopSearchPage> {
                         leading: Container(
                           width: 5,
                           decoration: BoxDecoration(
-                            color: Colors.orange,
+                            color: Theme.of(context).primaryColor,
                             borderRadius: BorderRadius.circular(5),
                           ),
                         ),

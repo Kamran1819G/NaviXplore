@@ -54,7 +54,7 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
       _polylines.add(
         Polyline(
           polylineId: PolylineId('polyline'),
-          color: Colors.orange,
+          color: Theme.of(context).primaryColor,
           points: polylinePoints,
           width: 3,
         ),
@@ -142,7 +142,7 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
                           height: 4,
                           margin: const EdgeInsets.symmetric(vertical: 15),
                           decoration: BoxDecoration(
-                            color: Colors.orange.shade400,
+                            color: Theme.of(context).primaryColor.withOpacity(0.5),
                             borderRadius: BorderRadius.circular(5),
                           ),
                         ),
@@ -187,11 +187,11 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
                     onTap: () {
                       Navigator.pop(context);
                     },
-                    child: const CircleAvatar(
+                    child: CircleAvatar(
                       radius: 25.0,
                       backgroundColor: Colors.white,
                       child: BackButton(
-                        color: Colors.orange,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                   ),

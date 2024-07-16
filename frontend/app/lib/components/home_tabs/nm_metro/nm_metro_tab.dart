@@ -136,7 +136,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
-              border: Border.all(width: 1, color: Colors.orange.shade900),
+              border: Border.all(width: 1, color: Theme.of(context).primaryColor),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -167,8 +167,8 @@ class _NMMetroTabState extends State<NMMetroTab> {
                               for (var station in _nmMetroService.allMetroStations)
                                 RotateAnimatedText(
                                   station["stationName"]["English"],
-                                  textStyle: const TextStyle(
-                                    color: Colors.orange,
+                                  textStyle: TextStyle(
+                                    color: Theme.of(context).primaryColor,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -176,8 +176,8 @@ class _NMMetroTabState extends State<NMMetroTab> {
                                 : [
                               TyperAnimatedText(
                                 "Loading...",
-                                textStyle: const TextStyle(
-                                  color: Colors.orange,
+                                textStyle: TextStyle(
+                                  color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -190,7 +190,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
                 ),
                 Icon(
                   Icons.search,
-                  color: Colors.orange.shade800,
+                  color: Theme.of(context).primaryColor.withOpacity(0.9),
                 ),
               ],
             ),
@@ -207,7 +207,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
               height: 10,
               margin: EdgeInsets.symmetric(vertical: 15),
               decoration: BoxDecoration(
-                color: Colors.orange.shade400,
+                color: Theme.of(context).primaryColor.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(5),
               ),
             ),
@@ -260,10 +260,10 @@ class _NMMetroTabState extends State<NMMetroTab> {
                         children: [
                           Text(
                             calculateTime(nearestStationsList![index]["distance"]),
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.orange),
+                                color: Theme.of(context).primaryColor),
                           ),
                           Text(
                             '~ ${formatDistance(nearestStationsList![index]["distance"])}',
@@ -289,7 +289,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
                   height: 10,
                   margin: EdgeInsets.symmetric(vertical: 15),
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade400,
+                    color: Theme.of(context).primaryColor.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(5),
                   ),
                 ),

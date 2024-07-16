@@ -18,13 +18,13 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
-        foregroundColor: Colors.orange,
+        foregroundColor: Theme.of(context).primaryColor,
         elevation: 3,
-        title:  const Row(
+        title:  Row(
           children: [
-            Text("Navi", style: TextStyle(color: Colors.orange, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 20)),
-            Text("X", style: TextStyle(color: Colors.orange, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 25)),
-            Text("plore", style: TextStyle(color: Colors.orange, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 20)),
+            Text("Navi", style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 20)),
+            Text("X", style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 25)),
+            Text("plore", style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 20)),
           ],
         ),
       ),
@@ -40,7 +40,7 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
               child: Text(
                   widget.place['name'],
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.orange, fontSize: 30, fontWeight: FontWeight.bold,fontFamily: "Fredoka")
+                  style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 30, fontWeight: FontWeight.bold,fontFamily: "Fredoka")
               ),
             ),
             SizedBox(height: 16),

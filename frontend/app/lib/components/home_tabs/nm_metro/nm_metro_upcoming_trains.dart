@@ -163,7 +163,7 @@ class _NM_MetroUpcomingTrainsState extends State<NM_MetroUpcomingTrains> {
               itemBuilder: (context, index) {
                 final isNextMetro = index == nextMetroIndex;
                 return ListTile(
-                  tileColor: isNextMetro ? Colors.orange.withOpacity(0.2) : null,
+                  tileColor: isNextMetro ? Theme.of(context).primaryColor.withOpacity(0.2) : null,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -181,7 +181,7 @@ class _NM_MetroUpcomingTrainsState extends State<NM_MetroUpcomingTrains> {
                   leading: Container(
                     width: 5,
                     decoration: BoxDecoration(
-                      color: Colors.orange,
+                      color: Theme.of(context).primaryColor,
                       borderRadius: BorderRadius.circular(5),
                     ),
                   ),
@@ -202,7 +202,7 @@ class _NM_MetroUpcomingTrainsState extends State<NM_MetroUpcomingTrains> {
                     _formatTime(upcomingTrains!['upcomingTimes'][index]),
                     style: TextStyle(
                       fontSize: 20,
-                      color: Colors.orange,
+                      color: Theme.of(context).primaryColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -236,8 +236,8 @@ class _NM_MetroUpcomingTrainsState extends State<NM_MetroUpcomingTrains> {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.orange : Colors.white,
-          border: Border.all(width: 2, color: Colors.orange),
+          color: isSelected ? Theme.of(context).primaryColor : Colors.white,
+          border: Border.all(width: 2, color: Theme.of(context).primaryColor),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -245,14 +245,14 @@ class _NM_MetroUpcomingTrainsState extends State<NM_MetroUpcomingTrains> {
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : Colors.orange,
+              color: isSelected ? Colors.white : Theme.of(context).primaryColor,
             ),
             SizedBox(width: 10),
             Text(
               label,
               style: TextStyle(
                 fontSize: 16,
-                color: isSelected ? Colors.white : Colors.orange,
+                color: isSelected ? Colors.white : Theme.of(context).primaryColor,
                 fontWeight: FontWeight.bold,
               ),
             ),

@@ -31,7 +31,7 @@ class _LocalTrainTabState extends State<LocalTrainTab> {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
-              border: Border.all(width: 1, color: Colors.orange.shade900),
+              border: Border.all(width: 1, color: Theme.of(context).primaryColor),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -40,7 +40,7 @@ class _LocalTrainTabState extends State<LocalTrainTab> {
                   padding: const EdgeInsets.all(8.0),
                   child: Icon(
                     CupertinoIcons.train_style_two,
-                    color: Colors.orange.shade800,
+                    color: Theme.of(context).primaryColor.withOpacity(0.9),
                   ),
                 ),
                 Expanded(
@@ -56,7 +56,7 @@ class _LocalTrainTabState extends State<LocalTrainTab> {
                 ),
                 Icon(
                   Icons.search,
-                  color: Colors.orange.shade800,
+                  color: Theme.of(context).primaryColor.withOpacity(0.9),
                 ),
               ],
             ),
@@ -255,9 +255,9 @@ class _LocalTrainTabState extends State<LocalTrainTab> {
                             ),
                           ],
                         ),
-                        const Text(
+                        Text(
                           "Open UTS App",
-                          style: TextStyle(fontSize: 14, color: Colors.orange),
+                          style: TextStyle(fontSize: 14, color: Theme.of(context).primaryColor),
                         ),
                       ],
                     )),

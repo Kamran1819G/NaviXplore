@@ -141,7 +141,7 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
       _polylines.add(
         Polyline(
           polylineId: PolylineId('polyline'),
-          color: Colors.orange,
+          color: Theme.of(context).primaryColor,
           points: polylinePoints,
           width: 3,
         ),
@@ -229,7 +229,7 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
                       height: 4,
                       margin: const EdgeInsets.symmetric(vertical: 15),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade400,
+                        color: Theme.of(context).primaryColor.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(5),
                       ),
                     ),
@@ -260,9 +260,9 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
                               ['stationName']['Marathi']),
                           trailing: Text(
                             _formatTime(metroScheduleList![index]['time']),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
-                              color: Colors.orange,
+                              color: Theme.of(context).primaryColor,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -280,11 +280,11 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
                 onTap: () {
                   Navigator.pop(context);
                 },
-                child: const CircleAvatar(
+                child: CircleAvatar(
                   radius: 25.0,
                   backgroundColor: Colors.white,
                   child: BackButton(
-                    color: Colors.orange,
+                    color: Theme.of(context).primaryColor,
                   ),
                 ),
               ),

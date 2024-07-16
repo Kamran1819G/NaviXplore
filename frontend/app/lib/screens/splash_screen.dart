@@ -17,14 +17,13 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   _navigatetohome()async{
-
     await Future.delayed(const Duration(seconds: 2), () {});
     Navigator.pushReplacement(context ,MaterialPageRoute(builder: (context)=> WidgetTree()));
   }
 
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.orange.shade700,
+      backgroundColor: Theme.of(context).primaryColor,
       body: SafeArea(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20),

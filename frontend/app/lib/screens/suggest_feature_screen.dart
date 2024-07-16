@@ -19,18 +19,18 @@ class _SuggestFeatureState extends State<SuggestFeature> {
         leading: const BackButton(
           color: Colors.black,
         ),
-        title: Text("Suggest a Feature", style: TextStyle(color: Colors.orange),),
+        title: Text("Suggest a Feature", style: TextStyle(color: Theme.of(context).primaryColor),),
       ),
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("Navi", style: TextStyle(color: Colors.orange, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 60)),
-                Text("X", style: TextStyle(color: Colors.orange, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 75)),
-                Text("plore", style: TextStyle(color: Colors.orange, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 60)),
+                Text("Navi", style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 60)),
+                Text("X", style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 75)),
+                Text("plore", style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 60)),
               ],
             ),
             const SizedBox(height: 50),

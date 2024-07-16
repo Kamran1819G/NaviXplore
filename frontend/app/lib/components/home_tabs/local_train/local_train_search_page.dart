@@ -32,7 +32,8 @@ class _LocalTrainSearchPageState extends State<LocalTrainSearchPage> {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
-                    border: Border.all(width: 1, color: Colors.orange.shade900),
+                    border: Border.all(
+                        width: 1, color: Theme.of(context).primaryColor),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -41,7 +42,8 @@ class _LocalTrainSearchPageState extends State<LocalTrainSearchPage> {
                         padding: const EdgeInsets.all(8.0),
                         child: Icon(
                           Icons.start,
-                          color: Colors.orange.shade800,
+                          color:
+                              Theme.of(context).primaryColor.withOpacity(0.9),
                         ),
                       ),
                       Expanded(
@@ -60,7 +62,7 @@ class _LocalTrainSearchPageState extends State<LocalTrainSearchPage> {
                       ),
                       Icon(
                         Icons.search,
-                        color: Colors.orange.shade800,
+                        color: Theme.of(context).primaryColor.withOpacity(0.9),
                       ),
                     ],
                   ),
@@ -71,7 +73,10 @@ class _LocalTrainSearchPageState extends State<LocalTrainSearchPage> {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
-                    border: Border.all(width: 1, color: Colors.orange.shade900),
+                    border: Border.all(
+                      width: 1,
+                      color: Theme.of(context).primaryColor.withOpacity(0.9),
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -80,7 +85,8 @@ class _LocalTrainSearchPageState extends State<LocalTrainSearchPage> {
                         padding: const EdgeInsets.all(8.0),
                         child: Icon(
                           Icons.last_page,
-                          color: Colors.orange.shade800,
+                          color:
+                              Theme.of(context).primaryColor.withOpacity(0.9),
                         ),
                       ),
                       Expanded(
@@ -99,7 +105,7 @@ class _LocalTrainSearchPageState extends State<LocalTrainSearchPage> {
                       ),
                       Icon(
                         Icons.search,
-                        color: Colors.orange.shade800,
+                        color: Theme.of(context).primaryColor.withOpacity(0.9),
                       ),
                     ],
                   ),
@@ -110,7 +116,7 @@ class _LocalTrainSearchPageState extends State<LocalTrainSearchPage> {
           Divider(
             height: 10,
             thickness: 2,
-            color: Colors.deepOrange,
+            color: Theme.of(context).primaryColor,
           ),
           Container(
             padding: EdgeInsets.symmetric(vertical: 10),
@@ -125,15 +131,15 @@ class _LocalTrainSearchPageState extends State<LocalTrainSearchPage> {
             ]),
           ),
           ListTile(
-            splashColor: Colors.orange,
-            focusColor: Colors.orange,
+            splashColor: Theme.of(context).primaryColor,
+            focusColor: Theme.of(context).primaryColor,
             contentPadding: EdgeInsets.all(16),
             onTap: () {
               // Handle tile click
             },
-            leading: const Icon(
+            leading: Icon(
               Icons.train,
-              color: Colors.orange,
+              color: Theme.of(context).primaryColor,
             ),
             title: const Text(
               "SourceStation",
@@ -149,6 +155,5 @@ class _LocalTrainSearchPageState extends State<LocalTrainSearchPage> {
             ),
           ),
         ]));
-
   }
 }

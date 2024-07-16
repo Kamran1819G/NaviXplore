@@ -134,7 +134,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
           Container(
             padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.orange,
+              color: Theme.of(context).primaryColor,
             ),
             child: Row(
               children: [
@@ -182,7 +182,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       decoration: InputDecoration(
                         prefixIcon: Icon(
                           Icons.location_on,
-                          color: Colors.orange,
+                          color: Theme.of(context).primaryColor,
                         ),
                         suffixIcon: IconButton(
                           onPressed: () {
@@ -215,12 +215,12 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       return ListTile(
                         leading: CircleAvatar(
                           radius: 20.0,
-                          backgroundColor: Colors.orange,
+                          backgroundColor: Theme.of(context).primaryColor,
                           child: CircleAvatar(
                             radius: 15.0,
                             backgroundColor: Colors.white,
                             child: Icon(Icons.directions_bus,
-                                color: Colors.orange, size: 20),
+                                color: Theme.of(context).primaryColor, size: 20),
                           ),
                         ),
                         title: Text(suggestion['stationName']['English']),
@@ -257,7 +257,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       decoration: InputDecoration(
                         prefixIcon: Icon(
                           Icons.location_on,
-                          color: Colors.orange,
+                          color: Theme.of(context).primaryColor,
                         ),
                         suffixIcon: IconButton(
                           onPressed: () {
@@ -292,12 +292,12 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       return ListTile(
                         leading: CircleAvatar(
                           radius: 20.0,
-                          backgroundColor: Colors.orange,
+                          backgroundColor: Theme.of(context).primaryColor,
                           child: CircleAvatar(
                             radius: 15.0,
                             backgroundColor: Colors.white,
                             child: Icon(Icons.directions_bus,
-                                color: Colors.orange, size: 20),
+                                color: Theme.of(context).primaryColor, size: 20),
                           ),
                         ),
                         title: Text(suggestion['stationName']['English']),
@@ -320,7 +320,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       ElevatedButton(
                         onPressed: _interchangeLocations,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
+                          backgroundColor: Theme.of(context).primaryColor,
                         ),
                         child: Icon(
                           Icons.swap_vert,
@@ -333,7 +333,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                               sourceLocationId, destinationLocationId);
                         },
                         style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange),
+                            backgroundColor: Theme.of(context).primaryColor),
                         child: Icon(
                           Icons.search,
                           color: Colors.white,
@@ -402,7 +402,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
       padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(width: 2, color: Colors.orange),
+        border: Border.all(width: 2, color: Theme.of(context).primaryColor),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -410,13 +410,13 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
         children: [
           Icon(
             icon,
-            color: Colors.orange,
+            color: Theme.of(context).primaryColor,
           ),
           SizedBox(width: 10),
           Text(
             label,
             style: TextStyle(
-                fontSize: 16, color: Colors.orange, fontWeight: FontWeight.bold),
+                fontSize: 16, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -479,9 +479,9 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                               onPressed: () {
                                 Navigator.pop(context);
                               },
-                              child: const Text(
+                              child: Text(
                                 'Okay, View Route',
-                                style: TextStyle(color: Colors.orange),
+                                style: TextStyle(color: Theme.of(context).primaryColor),
                               ),
                             ),
                           ],
@@ -506,13 +506,13 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                     children: [
                       Icon(
                         Icons.directions_bus,
-                        color: Colors.orange,
+                        color: Theme.of(context).primaryColor,
                       ),
                       Container(
                         padding:
                             EdgeInsets.symmetric(vertical: 2, horizontal: 2),
                         decoration: BoxDecoration(
-                          color: Colors.orange,
+                          color: Theme.of(context).primaryColor,
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(
@@ -555,7 +555,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       '${busData['ETATimeMinute']} min',
                       style: TextStyle(
                           fontSize: 22,
-                          color: Colors.orange,
+                          color: Theme.of(context).primaryColor,
                           fontWeight: FontWeight.bold),
                     ),
                     Text('${busData['ArrivalTime']}'),

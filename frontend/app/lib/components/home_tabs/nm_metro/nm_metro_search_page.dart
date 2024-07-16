@@ -49,7 +49,7 @@ class _NMMetroSearchPageState extends State<NMMetroSearchPage> {
                 Container(
                   padding: EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.orange,
+                    color: Theme.of(context).primaryColor,
                   ),
                   child: Row(
                     children: [
@@ -115,7 +115,7 @@ class _NMMetroSearchPageState extends State<NMMetroSearchPage> {
                         ),
                         trailing: Icon(
                           Icons.arrow_forward_ios,
-                          color: Colors.orange,
+                          color: Theme.of(context).primaryColor,
                         ),
                       );
                     },
