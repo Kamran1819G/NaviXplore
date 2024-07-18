@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:navixplore/components/home_tabs/local_train/local_train_penalties.dart';
-import 'package:navixplore/components/home_tabs/local_train/local_train_search_page.dart';
+import 'package:navixplore/pages/home/local_train/local_train_penalties.dart';
+import 'package:navixplore/pages/home/local_train/local_train_search_page.dart';
 import 'package:navixplore/widgets/webview_screen.dart';
 import 'package:external_app_launcher/external_app_launcher.dart';
 

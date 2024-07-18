@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_bus_number_schedules.dart';
+import 'package:navixplore/pages/home/nmmt_bus/nmmt_bus_number_schedules.dart';
 import 'package:navixplore/config/api_endpoints.dart';
 import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'package:navixplore/utils/color_utils.dart';

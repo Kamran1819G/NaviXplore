@@ -2,10 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-// import 'package:navixplore/components/home_tabs/local_train/local_train_tab.dart';
-import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_bus_tab.dart';
-import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_tab.dart';
-import 'package:navixplore/components/home_tabs/express_train/express_tab.dart';
+// import 'package:navixplore/components/home/local_train/local_train_tab.dart';
+import 'package:navixplore/pages/home/nmmt_bus/nmmt_bus_tab.dart';
+import 'package:navixplore/pages/home/nm_metro/nm_metro_tab.dart';
+import 'package:navixplore/pages/home/express_train/express_tab.dart';
 
 class TransportsScreen extends StatefulWidget {
   const TransportsScreen({Key? key}) : super(key: key);

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_bus_route_page.dart';
+import 'package:navixplore/pages/home/nmmt_bus/nmmt_bus_route_page.dart';
 import 'package:navixplore/services/NMMT_Service.dart';
 
 import '../../../widgets/Skeleton.dart';

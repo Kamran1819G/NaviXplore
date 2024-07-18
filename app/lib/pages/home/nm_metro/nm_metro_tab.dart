@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_upcoming_trains.dart';
+import 'package:navixplore/pages/home/nm_metro/nm_metro_upcoming_trains.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_fare_calculator.dart';
-import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_map.dart';
-import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_penalties.dart';
-import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_search_page.dart';
+import 'package:navixplore/pages/home/nm_metro/nm_metro_fare_calculator.dart';
+import 'package:navixplore/pages/home/nm_metro/nm_metro_map.dart';
+import 'package:navixplore/pages/home/nm_metro/nm_metro_penalties.dart';
+import 'package:navixplore/pages/home/nm_metro/nm_metro_search_page.dart';
 import 'package:navixplore/services/NM_Metro_Service.dart';
 import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'package:navixplore/widgets/Skeleton.dart';

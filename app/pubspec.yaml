@@ -86,7 +86,7 @@ flutter_launcher_icons:
     # flutter pub run flutter_launcher_icons -f pubspec.yaml
   android: "launcher_icon"
   ios: true
-  image_path: "assets/icons/logo.jpg"
+  image_path: "assets/icons/logo.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

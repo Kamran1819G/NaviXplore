@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:navixplore/pages/place_detail_page.dart';
+import 'package:navixplore/pages/explore/place_detail_page.dart';
 import 'package:navixplore/services/NM_Places_Service.dart';
 import 'package:navixplore/widgets/image_container.dart';
 

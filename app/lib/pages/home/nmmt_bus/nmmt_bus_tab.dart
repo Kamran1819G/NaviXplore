@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:dio/dio.dart';
-import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_all_nearest_bus_stop.dart';
+import 'package:navixplore/pages/home/nmmt_bus/nmmt_all_nearest_bus_stop.dart';
 import 'package:navixplore/config/api_endpoints.dart';
 import 'package:navixplore/pages/announcement_detail_page.dart';
 import 'package:navixplore/services/NMMT_Service.dart';

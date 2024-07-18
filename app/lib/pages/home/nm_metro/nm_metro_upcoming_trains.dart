@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:navixplore/components/home_tabs/nm_metro/nm_metro_route_page.dart';
+import 'package:navixplore/pages/home/nm_metro/nm_metro_route_page.dart';
 import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'package:navixplore/widgets/Skeleton.dart';
 

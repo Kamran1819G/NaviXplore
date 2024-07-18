@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:navixplore/components/explore_tabs/famous_places_tab.dart';
-import 'package:navixplore/components/explore_tabs/tourist_destinations_tab.dart';
+import 'package:navixplore/pages/explore/famous_places_tab.dart';
+import 'package:navixplore/pages/explore/tourist_destinations_tab.dart';
 import 'package:navixplore/services/NM_Places_Service.dart';
 
 class ExploreScreen extends StatefulWidget {

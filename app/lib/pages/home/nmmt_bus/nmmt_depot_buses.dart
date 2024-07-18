@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
-import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_bus_number_search_page.dart';
+import 'package:navixplore/pages/home/nmmt_bus/nmmt_bus_number_search_page.dart';
 import 'package:navixplore/config/api_endpoints.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:navixplore/components/home_tabs/nmmt_bus/nmmt_bus_route_page.dart';
+import 'package:navixplore/pages/home/nmmt_bus/nmmt_bus_route_page.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
 import 'package:dio/dio.dart';

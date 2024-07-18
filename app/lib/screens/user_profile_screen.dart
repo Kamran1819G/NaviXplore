@@ -27,17 +27,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(),
-          SliverToBoxAdapter(child: _buildProfileInfo()),
-          SliverPersistentHeader(
-            delegate: _SliverAppBarDelegate(_buildTabBar()),
-            pinned: true,
-          ),
-          _buildTabBarView(),
-        ],
-      );
+    return Scaffold(
+      body: CustomScrollView(
+          slivers: [
+            _buildSliverAppBar(),
+            SliverToBoxAdapter(child: _buildProfileInfo()),
+            SliverPersistentHeader(
+              delegate: _SliverAppBarDelegate(_buildTabBar()),
+              pinned: true,
+            ),
+            _buildTabBarView(),
+          ],
+        ),
+    );
   }
 
   Widget _buildSliverAppBar() {
