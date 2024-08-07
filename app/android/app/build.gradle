@@ -1,10 +1,7 @@
 plugins {
     id "com.android.application"
-    // START: FlutterFire Configuration
     id 'com.google.gms.google-services'
-    // END: FlutterFire Configuration
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -37,10 +34,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.navixplore.navixplore"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion 23
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
@@ -48,9 +42,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders = [GOOGLE_MAPS_API_KEY: project.properties['GOOGLE_MAPS_API_KEY'] ?: ""]
+        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            manifestPlaceholders = [GOOGLE_MAPS_API_KEY: project.properties['GOOGLE_MAPS_API_KEY'] ?: ""]
             signingConfig signingConfigs.debug
         }
     }

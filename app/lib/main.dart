@@ -1,21 +1,28 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
-import 'package:navixplore/controller/network_controller.dart';
-import 'package:navixplore/screens/splash_screen.dart';
-import 'package:navixplore/services/firebase/firebase_messaging_service.dart';
-import 'package:navixplore/services/permission_handler_service.dart';
+import 'package:navixplore/core/routes/app_pages.dart';
+import 'package:navixplore/core/routes/app_routes.dart';
+import 'package:navixplore/presentation/controllers/network_controller.dart';
+import 'package:navixplore/presentation/controllers/permission_controller.dart';
+import 'package:navixplore/presentation/pages/splash_screen.dart';
 import 'package:navixplore/theme/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final PermissionHandlerService _permissionHandler = PermissionHandlerService();
-  await _permissionHandler.requestMultiplePermissions();
+  // Load environment variables
+  await dotenv.load(fileName: ".env.dev");
+
+  final PermissionController permissionController =
+      Get.put(PermissionController());
+
+  await permissionController.requestPermissions();
+
+  Get.put<NetworkController>(NetworkController(), permanent: true);
 
   // Initialize Firebase
   await Firebase.initializeApp(
@@ -24,24 +31,13 @@ void main() async {
 
   // Initialize Supabase
   await Supabase.initialize(
-    url: 'https://lsovwpfxweicraibsgsy.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxzb3Z3cGZ4d2VpY3JhaWJzZ3N5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjAxOTMwMjAsImV4cCI6MjAzNTc2OTAyMH0.NuZX8AqgAEM6SRLrHWHoW5Qdk6Bl-EZl9M60LM1nkcA',
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
-
-  FirebaseMessagingService messagingService = FirebaseMessagingService();
-  await messagingService.initialize();
-  if (kDebugMode) {
-    print('Firebase Messaging Service initialized : ${messagingService.getFCMToken()}');
-  }
-
-  // Initialize GetX controller
-  Get.put<NetworkController>(NetworkController(), permanent: true);
 
   // Run the app
   runApp(const MyApp());
 }
-
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -58,7 +54,8 @@ class MyApp extends StatelessWidget {
       ),
       darkTheme: darkMode,
       home: const SplashScreen(),
+      initialRoute: AppRoutes.SPLASH,
+      getPages: AppPages.pages,
     );
   }
 }
-
