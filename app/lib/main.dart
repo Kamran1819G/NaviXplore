@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:navixplore/core/di/dependency_injection.dart';
 import 'package:navixplore/core/routes/app_pages.dart';
 import 'package:navixplore/core/routes/app_routes.dart';
 import 'package:navixplore/presentation/controllers/network_controller.dart';
 import 'package:navixplore/presentation/controllers/permission_controller.dart';
-import 'package:navixplore/presentation/pages/splash_screen.dart';
 import 'package:navixplore/theme/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -35,6 +36,8 @@ void main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
+  DependencyInjection.init();
+
   // Run the app
   runApp(const MyApp());
 }
@@ -45,17 +48,21 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      themeMode: ThemeMode.light,
-      theme: ThemeData(
-        primaryColor: Colors.purple.shade700,
-        scaffoldBackgroundColor: Colors.white,
-        hintColor: Theme.of(context).primaryColor,
+    return ScreenUtilInit(
+      designSize: const Size(360, 800),
+      enableScaleText: () => false,
+      enableScaleWH: () => false,
+      builder: (_, child) => GetMaterialApp(
+        themeMode: ThemeMode.light,
+        theme: ThemeData(
+          primaryColor: Colors.purple.shade700,
+          scaffoldBackgroundColor: Colors.white,
+          hintColor: Theme.of(context).primaryColor,
+        ),
+        darkTheme: darkMode,
+        initialRoute: AppRoutes.SPLASH,
+        getPages: AppPages.pages,
       ),
-      darkTheme: darkMode,
-      home: const SplashScreen(),
-      initialRoute: AppRoutes.SPLASH,
-      getPages: AppPages.pages,
     );
   }
 }

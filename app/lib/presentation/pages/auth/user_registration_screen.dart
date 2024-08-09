@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'package:get/get.dart';
 import 'package:navixplore/presentation/controllers/user_registration_controller.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 

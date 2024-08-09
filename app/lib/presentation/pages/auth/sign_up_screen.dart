@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:navixplore/core/routes/app_routes.dart';
 import 'package:navixplore/presentation/controllers/sign_up_controller.dart';
@@ -23,7 +24,7 @@ class SignUpScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+                SizedBox(height: 100.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -31,7 +32,7 @@ class SignUpScreen extends StatelessWidget {
                       "Navi",
                       style: TextStyle(
                         color: Theme.of(context).primaryColor,
-                        fontSize: 60,
+                        fontSize: 60.sp,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold,
                       ),
@@ -40,7 +41,7 @@ class SignUpScreen extends StatelessWidget {
                       "X",
                       style: TextStyle(
                         color: Theme.of(context).primaryColor,
-                        fontSize: 75,
+                        fontSize: 75.sp,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold,
                       ),
@@ -49,7 +50,7 @@ class SignUpScreen extends StatelessWidget {
                       "plore",
                       style: TextStyle(
                         color: Theme.of(context).primaryColor,
-                        fontSize: 60,
+                        fontSize: 60.sp,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold,
                       ),
@@ -60,44 +61,45 @@ class SignUpScreen extends StatelessWidget {
                   "Navi Mumbai Guide App",
                   style: TextStyle(
                     color: Theme.of(context).primaryColor,
-                    fontSize: 28,
+                    fontSize: 28.sp,
                     fontFamily: "Fredoka",
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 20.h),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25),
+                  padding: EdgeInsets.symmetric(horizontal: 25.w),
                   child: Column(
                     children: [
-                      Obx(
-                        () => TextField(
-                          controller: controller.emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            fillColor: Colors.white,
-                            filled: true,
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(10.0)),
-                              borderSide: BorderSide(color: Colors.white),
-                            ),
-                            suffixIcon: controller.isEmailValid.value
-                                ? Icon(Icons.check_circle, color: Colors.green)
-                                : Icon(Icons.error, color: Colors.red),
-                            border: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(10.0)),
-                              borderSide: BorderSide(color: Colors.white),
-                            ),
+                      TextField(
+                        controller: controller.emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          fillColor: Colors.white,
+                          filled: true,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10.0)),
+                            borderSide: BorderSide(color: Colors.white),
                           ),
-                          onChanged: (value) {
-                            controller.validateEmail(value);
-                          },
+                          suffixIcon: controller.emailController.text.isNotEmpty
+                              ? Obx(() => controller.isEmailValid.value
+                                  ? Icon(Icons.check_circle,
+                                      color: Colors.green)
+                                  : Icon(Icons.error, color: Colors.red))
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10.0)),
+                            borderSide: BorderSide(color: Colors.white),
+                          ),
                         ),
+                        onChanged: (value) {
+                          controller.validateEmail(value);
+                        },
                       ),
-                      SizedBox(height: 20),
+                      SizedBox(height: 20.h),
                       TextField(
                         controller: controller.passwordController,
                         keyboardType: TextInputType.visiblePassword,
@@ -108,17 +110,17 @@ class SignUpScreen extends StatelessWidget {
                           filled: true,
                           enabledBorder: OutlineInputBorder(
                             borderRadius:
-                                BorderRadius.all(Radius.circular(10.0)),
-                            borderSide: BorderSide(color: Colors.white),
+                                BorderRadius.all(Radius.circular(10.r)),
+                            borderSide: const BorderSide(color: Colors.white),
                           ),
                           border: OutlineInputBorder(
                             borderRadius:
-                                BorderRadius.all(Radius.circular(10.0)),
-                            borderSide: BorderSide(color: Colors.white),
+                                BorderRadius.all(Radius.circular(10.r)),
+                            borderSide: const BorderSide(color: Colors.white),
                           ),
                         ),
                       ),
-                      SizedBox(height: 20),
+                      SizedBox(height: 20.h),
                       TextField(
                         controller: controller.confirmPasswordController,
                         keyboardType: TextInputType.visiblePassword,
@@ -129,20 +131,20 @@ class SignUpScreen extends StatelessWidget {
                           filled: true,
                           enabledBorder: OutlineInputBorder(
                             borderRadius:
-                                BorderRadius.all(Radius.circular(10.0)),
-                            borderSide: BorderSide(color: Colors.white),
+                                BorderRadius.all(Radius.circular(10.r)),
+                            borderSide: const BorderSide(color: Colors.white),
                           ),
                           border: OutlineInputBorder(
                             borderRadius:
-                                BorderRadius.all(Radius.circular(10.0)),
-                            borderSide: BorderSide(color: Colors.white),
+                                BorderRadius.all(Radius.circular(10.r)),
+                            borderSide: const BorderSide(color: Colors.white),
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: 30),
+                SizedBox(height: 30.h),
                 Obx(
                   () => ElevatedButton(
                     onPressed: controller.isLoading.value
@@ -155,35 +157,35 @@ class SignUpScreen extends StatelessWidget {
                             }
                           },
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 50, vertical: 10),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 50.w, vertical: 10.h),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(10.r),
                       ),
                       backgroundColor: Theme.of(context).primaryColor,
                     ),
-                    child: const Text(
+                    child: Text(
                       "Sign Up",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: 20.sp,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+                SizedBox(height: 75.h),
                 Text(
                   'Or Sign Up With',
                   style: TextStyle(
                     color: Theme.of(context).primaryColor,
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     fontFamily: "Fredoka",
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 20.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -196,17 +198,17 @@ class SignUpScreen extends StatelessWidget {
                         }
                       },
                       child: Container(
-                        height: 75,
-                        width: 75,
-                        padding: EdgeInsets.all(10),
+                        height: 75.h,
+                        width: 75.w,
+                        padding: EdgeInsets.all(10.w),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(10.r),
                         ),
                         child: Image.asset('assets/icons/google.png'),
                       ),
                     ),
-                    SizedBox(width: 40),
+                    SizedBox(width: 30.w),
                     GestureDetector(
                       onTap: () async {
                         final user = await controller.signInWithGoogle();
@@ -216,26 +218,26 @@ class SignUpScreen extends StatelessWidget {
                         }
                       },
                       child: Container(
-                        height: 75,
-                        width: 75,
-                        padding: EdgeInsets.all(10),
+                        height: 75.h,
+                        width: 75.w,
+                        padding: EdgeInsets.all(10.w),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(10.r),
                         ),
                         child: Image.asset('assets/icons/apple.png'),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 20.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
+                    Text(
                       "Already have an account?",
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold,
                       ),
@@ -248,7 +250,7 @@ class SignUpScreen extends StatelessWidget {
                         "Sign In",
                         style: TextStyle(
                           color: Theme.of(context).primaryColor,
-                          fontSize: 16,
+                          fontSize: 16.sp,
                           fontFamily: "Fredoka",
                           fontWeight: FontWeight.bold,
                         ),

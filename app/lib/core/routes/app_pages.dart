@@ -3,6 +3,7 @@ import 'package:navixplore/core/routes/app_routes.dart';
 import 'package:navixplore/presentation/pages/auth/sign_in_screen.dart';
 import 'package:navixplore/presentation/pages/auth/sign_up_screen.dart';
 import 'package:navixplore/presentation/pages/auth/user_registration_screen.dart';
+import 'package:navixplore/presentation/pages/drawer/terms_and_conditions_screen.dart';
 import 'package:navixplore/presentation/pages/splash_screen.dart';
 import 'package:navixplore/presentation/pages/auth_gate.dart';
 import 'package:navixplore/presentation/pages/home_screen.dart';
@@ -21,5 +22,8 @@ class AppPages {
     GetPage(
         name: AppRoutes.USER_REGISTRATION,
         page: () => UserRegistrationScreen()),
+    GetPage(
+        name: AppRoutes.TERMS_AND_CONDITIONS,
+        page: () => TermsAndConditionsScreen()),
   ];
 }

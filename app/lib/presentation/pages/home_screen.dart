@@ -169,12 +169,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     )),
               ),
               ListTile(
-                leading: const Icon(Icons.note_alt),
-                title: const Text("Term & Conditions",
-                    style: TextStyle(
-                      fontSize: 18,
-                    )),
-              ),
+                  leading: const Icon(Icons.note_alt),
+                  title: const Text("Term & Conditions",
+                      style: TextStyle(
+                        fontSize: 18,
+                      )),
+                  onTap: () {
+                    Get.toNamed(AppRoutes.TERMS_AND_CONDITIONS);
+                  }),
               if (authController.isAuthenticated.value == true)
                 ListTile(
                   leading:

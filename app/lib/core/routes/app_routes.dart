@@ -7,4 +7,5 @@ class AppRoutes {
   static const String XPLOREFEED = '/xplorefeed';
   static const String AUTH_GATE = '/auth_gate';
   static const String USER_REGISTRATION = '/user_registration';
+  static const String TERMS_AND_CONDITIONS = '/terms_and_conditions';
 }

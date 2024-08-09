@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:navixplore/core/routes/app_routes.dart';
 import 'package:navixplore/presentation/controllers/sign_in_controller.dart';
@@ -26,7 +27,8 @@ class SignInScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
                   child: Row(
                     children: [
                       Spacer(),
@@ -40,9 +42,9 @@ class SignInScreen extends StatelessWidget {
                         },
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.symmetric(
-                              horizontal: 30, vertical: 10),
+                              horizontal: 30.w, vertical: 10.h),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100),
+                            borderRadius: BorderRadius.circular(50.r),
                           ),
                           backgroundColor: Theme.of(context).primaryColor,
                         ),
@@ -50,7 +52,7 @@ class SignInScreen extends StatelessWidget {
                           "Guest",
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold,
                           ),
@@ -59,26 +61,26 @@ class SignInScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+                SizedBox(height: 50.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text("Navi",
                         style: TextStyle(
                             color: Theme.of(context).primaryColor,
-                            fontSize: 60,
+                            fontSize: 60.sp,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold)),
                     Text("X",
                         style: TextStyle(
                             color: Theme.of(context).primaryColor,
-                            fontSize: 75,
+                            fontSize: 75.sp,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold)),
                     Text("plore",
                         style: TextStyle(
                             color: Theme.of(context).primaryColor,
-                            fontSize: 60,
+                            fontSize: 60.sp,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold)),
                   ],
@@ -86,12 +88,12 @@ class SignInScreen extends StatelessWidget {
                 Text("Navi Mumbai Guide App",
                     style: TextStyle(
                         color: Theme.of(context).primaryColor,
-                        fontSize: 28,
+                        fontSize: 28.sp,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold)),
-                SizedBox(height: 20),
+                SizedBox(height: 20.h),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                  padding: EdgeInsets.symmetric(horizontal: 25.w),
                   child: TextField(
                     controller: controller.emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -99,16 +101,19 @@ class SignInScreen extends StatelessWidget {
                       labelText: 'Email',
                       fillColor: Colors.white,
                       filled: true,
-                      suffixIcon: Obx(() => controller.isEmailValid.value
-                          ? Icon(Icons.check_circle, color: Colors.green)
-                          : Icon(Icons.error, color: Colors.red)),
+                      suffixIcon: controller.emailController.text.isNotEmpty
+                          ? Obx(() => controller.isEmailValid.value
+                              ? const Icon(Icons.check_circle,
+                                  color: Colors.green)
+                              : const Icon(Icons.error, color: Colors.red))
+                          : null,
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                        borderSide: BorderSide(color: Colors.white),
+                        borderRadius: BorderRadius.all(Radius.circular(10.r)),
+                        borderSide: const BorderSide(color: Colors.white),
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                        borderSide: BorderSide(color: Colors.white),
+                        borderRadius: BorderRadius.all(Radius.circular(10.r)),
+                        borderSide: const BorderSide(color: Colors.white),
                       ),
                     ),
                     onChanged: (value) {
@@ -116,9 +121,9 @@ class SignInScreen extends StatelessWidget {
                     },
                   ),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 20.h),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                  padding: EdgeInsets.symmetric(horizontal: 25.w),
                   child: TextField(
                     controller: controller.passwordController,
                     keyboardType: TextInputType.visiblePassword,
@@ -128,11 +133,11 @@ class SignInScreen extends StatelessWidget {
                       fillColor: Colors.white,
                       filled: true,
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                        borderRadius: BorderRadius.all(Radius.circular(10.r)),
                         borderSide: BorderSide(color: Colors.white),
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                        borderRadius: BorderRadius.all(Radius.circular(10.r)),
                         borderSide: BorderSide(color: Colors.white),
                       ),
                     ),
@@ -141,9 +146,9 @@ class SignInScreen extends StatelessWidget {
                     },
                   ),
                 ),
-                SizedBox(height: 10),
+                SizedBox(height: 10.h),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                  padding: EdgeInsets.symmetric(horizontal: 25.w),
                   child: Row(
                     children: [
                       Spacer(),
@@ -159,7 +164,7 @@ class SignInScreen extends StatelessWidget {
                           "Forgot Password?",
                           style: TextStyle(
                               color: Theme.of(context).primaryColor,
-                              fontSize: 16,
+                              fontSize: 16.sp,
                               fontFamily: "Fredoka",
                               fontWeight: FontWeight.bold),
                         ),
@@ -167,7 +172,7 @@ class SignInScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                SizedBox(height: 30),
+                SizedBox(height: 30.h),
                 ElevatedButton(
                   onPressed: () async {
                     try {
@@ -182,9 +187,10 @@ class SignInScreen extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 10),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 50.w, vertical: 10.h),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(10.r),
                     ),
                     backgroundColor: Theme.of(context).primaryColor,
                   ),
@@ -192,20 +198,20 @@ class SignInScreen extends StatelessWidget {
                     "Sign In",
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 20.sp,
                       fontFamily: "Fredoka",
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+                SizedBox(height: 75.h),
                 Text('Or Sign In With',
                     style: TextStyle(
                         color: Theme.of(context).primaryColor,
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         fontFamily: "Fredoka",
                         fontWeight: FontWeight.bold)),
-                SizedBox(height: 20),
+                SizedBox(height: 20.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -217,17 +223,17 @@ class SignInScreen extends StatelessWidget {
                         }
                       },
                       child: Container(
-                        height: 75,
-                        width: 75,
-                        padding: EdgeInsets.all(10),
+                        height: 75.h,
+                        width: 75.w,
+                        padding: EdgeInsets.all(10.w),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(10.r),
                         ),
                         child: Image.asset('assets/icons/google.png'),
                       ),
                     ),
-                    SizedBox(width: 40),
+                    SizedBox(width: 30.w),
                     GestureDetector(
                       onTap: () async {
                         await controller.signInWithApple();
@@ -239,26 +245,26 @@ class SignInScreen extends StatelessWidget {
                         }
                       },
                       child: Container(
-                        height: 75,
-                        width: 75,
-                        padding: EdgeInsets.all(10),
+                        height: 75.h,
+                        width: 75.w,
+                        padding: EdgeInsets.all(10.w),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(10.r),
                         ),
                         child: Image.asset('assets/icons/apple.png'),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 20.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       "Don't have an account?",
                       style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 16.sp,
                           fontFamily: "Fredoka",
                           fontWeight: FontWeight.bold),
                     ),
@@ -270,7 +276,7 @@ class SignInScreen extends StatelessWidget {
                         "Sign Up",
                         style: TextStyle(
                             color: Theme.of(context).primaryColor,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold),
                       ),
