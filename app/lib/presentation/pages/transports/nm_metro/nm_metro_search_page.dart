@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:navixplore/services/NM_Metro_Service.dart';
-import 'package:navixplore/services/firebase/firestore_service.dart';
+import 'package:get/get.dart';
+import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 import 'nm_metro_upcoming_trains.dart';
 
@@ -14,7 +14,7 @@ class NMMetroSearchPage extends StatefulWidget {
 class _NMMetroSearchPageState extends State<NMMetroSearchPage> {
   bool isLoading = true;
 
-  final NM_MetroService _nmMetroService = NM_MetroService();
+  final NMMetroController controller = Get.find<NMMetroController>();
 
   @override
   void initState() {
@@ -23,7 +23,7 @@ class _NMMetroSearchPageState extends State<NMMetroSearchPage> {
   }
 
   void initialize() async {
-    await _nmMetroService.fetchAllStations();
+    await controller.fetchAllStations();
     setState(() {
       isLoading = false;
     });
@@ -72,7 +72,7 @@ class _NMMetroSearchPageState extends State<NMMetroSearchPage> {
                 ),
                 Expanded(
                   child: ListView.builder(
-                    itemCount: _nmMetroService.allMetroStations.length,
+                    itemCount: controller.allMetroStations.length,
                     itemBuilder: (context, index) {
                       return ListTile(
                         contentPadding: EdgeInsets.all(16.0),
@@ -81,12 +81,12 @@ class _NMMetroSearchPageState extends State<NMMetroSearchPage> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => NM_MetroUpcomingTrains(
-                                  lineID: _nmMetroService
-                                      .allMetroStations[index]["lineID"],
-                                  stationID: _nmMetroService
-                                      .allMetroStations[index]["stationID"],
+                                  lineID: controller.allMetroStations[index]
+                                      ["lineID"],
+                                  stationID: controller.allMetroStations[index]
+                                      ["stationID"],
                                   stationName:
-                                      _nmMetroService.allMetroStations[index]
+                                      controller.allMetroStations[index]
                                           ["stationName"]["English"]),
                             ),
                           );
@@ -100,13 +100,13 @@ class _NMMetroSearchPageState extends State<NMMetroSearchPage> {
                           ),
                         ),
                         title: Text(
-                          _nmMetroService.allMetroStations[index]["stationName"]
+                          controller.allMetroStations[index]["stationName"]
                               ["English"],
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(
-                          _nmMetroService.allMetroStations[index]["stationName"]
+                          controller.allMetroStations[index]["stationName"]
                               ["Marathi"],
                           style: const TextStyle(
                               fontSize: 16,

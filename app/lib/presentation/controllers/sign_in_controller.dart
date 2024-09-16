@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:navixplore/presentation/controllers/auth_controller.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SignInController extends GetxController {
   final AuthController authController = Get.find<AuthController>();
@@ -25,9 +25,10 @@ class SignInController extends GetxController {
   Future<User?> signInAnonymously() async {
     isLoading.value = true;
     try {
-      final response = await Supabase.instance.client.auth.signInAnonymously();
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInAnonymously();
       isLoading.value = false;
-      return response.user;
+      return userCredential.user;
     } catch (e) {
       isLoading.value = false;
       Get.snackbar('Error', e.toString(),
@@ -52,14 +53,25 @@ class SignInController extends GetxController {
     isLoading.value = true;
 
     try {
-      final response = await Supabase.instance.client.auth.signInWithPassword(
-          email: emailController.text, password: passwordController.text);
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text,
+        password: passwordController.text,
+      );
       isLoading.value = false;
-      return response.user;
-    } catch (e) {
+      return userCredential.user;
+    } on FirebaseAuthException catch (e) {
       isLoading.value = false;
-      Get.snackbar('Error', e.toString(),
-          colorText: Colors.white, backgroundColor: Colors.red);
+      if (e.code == 'user-not-found') {
+        Get.snackbar('Error', 'No user found for that email.',
+            colorText: Colors.white, backgroundColor: Colors.red);
+      } else if (e.code == 'wrong-password') {
+        Get.snackbar('Error', 'Wrong password provided for that user.',
+            colorText: Colors.white, backgroundColor: Colors.red);
+      } else {
+        Get.snackbar('Error', e.message ?? 'An error occurred',
+            colorText: Colors.white, backgroundColor: Colors.red);
+      }
       return null;
     }
   }
@@ -68,23 +80,26 @@ class SignInController extends GetxController {
     isLoading.value = true;
 
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) return null;
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final response = await Supabase.instance.client.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: googleAuth.idToken!,
-      );
-      if (response.user == null) {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
         Get.snackbar('Error', 'Failed to sign in with Google',
             colorText: Colors.white, backgroundColor: Colors.red);
         return null;
       }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
       isLoading.value = false;
-      return response.user;
+      return userCredential.user;
     } catch (e) {
+      isLoading.value = false;
       Get.snackbar('Error', e.toString(),
           colorText: Colors.white, backgroundColor: Colors.red);
       return null;
@@ -94,55 +109,19 @@ class SignInController extends GetxController {
   Future<User?> signInWithApple() async {
     isLoading.value = true;
     try {
-      final rawNonce = Supabase.instance.client.auth.generateRawNonce();
-      final AuthorizationCredentialAppleID appleCredential =
-          await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-        nonce: rawNonce,
-      );
-      final response = await Supabase.instance.client.auth.signInWithIdToken(
-        provider: OAuthProvider.apple,
-        idToken: appleCredential.identityToken!,
-        nonce: rawNonce,
-      );
-      if (response.user == null) {
-        Get.snackbar('Error', 'Failed to sign in with Apple',
-            colorText: Colors.white, backgroundColor: Colors.red);
-        return null;
-      }
+      final AppleAuthProvider appleProvider = AppleAuthProvider();
+      appleProvider.addScope('email');
+      appleProvider.addScope('fullName');
+
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithProvider(appleProvider);
       isLoading.value = false;
-      return response.user;
+      return userCredential.user;
     } catch (e) {
+      isLoading.value = false;
       Get.snackbar('Error', e.toString(),
           colorText: Colors.white, backgroundColor: Colors.red);
       return null;
-    }
-  }
-
-  Future<void> sendPasswordResetEmail() async {
-    if (!isEmailValid.value) {
-      Get.snackbar('Error', 'Please enter a valid email',
-          colorText: Colors.white, backgroundColor: Colors.red);
-      return;
-    }
-
-    isLoading.value = true;
-
-    try {
-      await Supabase.instance.client.auth.resetPasswordForEmail(
-        emailController.text,
-        redirectTo: 'io.supabase.navixplore://reset-password',
-      );
-      isLoading.value = false;
-      Get.snackbar('Success', 'Password reset email sent',
-          colorText: Colors.white, backgroundColor: Colors.green);
-    } catch (e) {
-      isLoading.value = false;
-      Get.snackbar('Error', e.toString(),
-          colorText: Colors.white, backgroundColor: Colors.red);
     }
   }
 }

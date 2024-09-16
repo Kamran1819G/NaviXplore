@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:navixplore/services/NM_Metro_Service.dart';
-import 'package:navixplore/services/firebase/firestore_service.dart';
+import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -38,7 +38,7 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
   late String _mapStyle;
   bool isLoading = true;
 
-  final NM_MetroService _nmMetroService = NM_MetroService();
+  final NMMetroController controller = Get.find<NMMetroController>();
 
   @override
   void initState() {
@@ -50,10 +50,10 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
     await rootBundle.loadString('assets/map_style.txt').then((string) {
       _mapStyle = string;
     });
-    await _nmMetroService.fetchAllStations();
+    await controller.fetchAllStations();
     await _addMetroStationMarker();
     await _fetchMetroSchedule();
-    await _nmMetroService.fetchPolylinePoints();
+    await controller.fetchPolylinePoints();
     await _addPolyline();
     setState(() {
       isLoading = false;
@@ -62,13 +62,11 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
 
   Future<void> _fetchMetroSchedule() async {
     try {
-      final metroSchedule = await FirestoreService().getDocumentsWithFilters(
-        collection: 'NM-Metro-Schedules',
-        filters: [
-          {'field': 'lineID', 'value': widget.lineID},
-          {'field': 'direction', 'value': widget.direction},
-        ],
-      );
+      final QuerySnapshot metroSchedule = await FirebaseFirestore.instance
+          .collection('NM-Metro-Schedules')
+          .where('lineID', isEqualTo: widget.lineID)
+          .where('direction', isEqualTo: widget.direction)
+          .get();
 
       if (metroSchedule.docs.isNotEmpty) {
         // Assuming metroSchedule.docs contains the fetched documents
@@ -91,7 +89,7 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
         setState(() {
           metroScheduleList = trainSchedule;
           metroScheduleList = addStationNameToSchedule(
-              _nmMetroService.allMetroStations, metroScheduleList!);
+              controller.allMetroStations, metroScheduleList!);
         });
       }
     } catch (e) {
@@ -130,7 +128,7 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
     List<LatLng> polylinePoints = [];
 
     // Convert latitude and longitude points to LatLng objects
-    for (var point in _nmMetroService.polylines) {
+    for (var point in controller.polylines) {
       polylinePoints.add(LatLng(point['latitude'], point['longitude']));
     }
 
@@ -148,7 +146,7 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
   }
 
   Future<void> _addMetroStationMarker() async {
-    for (var station in _nmMetroService.allMetroStations) {
+    for (var station in controller.allMetroStations) {
       final markerBitmap =
           await metroStationMarker(station['stationName']['English'])
               .toBitmapDescriptor(

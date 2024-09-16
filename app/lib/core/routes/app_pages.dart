@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:navixplore/core/routes/app_routes.dart';
+import 'package:navixplore/presentation/pages/auth/forgot_password_screen.dart';
 import 'package:navixplore/presentation/pages/auth/sign_in_screen.dart';
 import 'package:navixplore/presentation/pages/auth/sign_up_screen.dart';
 import 'package:navixplore/presentation/pages/auth/user_registration_screen.dart';
@@ -14,6 +15,8 @@ class AppPages {
   static final pages = [
     GetPage(name: AppRoutes.SIGN_IN, page: () => SignInScreen()),
     GetPage(name: AppRoutes.SIGN_UP, page: () => SignUpScreen()),
+    GetPage(
+        name: AppRoutes.FORGOT_PASSWORD, page: () => ForgotPasswordScreen()),
     GetPage(name: AppRoutes.HOME, page: () => const HomeScreen()),
     GetPage(name: AppRoutes.EXPLORE, page: () => const ExploreScreen()),
     GetPage(name: AppRoutes.XPLOREFEED, page: () => const XploreFeedScreen()),

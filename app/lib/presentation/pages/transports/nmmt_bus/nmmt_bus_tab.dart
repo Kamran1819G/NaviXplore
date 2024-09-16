@@ -3,12 +3,13 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:dio/dio.dart';
+import 'package:navixplore/presentation/controllers/nmmt_controller.dart';
 import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_all_nearest_bus_stop.dart';
 import 'package:navixplore/core/utils/api_endpoints.dart';
 import 'package:navixplore/presentation/pages/announcement_detail_screen.dart';
-import 'package:navixplore/services/NMMT_Service.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 import 'package:navixplore/presentation/widgets/announcement_card.dart';
 import 'package:navixplore/presentation/widgets/webview_screen.dart';
@@ -35,7 +36,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
   BitmapDescriptor? busStopMarker;
   Timer? _timer;
 
-  final NMMTService _nmmtService = NMMTService();
+  final NMMTController controller = Get.put(NMMTController());
 
   @override
   void initState() {
@@ -52,7 +53,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
   void initialize() async {
     _getNearbyBusStops();
     try {
-      await _nmmtService.fetchAnnouncements();
+      await controller.fetchAnnouncements();
       setState(() {
         isAnnouncementLoading = false;
       });
@@ -408,9 +409,9 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                   )
                 : ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: _nmmtService.announcements.length,
+                    itemCount: controller.announcements.length,
                     itemBuilder: (context, index) {
-                      final announcement = _nmmtService.announcements[index];
+                      final announcement = controller.announcements[index];
                       return GestureDetector(
                         onTap: () {
                           if (announcement['link'] != null) {

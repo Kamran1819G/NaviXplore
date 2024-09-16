@@ -154,11 +154,7 @@ class SignInScreen extends StatelessWidget {
                       Spacer(),
                       GestureDetector(
                         onTap: () {
-                          controller.sendPasswordResetEmail();
-                          Get.snackbar('Password Reset',
-                              'Password reset email sent successfully',
-                              colorText: Colors.white,
-                              backgroundColor: Theme.of(context).primaryColor);
+                          Get.toNamed(AppRoutes.FORGOT_PASSWORD);
                         },
                         child: Text(
                           "Forgot Password?",

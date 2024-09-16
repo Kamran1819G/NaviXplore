@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_route_page.dart';
-import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 
 class NM_MetroUpcomingTrains extends StatefulWidget {
@@ -36,14 +35,12 @@ class _NM_MetroUpcomingTrainsState extends State<NM_MetroUpcomingTrains> {
 
   Future<void> _fetchUpcomingTrains() async {
     try {
-      final QuerySnapshot upcomingTrainsSnapshot =
-          await FirestoreService().getDocumentsWithFilters(
-        collection: "NM-Metro-Schedules",
-        filters: [
-          {'field': 'lineID', 'value': widget.lineID},
-          {'field': 'direction', 'value': direction},
-        ],
-      );
+      final QuerySnapshot upcomingTrainsSnapshot = await FirebaseFirestore
+          .instance
+          .collection("NM-Metro-Schedules")
+          .where('lineID', isEqualTo: widget.lineID)
+          .where('direction', isEqualTo: direction)
+          .get();
 
       if (upcomingTrainsSnapshot.docs.isNotEmpty) {
         final QueryDocumentSnapshot firstDocument =

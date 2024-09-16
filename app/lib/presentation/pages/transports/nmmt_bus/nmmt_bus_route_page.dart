@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_number_schedules.dart';
 import 'package:navixplore/core/utils/api_endpoints.dart';
-import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'package:navixplore/core/utils/color_utils.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -87,15 +87,10 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
   }
 
   Future<void> _fetchAllBusStopData() async {
-    final busStopQuery = await FirestoreService().getDocumentsWithFilters(
-      collection: 'NMMT-Buses',
-      filters: [
-        {
-          'field': 'routeID',
-          'value': widget.routeid,
-        },
-      ],
-    );
+    final busStopQuery = await FirebaseFirestore.instance
+        .collection('NMMT-Buses')
+        .where('routeID', isEqualTo: widget.routeid)
+        .get();
 
     if (busStopQuery.docs.isNotEmpty) {
       final busStopData =

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:navixplore/core/routes/app_routes.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:navixplore/presentation/controllers/auth_controller.dart';
 import 'package:navixplore/presentation/pages/auth/sign_up_screen.dart';
 import 'package:navixplore/presentation/pages/profile/user_profile_screen.dart';
@@ -31,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ExploreScreen(),
     const XploreFeedScreen(),
     UserProfileScreen(
-        userId: Get.find<AuthController>().currentUser!.id, isMyProfile: true),
+        userId: Get.find<AuthController>().currentUser!.uid, isMyProfile: true),
   ];
 
   @override
@@ -60,27 +61,27 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Theme.of(context).primaryColor,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold,
-                            fontSize: 45)),
+                            fontSize: 45.sp)),
                     Text("X",
                         style: TextStyle(
                             color: Theme.of(context).primaryColor,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold,
-                            fontSize: 60)),
+                            fontSize: 60.sp)),
                     Text("plore",
                         style: TextStyle(
                             color: Theme.of(context).primaryColor,
                             fontFamily: "Fredoka",
                             fontWeight: FontWeight.bold,
-                            fontSize: 45)),
+                            fontSize: 45.sp)),
                   ],
                 ),
               ),
               ListTile(
                 leading: const Icon(Icons.stars),
-                title: const Text("What's New?",
+                title: Text("What's New?",
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 18.sp,
                     )),
                 onTap: () {
                   Navigator.push(
@@ -94,9 +95,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.sos_rounded),
-                title: const Text("SOS",
+                title: Text("SOS",
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 18.sp,
                     )),
               ),
               const Divider(color: Colors.grey),

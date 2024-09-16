@@ -4,8 +4,9 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:get/get.dart';
 import 'package:navixplore/core/utils/api_endpoints.dart';
-import 'package:navixplore/services/NMMT_Service.dart';
+import 'package:navixplore/presentation/controllers/nmmt_controller.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 import 'package:xml/xml.dart' as xml;
 
@@ -30,7 +31,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   int? sourceLocationId;
   int? destinationLocationId;
 
-  final NMMTService _nmmtService = NMMTService();
+  final NMMTController controller = Get.find<NMMTController>();
 
   @override
   void initState() {
@@ -39,7 +40,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   }
 
   void initialize() async {
-    await _nmmtService.fetchAllStations();
+    await controller.fetchAllStations();
     _timer = Timer.periodic(Duration(minutes: 2), (Timer timer) {
       _fetchRunningBusData(sourceLocationId, destinationLocationId);
     });
@@ -201,7 +202,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       ),
                     ),
                     suggestionsCallback: (pattern) {
-                      return _nmmtService.allBusStops
+                      return controller.allBusStops
                               .where((stop) =>
                                   stop['stationName']['English']
                                       ?.toLowerCase()
@@ -279,7 +280,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       ),
                     ),
                     suggestionsCallback: (pattern) {
-                      return _nmmtService.allBusStops
+                      return controller.allBusStops
                               .where((stop) =>
                                   stop['stationName']['English']
                                       ?.toLowerCase()

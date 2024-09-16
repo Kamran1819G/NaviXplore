@@ -1,13 +1,12 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:navixplore/services/NM_Metro_Service.dart';
+import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
-import 'package:navixplore/services/firebase/firestore_service.dart';
 
 class NM_MetroMap extends StatefulWidget {
   NM_MetroMap({Key? key}) : super(key: key);
@@ -24,7 +23,7 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
   late String _mapStyle;
   bool isLoading = true;
 
-  final NM_MetroService _nmMetroService = NM_MetroService();
+  final NMMetroController controller = Get.find<NMMetroController>();
 
   @override
   void initState() {
@@ -36,9 +35,9 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
     await rootBundle.loadString('assets/map_style.txt').then((string) {
       _mapStyle = string;
     });
-    await _nmMetroService.fetchAllStations();
+    await controller.fetchAllStations();
     await _addMetroStationMarker();
-    await _nmMetroService.fetchPolylinePoints();
+    await controller.fetchPolylinePoints();
     await _addPolyline();
     setState(() {
       isLoading = false;
@@ -46,7 +45,7 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
   }
 
   Future<void> _addPolyline() async {
-    List<LatLng> polylinePoints = _nmMetroService.polylines.map((point) {
+    List<LatLng> polylinePoints = controller.polylines.map((point) {
       return LatLng(point['latitude'], point['longitude']);
     }).toList();
 
@@ -63,7 +62,7 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
   }
 
   Future<void> _addMetroStationMarker() async {
-    for (var station in _nmMetroService.allMetroStations) {
+    for (var station in controller.allMetroStations) {
       final markerBitmap =
           await metroStationMarker(station['stationName']['English'])
               .toBitmapDescriptor(
@@ -156,7 +155,7 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
                       SizedBox(height: 10),
                       Expanded(
                         child: ListView.builder(
-                          itemCount: _nmMetroService.allMetroStations.length,
+                          itemCount: controller.allMetroStations.length,
                           itemBuilder: (context, index) {
                             return ListTile(
                               contentPadding: EdgeInsets.all(10.0),
@@ -168,12 +167,10 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
                                   height: 50,
                                 ),
                               ),
-                              title: Text(
-                                  _nmMetroService.allMetroStations[index]
-                                      ['stationName']['English']),
-                              subtitle: Text(
-                                  _nmMetroService.allMetroStations[index]
-                                      ['stationName']['Marathi']),
+                              title: Text(controller.allMetroStations[index]
+                                  ['stationName']['English']),
+                              subtitle: Text(controller.allMetroStations[index]
+                                  ['stationName']['Marathi']),
                             );
                           },
                         ),

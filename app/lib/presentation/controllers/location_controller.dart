@@ -1,8 +1,8 @@
-import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
 import 'package:navixplore/core/services/location_service.dart';
 
-class LocationViewModel extends GetxController {
+class LocationController extends GetxController {
   var currentLocation =
       Rx<Position?>(null); // Observable variable for current location
   var isLoading = true.obs; // Observable variable for loading state

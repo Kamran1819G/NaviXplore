@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:navixplore/presentation/controllers/nmmt_controller.dart';
 import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_route_page.dart';
-import 'package:navixplore/services/NMMT_Service.dart';
 
 import '../../../widgets/Skeleton.dart';
 
@@ -17,7 +18,7 @@ class _NMMTBusNumberSearchPageState extends State<NMMTBusNumberSearchPage> {
   List<dynamic>? filteredBusData;
   TextEditingController _searchController = TextEditingController();
 
-  final NMMTService _nmmtService = NMMTService();
+  final NMMTController controller = Get.find<NMMTController>();
 
   @override
   void initState() {
@@ -26,9 +27,9 @@ class _NMMTBusNumberSearchPageState extends State<NMMTBusNumberSearchPage> {
   }
 
   void initialize() async {
-    await _nmmtService.fetchAllBuses();
+    await controller.fetchAllBuses();
     setState(() {
-      filteredBusData = _nmmtService.allBuses;
+      filteredBusData = controller.allBuses;
       isLoading = false;
     });
   }
@@ -42,11 +43,11 @@ class _NMMTBusNumberSearchPageState extends State<NMMTBusNumberSearchPage> {
   void _searchBusNumber(String query) {
     if (query.isEmpty) {
       setState(() {
-        filteredBusData = _nmmtService.allBuses;
+        filteredBusData = controller.allBuses;
       });
     } else {
       setState(() {
-        filteredBusData = _nmmtService.allBuses
+        filteredBusData = controller.allBuses
             .where((busStop) => busStop['routeName']['English']
                 .toLowerCase()
                 .contains(query.toLowerCase()))

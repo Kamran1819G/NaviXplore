@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ExploreScreen(),
     const XploreFeedScreen(),
     UserProfileScreen(
-        userId: Get.find<AuthController>().currentUser!.id, isMyProfile: true),
+        userId: Get.find<AuthController>().currentUser!.uid, isMyProfile: true),
   ];
 
   @override

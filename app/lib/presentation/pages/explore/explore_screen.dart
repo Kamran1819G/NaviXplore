@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:navixplore/presentation/pages/explore/famous_places_tab.dart';
 import 'package:navixplore/presentation/pages/explore/tourist_destinations_tab.dart';
-import 'package:navixplore/services/NM_Places_Service.dart';
+import 'package:navixplore/presentation/controllers/nm_places_controller.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({Key? key}) : super(key: key);
@@ -13,18 +14,13 @@ class ExploreScreen extends StatefulWidget {
 class _ExploreScreenState extends State<ExploreScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
-
-  NM_PlacesService nmPlacesService = NM_PlacesService();
+  final NMPlacesController _placesController = Get.put(NMPlacesController());
 
   @override
   void initState() {
     super.initState();
-    initialize();
-  }
-
-  void initialize() async {
     _tabController = TabController(length: 2, initialIndex: 0, vsync: this);
-    await nmPlacesService.fetchAllPlaces();
+    _placesController.fetchAllPlaces();
   }
 
   @override
@@ -62,25 +58,19 @@ class _ExploreScreenState extends State<ExploreScreen>
           labelColor: Theme.of(context).primaryColor,
           indicatorColor: Theme.of(context).primaryColor,
           indicatorWeight: 5,
-          tabs: <Widget>[
-            Tab(
-              text: "Famous Places in Navi Mumbai",
-            ),
-            Tab(
-              text: "Tourist destinations in Navi Mumbai",
-            ),
+          tabs: const <Widget>[
+            Tab(text: "Famous Places in Navi Mumbai"),
+            Tab(text: "Tourist destinations in Navi Mumbai"),
           ],
         ),
-        SizedBox(
-          height: 16,
-        ),
+        const SizedBox(height: 16),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15),
             child: TabBarView(
               controller: _tabController,
               physics: const AlwaysScrollableScrollPhysics(),
-              children: [
+              children: const [
                 FamousPlacesTab(),
                 TouristDestinationsTab(),
               ],

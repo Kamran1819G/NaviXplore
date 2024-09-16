@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:navixplore/domain/entities/post_model.dart';
-import 'package:navixplore/domain/entities/comment_model.dart';
+import 'package:navixplore/presentation/models/post_model.dart';
+import 'package:navixplore/presentation/models/comment_model.dart';
 import 'package:navixplore/presentation/pages/profile/user_profile_screen.dart';
 
 class XploreFeedScreen extends StatelessWidget {

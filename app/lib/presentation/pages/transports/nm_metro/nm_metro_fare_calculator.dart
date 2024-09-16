@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:navixplore/services/NM_Metro_Service.dart';
-import 'package:navixplore/services/firebase/firestore_service.dart';
+import 'package:get/get.dart';
+import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
 
 class NM_MetroFareCalculator extends StatefulWidget {
-
   NM_MetroFareCalculator({Key? key}) : super(key: key);
 
   @override
-  State<NM_MetroFareCalculator> createState() =>
-      _NM_MetroFareCalculatorState();
+  State<NM_MetroFareCalculator> createState() => _NM_MetroFareCalculatorState();
 }
 
 class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
@@ -18,7 +16,7 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
   String? sourceMetroStation;
   String? destinationMetroStation;
 
-  final NM_MetroService _nmMetroService = NM_MetroService();
+  final NMMetroController controller = Get.find<NMMetroController>();
 
   @override
   void initState() {
@@ -26,25 +24,8 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
     initialize();
   }
 
-  void initialize () async{
-    await _nmMetroService.fetchAllStations();
-  }
-
-
-  double calculateFare(double distance) {
-    if (distance <= 2) {
-      return 10;
-    } else if (distance <= 4) {
-      return 15;
-    } else if (distance <= 6) {
-      return 20;
-    } else if (distance <= 8) {
-      return 25;
-    } else if (distance <= 10) {
-      return 30;
-    } else {
-      return 40;
-    }
+  void initialize() async {
+    await controller.fetchAllStations();
   }
 
   double calculateTotalDistanceBetweenStations(
@@ -52,31 +33,38 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
     double totalDistance = 0.0;
     bool countingDistance = false;
 
-    if(sourceStationID > destinationStationID) {
-      for(var station in _nmMetroService.allMetroStations.reversed) {
-        if(int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) == sourceStationID || int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) == destinationStationID) {
+    if (sourceStationID > destinationStationID) {
+      for (var station in controller.allMetroStations.reversed) {
+        if (int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) ==
+                sourceStationID ||
+            int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) ==
+                destinationStationID) {
           countingDistance = !countingDistance;
         }
 
-        if(countingDistance) {
+        if (countingDistance) {
           totalDistance += station['distance']['fromPreviousStation'];
         }
 
-        if(station['stationID'] == destinationStationID) {
+        if (station['stationID'] == destinationStationID) {
           break;
         }
       }
-    }else{
-      for(var station in _nmMetroService.allMetroStations) {
-        if(int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) == sourceStationID || int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) == destinationStationID) {
+    } else {
+      for (var station in controller.allMetroStations) {
+        if (int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) ==
+                sourceStationID ||
+            int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) ==
+                destinationStationID) {
           countingDistance = !countingDistance;
         }
 
-        if(countingDistance) {
+        if (countingDistance) {
           totalDistance += station['distance']['toNextStation'];
         }
 
-        if(int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) == destinationStationID) {
+        if (int.parse(station['stationID'].replaceAll(RegExp(r'[^0-9]'), '')) ==
+            destinationStationID) {
           break;
         }
       }
@@ -84,7 +72,6 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
 
     return totalDistance;
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -145,29 +132,30 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                     ),
                   ),
                   suggestionsCallback: (pattern) {
-                    return _nmMetroService.allMetroStations
+                    return controller.allMetroStations
                         .where((station) =>
-                    station['stationName']['English']
-                        ?.toLowerCase()
-                        ?.contains(pattern.toLowerCase()) ??
-                        false ||
-                            station['stationName']['Marathi']
+                            station['stationName']['English']
                                 ?.toLowerCase()
                                 ?.contains(pattern.toLowerCase()) ??
-                        false)
+                            false ||
+                                station['stationName']['Marathi']
+                                    ?.toLowerCase()
+                                    ?.contains(pattern.toLowerCase()) ??
+                            false)
                         .toList();
                   },
                   itemBuilder: (context, suggestion) {
                     return ListTile(
                       contentPadding: EdgeInsets.all(4),
-                      leading: Image.asset('assets/icons/NM_Metro.png', width: 30),
+                      leading:
+                          Image.asset('assets/icons/NM_Metro.png', width: 30),
                       title: Text(suggestion['stationName']['English']),
                     );
                   },
                   onSuggestionSelected: (suggestion) {
                     setState(() {
                       sourceLocationController.text =
-                      suggestion['stationName']['English'];
+                          suggestion['stationName']['English'];
                       sourceMetroStation = suggestion['stationName']['English'];
                     });
                   },
@@ -196,32 +184,33 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                     ),
                   ),
                   suggestionsCallback: (pattern) {
-                    return _nmMetroService.allMetroStations
-                        .where((station) =>
-                    station['stationName']['English']
-                        ?.toLowerCase()
-                        ?.contains(pattern.toLowerCase()) ??
-                        false ||
-                            station['stationName']['Marathi']
-                                ?.toLowerCase()
-                                ?.contains(pattern.toLowerCase()) ??
-                        false)
-                        .toList() ??
+                    return controller.allMetroStations
+                            .where((station) =>
+                                station['stationName']['English']
+                                    ?.toLowerCase()
+                                    ?.contains(pattern.toLowerCase()) ??
+                                false ||
+                                    station['stationName']['Marathi']
+                                        ?.toLowerCase()
+                                        ?.contains(pattern.toLowerCase()) ??
+                                false)
+                            .toList() ??
                         [];
                   },
                   itemBuilder: (context, suggestion) {
                     return ListTile(
                       contentPadding: EdgeInsets.all(4),
-                      leading: Image.asset('assets/icons/NM_Metro.png', width: 30),
+                      leading:
+                          Image.asset('assets/icons/NM_Metro.png', width: 30),
                       title: Text(suggestion['stationName']['English']),
                     );
                   },
                   onSuggestionSelected: (suggestion) {
                     setState(() {
                       destinationLocationController.text =
-                      suggestion['stationName']['English'];
+                          suggestion['stationName']['English'];
                       destinationMetroStation =
-                      suggestion['stationName']['English'];
+                          suggestion['stationName']['English'];
                     });
                   },
                 ),
@@ -236,18 +225,22 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
             onPressed: () {
               if (sourceMetroStation != null &&
                   destinationMetroStation != null) {
-                String sourceStationID = _nmMetroService.allMetroStations
-                    .firstWhere((station) =>
-                station['stationName']['English'] == sourceMetroStation)['stationID'];
+                String sourceStationID = controller.allMetroStations.firstWhere(
+                    (station) =>
+                        station['stationName']['English'] ==
+                        sourceMetroStation)['stationID'];
 
-                String destinationStationID = _nmMetroService.allMetroStations
+                String destinationStationID = controller.allMetroStations
                     .firstWhere((station) =>
-                station['stationName']['English'] == destinationMetroStation)['stationID'];
+                        station['stationName']['English'] ==
+                        destinationMetroStation)['stationID'];
 
-                double totalDistance =
-                calculateTotalDistanceBetweenStations(
-                    int.parse(sourceStationID.replaceAll(RegExp(r'[^0-9]'), '')), int.parse(destinationStationID.replaceAll(RegExp(r'[^0-9]'), '')));
-                double fare = calculateFare(totalDistance);
+                double totalDistance = calculateTotalDistanceBetweenStations(
+                    int.parse(
+                        sourceStationID.replaceAll(RegExp(r'[^0-9]'), '')),
+                    int.parse(destinationStationID.replaceAll(
+                        RegExp(r'[^0-9]'), '')));
+                double fare = controller.calculateFare(totalDistance);
 
                 showDialog(
                   context: context,
@@ -271,9 +264,11 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                             SizedBox(height: 15),
                             Text('You are traveling from:'),
                             SizedBox(height: 5),
-                            Text('$sourceMetroStation to $destinationMetroStation'),
+                            Text(
+                                '$sourceMetroStation to $destinationMetroStation'),
                             SizedBox(height: 5),
-                            Text('Distance: ~ ${totalDistance.toStringAsFixed(2)} km'),
+                            Text(
+                                'Distance: ~ ${totalDistance.toStringAsFixed(2)} km'),
                             SizedBox(height: 15),
                             Text('The fare for your journey is:'),
                             SizedBox(height: 10),
@@ -300,7 +295,8 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Theme.of(context).primaryColor,
                               ),
-                              child: Text('OK', style: TextStyle(color: Colors.white)),
+                              child: Text('OK',
+                                  style: TextStyle(color: Colors.white)),
                             ),
                           ],
                         ),
@@ -308,10 +304,10 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                     );
                   },
                 );
-
               }
             },
-            child: Text('Calculate Fare', style: TextStyle(color: Colors.white)),
+            child:
+                Text('Calculate Fare', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

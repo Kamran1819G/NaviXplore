@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:get/get.dart';
+import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
 import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_upcoming_trains.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
@@ -7,8 +9,6 @@ import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_fare_
 import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_map.dart';
 import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_penalties.dart';
 import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_search_page.dart';
-import 'package:navixplore/services/NM_Metro_Service.dart';
-import 'package:navixplore/services/firebase/firestore_service.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 
 class NMMetroTab extends StatefulWidget {
@@ -24,7 +24,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
   late double? _currentlongitude;
   List<dynamic>? nearestStationsList;
 
-  final NM_MetroService _nmMetroService = NM_MetroService();
+  final NMMetroController _controller = Get.put(NMMetroController());
 
   @override
   void initState() {
@@ -34,7 +34,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
 
   void _initialize() async {
     await _getCurrentLocation();
-    await _nmMetroService.fetchAllStations();
+    await _controller.fetchAllStations();
     await fetchNearestStations();
   }
 
@@ -60,7 +60,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
 
     List<Map<String, dynamic>> stationsWithDistance = [];
 
-    for (var station in _nmMetroService.allMetroStations) {
+    for (var station in _controller.allMetroStations) {
       double stationLat = station['location']['_latitude'];
       double stationLon = station['location']['_longitude'];
 
@@ -155,11 +155,11 @@ class _NMMetroTabState extends State<NMMetroTab> {
                         AnimatedTextKit(
                             repeatForever: true,
                             pause: const Duration(milliseconds: 150),
-                            animatedTexts: _nmMetroService
+                            animatedTexts: _controller
                                     .allMetroStations.isNotEmpty
                                 ? [
                                     for (var station
-                                        in _nmMetroService.allMetroStations)
+                                        in _controller.allMetroStations)
                                       RotateAnimatedText(
                                         station["stationName"]["English"],
                                         textStyle: TextStyle(

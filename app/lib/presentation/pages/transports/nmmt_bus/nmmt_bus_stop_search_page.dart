@@ -1,9 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:navixplore/services/NMMT_Service.dart';
-import 'package:navixplore/services/firebase/firestore_service.dart';
+import 'package:get/get.dart';
+import 'package:navixplore/presentation/controllers/nmmt_controller.dart';
 import '../../../widgets/Skeleton.dart';
 import 'nmmt_depot_buses.dart';
 
@@ -19,7 +17,7 @@ class _NMMTBusStopSearchPageState extends State<NMMTBusStopSearchPage> {
   List<dynamic>? filteredBusStopData;
   TextEditingController _searchController = TextEditingController();
 
-  final NMMTService _nmmtService = NMMTService();
+  final NMMTController controller = Get.find<NMMTController>();
 
   @override
   void initState() {
@@ -28,9 +26,9 @@ class _NMMTBusStopSearchPageState extends State<NMMTBusStopSearchPage> {
   }
 
   void initialize() async {
-    await _nmmtService.fetchAllStations();
+    await controller.fetchAllStations();
     setState(() {
-      filteredBusStopData = _nmmtService.allBusStops;
+      filteredBusStopData = controller.allBusStops;
       isLoading = false;
     });
   }
@@ -38,11 +36,11 @@ class _NMMTBusStopSearchPageState extends State<NMMTBusStopSearchPage> {
   void _searchBusStops(String query) {
     if (query.isEmpty) {
       setState(() {
-        filteredBusStopData = _nmmtService.allBusStops;
+        filteredBusStopData = controller.allBusStops;
       });
     } else {
       setState(() {
-        filteredBusStopData = _nmmtService.allBusStops
+        filteredBusStopData = controller.allBusStops
             .where((busStop) => busStop['stationName']['English']
                 .toLowerCase()
                 .contains(query.toLowerCase()))

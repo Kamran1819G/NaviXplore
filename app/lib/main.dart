@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:navixplore/core/di/dependency_injection.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:navixplore/core/routes/app_pages.dart';
 import 'package:navixplore/core/routes/app_routes.dart';
 import 'package:navixplore/presentation/controllers/network_controller.dart';
+import 'package:navixplore/presentation/controllers/notification_controller.dart';
 import 'package:navixplore/presentation/controllers/permission_controller.dart';
 import 'package:navixplore/theme/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Load environment variables
-  await dotenv.load(fileName: ".env.dev");
+  // await dotenv.load(fileName: ".env.dev");
 
   final PermissionController permissionController =
       Get.put(PermissionController());
@@ -30,13 +30,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Supabase
-  await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-  );
+  await NotificationController.initialize();
 
-  DependencyInjection.init();
+  await GetStorage.init();
 
   // Run the app
   runApp(const MyApp());

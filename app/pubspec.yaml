@@ -41,6 +41,7 @@ dependencies:
   animated_text_kit: ^4.2.2
   sliding_up_panel: ^2.0.0+1
   carousel_slider: ^5.0.0
+  quickalert: ^1.1.0
 
   # Navigation
   google_nav_bar: ^5.0.6
@@ -74,13 +75,13 @@ dependencies:
   firebase_auth: ^5.1.1
   google_sign_in: ^6.2.1
   sign_in_with_apple: ^6.1.1
-  supabase_flutter: ^2.5.8
 
   # Notifications
   awesome_notifications: ^0.9.3+1
 
   # State Management
   get: ^4.6.6
+  get_storage: ^2.1.1
 
   # Miscellaneous
   flutter_dotenv: ^5.1.0
