@@ -21,11 +21,6 @@
 
     <!-- Internet permission -->
     <uses-permission android:name="android.permission.INTERNET"/>
-
-    <queries>
-        <package android:name="com.cris.utsmobile" />
-        <package android:name="cris.org.in.prs.ima" />
-    </queries>
     <application
         android:label="NaviXplore"
         android:name="${applicationName}"
@@ -64,7 +59,7 @@
             android:value="2"/>
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="high_importance_channel" />
+            android:value="default_channel" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${GOOGLE_MAPS_API_KEY}" />

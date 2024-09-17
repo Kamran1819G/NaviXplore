@@ -57,8 +57,8 @@ dependencies:
 
   # Web and External Interaction
   webview_flutter: ^4.4.2
-  external_app_launcher: ^4.0.0
   image_picker: ^1.1.2
+  url_launcher: ^6.3.0
 
   # Location and Maps
   geolocator: ^12.0.0

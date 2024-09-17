@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:navixplore/presentation/widgets/webview_screen.dart';
-import 'package:external_app_launcher/external_app_launcher.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ExpressTab extends StatefulWidget {
   const ExpressTab({Key? key}) : super(key: key);
@@ -10,16 +10,27 @@ class ExpressTab extends StatefulWidget {
 }
 
 class _ExpressTabState extends State<ExpressTab> {
+  Future<void> _launchUrl(String url) async {
+    if (!await launchUrl(Uri.parse(url))) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListView(
       children: [
         GestureDetector(
           onTap: () async {
-            await LaunchApp.openApp(
-              androidPackageName: "cris.org.in.prs.ima",
-              openStore: true,
-            );
+            const String irctcAppUrl = 'irctc://';
+            const String playStoreUrl =
+                'https://play.google.com/store/apps/details?id=cris.org.in.prs.ima';
+
+            try {
+              await _launchUrl(irctcAppUrl);
+            } catch (e) {
+              await _launchUrl(playStoreUrl);
+            }
           },
           child: Padding(
             padding: const EdgeInsets.all(10.0),
