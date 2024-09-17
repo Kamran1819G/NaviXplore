@@ -114,10 +114,10 @@ class NMMetroController extends GetxController {
 
   double calculateFare(double distance) {
     if (distance <= 2) return 10;
-    if (distance <= 4) return 15;
+    if (distance <= 4) return 10;
     if (distance <= 6) return 20;
-    if (distance <= 8) return 25;
+    if (distance <= 8) return 20;
     if (distance <= 10) return 30;
-    return 40;
+    return 30;
   }
 }
