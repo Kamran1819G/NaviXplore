@@ -31,8 +31,8 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
   Set<Marker> markers = Set();
   bool isLoading = true;
   bool isAnnouncementLoading = true;
-  double? _latitude;
-  double? _longitude;
+  double? latitude;
+  double? longitude;
   BitmapDescriptor? busStopMarker;
   Timer? _timer;
 
@@ -88,8 +88,8 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
           desiredAccuracy: LocationAccuracy.high,
         );
         setState(() {
-          _latitude = position.latitude;
-          _longitude = position.longitude;
+          latitude = position.latitude;
+          longitude = position.longitude;
         });
       } else {
         await _getNearbyBusStops();
@@ -102,7 +102,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
 
       final dio = Dio();
       final response = await dio.get(
-        NMMTApiEndpoints.GetNearByBusStops(_latitude!, _longitude!),
+        NMMTApiEndpoints.GetNearByBusStops(latitude!, longitude!),
       );
 
       if (response.statusCode == 200) {
@@ -308,9 +308,9 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                                   stationid:
                                       int.parse(busStopData["StationId"]),
                                   stationLocation: {
-                                    '_latitude':
+                                    'latitude':
                                         double.parse(busStopData['Center_Lat']),
-                                    '_longitude':
+                                    'longitude':
                                         double.parse(busStopData['Center_Lon']),
                                   },
                                 ),
@@ -487,7 +487,7 @@ class _NMMTBusTabState extends State<NMMTBusTab> {
                     myLocationEnabled: true,
                     fortyFiveDegreeImageryEnabled: true,
                     initialCameraPosition: CameraPosition(
-                      target: LatLng(_latitude ?? 0, _longitude ?? 0),
+                      target: LatLng(latitude ?? 0, longitude ?? 0),
                       zoom: 16,
                     ),
                     markers: markers,

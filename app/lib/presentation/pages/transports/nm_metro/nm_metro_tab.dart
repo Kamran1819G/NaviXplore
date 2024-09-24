@@ -61,8 +61,8 @@ class _NMMetroTabState extends State<NMMetroTab> {
     List<Map<String, dynamic>> stationsWithDistance = [];
 
     for (var station in _controller.allMetroStations) {
-      double stationLat = station['location']['_latitude'];
-      double stationLon = station['location']['_longitude'];
+      double stationLat = station['location']['latitude'];
+      double stationLon = station['location']['longitude'];
 
       double distance = Geolocator.distanceBetween(
           _currentlatitude!, _currentlongitude!, stationLat, stationLon);

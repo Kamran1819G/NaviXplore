@@ -27,8 +27,8 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
   List<dynamic>? nearbyBusStop;
   Set<Marker> markers = Set();
   bool isLoading = true;
-  double? _latitude;
-  double? _longitude;
+  double? latitude;
+  double? longitude;
   BitmapDescriptor? busStopMarker;
   Timer? _timer;
   final Completer<GoogleMapController> mapController =
@@ -80,8 +80,8 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
           desiredAccuracy: LocationAccuracy.high,
         );
         setState(() {
-          _latitude = position.latitude;
-          _longitude = position.longitude;
+          latitude = position.latitude;
+          longitude = position.longitude;
         });
       } else {
         await getCurrentLocation();
@@ -100,7 +100,7 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
 
       final dio = Dio();
       final response = await dio.get(
-        NMMTApiEndpoints.GetNearByBusStops(_latitude!, _longitude!),
+        NMMTApiEndpoints.GetNearByBusStops(latitude!, longitude!),
       );
 
       if (response.statusCode == 200) {
@@ -249,7 +249,7 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
 
     return GoogleMap(
       initialCameraPosition: CameraPosition(
-        target: LatLng(_latitude!, _longitude!),
+        target: LatLng(latitude!, longitude!),
         zoom: 16,
       ),
       markers: markers,
@@ -312,8 +312,8 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
                     busStopName: busStopData["StationName"],
                     stationid: int.parse(busStopData["StationId"]),
                     stationLocation: {
-                      '_latitude': double.parse(busStopData['Center_Lat']),
-                      '_longitude': double.parse(busStopData['Center_Lon']),
+                      'latitude': double.parse(busStopData['Center_Lat']),
+                      'longitude': double.parse(busStopData['Center_Lon']),
                     },
                   ),
                 ),

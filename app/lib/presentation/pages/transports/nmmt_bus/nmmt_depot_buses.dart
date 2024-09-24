@@ -80,8 +80,8 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
       Marker(
         markerId: MarkerId(widget.busStopName),
         position: LatLng(
-          widget.stationLocation['_latitude'],
-          widget.stationLocation['_longitude'],
+          widget.stationLocation['latitude'],
+          widget.stationLocation['longitude'],
         ),
         icon: busStopMarker,
         infoWindow: InfoWindow(
@@ -302,8 +302,8 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
               zoomControlsEnabled: false,
               initialCameraPosition: CameraPosition(
                 target: LatLng(
-                  widget.stationLocation['_latitude'],
-                  widget.stationLocation['_longitude'],
+                  widget.stationLocation['latitude'],
+                  widget.stationLocation['longitude'],
                 ),
                 zoom: 15.0,
               ),

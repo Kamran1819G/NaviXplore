@@ -156,7 +156,7 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
 
       // Create a LatLng object
       LatLng stationLatLng = LatLng(
-          station['location']['_latitude'], station['location']['_longitude']);
+          station['location']['latitude'], station['location']['longitude']);
 
       // Add marker to the set
       markers.add(
