@@ -20,7 +20,7 @@ class NMMetroTab extends StatefulWidget {
 
 class _NMMetroTabState extends State<NMMetroTab> {
   bool isLoading = true;
-  late double? _currentlatitude;
+  late double? _currentLatitude;
   late double? _currentlongitude;
   List<dynamic>? nearestStationsList;
 
@@ -48,13 +48,13 @@ class _NMMetroTabState extends State<NMMetroTab> {
       desiredAccuracy: LocationAccuracy.high,
     );
     setState(() {
-      _currentlatitude = position.latitude;
+      _currentLatitude = position.latitude;
       _currentlongitude = position.longitude;
     });
   }
 
   Future<void> fetchNearestStations() async {
-    if (_currentlatitude == null || _currentlongitude == null) {
+    if (_currentLatitude == null || _currentlongitude == null) {
       return;
     }
 
@@ -65,7 +65,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
       double stationLon = station['location']['longitude'];
 
       double distance = Geolocator.distanceBetween(
-          _currentlatitude!, _currentlongitude!, stationLat, stationLon);
+          _currentLatitude!, _currentlongitude!, stationLat, stationLon);
 
       stationsWithDistance.add({
         'stationID': station['stationID'],

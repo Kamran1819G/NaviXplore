@@ -174,12 +174,23 @@ class SignInScreen extends StatelessWidget {
                     try {
                       await controller.signIn();
                       Get.offAllNamed(AppRoutes.AUTH_GATE);
-                      Get.snackbar('Success', 'Signed in successfully',
-                          colorText: Colors.white,
-                          backgroundColor: Colors.green);
                     } catch (e) {
-                      Get.snackbar('Error', e.toString(),
-                          colorText: Colors.white, backgroundColor: Colors.red);
+                      Get.showSnackbar(
+                        GetSnackBar(
+                          icon: const Icon(
+                            Icons.error,
+                            color: Colors.white,
+                          ),
+                          message: e.toString(),
+                          duration: const Duration(seconds: 2),
+                          backgroundColor: Colors.red,
+                          snackStyle: SnackStyle.FLOATING,
+                          snackPosition: SnackPosition.TOP,
+                          margin: const EdgeInsets.only(
+                              top: 10, left: 10, right: 10),
+                          borderRadius: 8,
+                        ),
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(

@@ -13,33 +13,43 @@ class NetworkController extends GetxController {
 
   void updateConnectionStatus(List<ConnectivityResult> connectivityResultList) {
     if (connectivityResultList.contains(ConnectivityResult.none)) {
-      Get.snackbar(
-          'No internet connection', 'Please check your internet connection',
-          snackPosition: SnackPosition.TOP,
-          snackStyle: SnackStyle.FLOATING,
+      Get.showSnackbar(
+        const GetSnackBar(
+          icon: const Icon(
+            Icons.wifi_off,
+            color: Colors.white,
+          ),
+          message: 'Please check your internet connection',
+          isDismissible: false,
           backgroundColor: Colors.red,
-          colorText: Colors.white,
-          icon: Icon(Icons.wifi_off, color: Colors.white),
-          shouldIconPulse: true,
-          duration: Duration(seconds: 5),
-          isDismissible: true
-      );
-    }else if(Get.isSnackbarOpen && (connectivityResultList.contains(ConnectivityResult.mobile) || connectivityResultList.contains(ConnectivityResult.wifi))){
-      Get.closeCurrentSnackbar();
-      Get.snackbar(
-          'Internet connection restored', 'You are now connected to the internet',
-          snackPosition: SnackPosition.TOP,
           snackStyle: SnackStyle.FLOATING,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          icon: Icon(Icons.wifi, color: Colors.white),
-          shouldIconPulse: false,
-          duration: Duration(seconds: 5),
-          isDismissible: true
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.only(top: 10, left: 10, right: 10),
+          borderRadius: 8,
+        ),
       );
-    }
-    else{
-      if(Get.isSnackbarOpen){
+    } else if (Get.isSnackbarOpen &&
+        (connectivityResultList.contains(ConnectivityResult.mobile) ||
+            connectivityResultList.contains(ConnectivityResult.wifi))) {
+      Get.closeCurrentSnackbar();
+      Get.showSnackbar(
+        const GetSnackBar(
+          icon: const Icon(
+            Icons.wifi,
+            color: Colors.white,
+          ),
+          message: 'You are now connected to the internet',
+          isDismissible: true,
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.green,
+          snackStyle: SnackStyle.FLOATING,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.only(top: 10, left: 10, right: 10),
+          borderRadius: 8,
+        ),
+      );
+    } else {
+      if (Get.isSnackbarOpen) {
         Get.closeCurrentSnackbar();
       }
     }

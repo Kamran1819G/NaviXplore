@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:get/get.dart';
 import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
+import 'package:quickalert/quickalert.dart';
 
 class NM_MetroFareCalculator extends StatefulWidget {
   NM_MetroFareCalculator({Key? key}) : super(key: key);
@@ -242,68 +243,75 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                         RegExp(r'[^0-9]'), '')));
                 double fare = controller.calculateFare(totalDistance);
 
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return Dialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: Container(
-                        padding: EdgeInsets.all(16),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
+                QuickAlert.show(
+                    context: context,
+                    type: QuickAlertType.info,
+                    title: 'Fare Calculation',
+                    confirmBtnText: 'OK',
+                    confirmBtnColor: Theme.of(context).primaryColor,
+                    confirmBtnTextStyle: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white),
+                    barrierDismissible: false,
+                    widget: Column(
+                      children: [
+                        SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Fare Calculation',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 15),
-                            Text('You are traveling from:'),
-                            SizedBox(height: 5),
-                            Text(
-                                '$sourceMetroStation to $destinationMetroStation'),
-                            SizedBox(height: 5),
-                            Text(
-                                'Distance: ~ ${totalDistance.toStringAsFixed(2)} km'),
-                            SizedBox(height: 15),
-                            Text('The fare for your journey is:'),
-                            SizedBox(height: 10),
-                            RichText(
-                              text: TextSpan(
-                                text: 'Rs. $fare',
+                            Text('From:',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(sourceLocationController.text),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('To:',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(destinationLocationController.text),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Distance:',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text('~${totalDistance.toStringAsFixed(2)} km'),
+                          ],
+                        ),
+                        SizedBox(height: 20),
+                        Container(
+                          padding: EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color:
+                                Theme.of(context).primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Fare:',
                                 style: TextStyle(
-                                  fontSize: 24,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              Text(
+                                'Rs. $fare',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
                                   color: Theme.of(context).primaryColor,
                                 ),
                               ),
-                            ),
-                            SizedBox(height: 10),
-                            Divider(
-                              color: Colors.grey,
-                              thickness: 1,
-                            ),
-                            SizedBox(height: 10),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context).primaryColor,
-                              ),
-                              child: Text('OK',
-                                  style: TextStyle(color: Colors.white)),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                );
+                      ],
+                    ));
               }
             },
             child:

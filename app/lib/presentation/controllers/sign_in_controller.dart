@@ -31,22 +31,57 @@ class SignInController extends GetxController {
       return userCredential.user;
     } catch (e) {
       isLoading.value = false;
-      Get.snackbar('Error', e.toString(),
-          colorText: Colors.white, backgroundColor: Colors.red);
+      Get.showSnackbar(
+        GetSnackBar(
+          icon: const Icon(
+            Icons.error,
+            color: Colors.white,
+          ),
+          message: e.toString(),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.red,
+          snackStyle: SnackStyle.FLOATING,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.only(top: 10, left: 10, right: 10),
+          borderRadius: 8,
+        ),
+      );
       return null;
     }
   }
 
   Future<User?> signIn() async {
     if (!isEmailValid.value) {
-      Get.snackbar('Error', 'Please enter a valid email',
-          colorText: Colors.white, backgroundColor: Colors.red);
+      Get.showSnackbar(const GetSnackBar(
+        icon: Icon(
+          Icons.error,
+          color: Colors.white,
+        ),
+        message: 'Please enter a valid email',
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.red,
+        snackStyle: SnackStyle.FLOATING,
+        snackPosition: SnackPosition.TOP,
+        margin: EdgeInsets.only(top: 10, left: 10, right: 10),
+        borderRadius: 8,
+      ));
       return null;
     }
 
     if (!isPasswordValid.value) {
-      Get.snackbar('Error', 'Please enter a valid password',
-          colorText: Colors.white, backgroundColor: Colors.red);
+      Get.showSnackbar(const GetSnackBar(
+        icon: Icon(
+          Icons.error,
+          color: Colors.white,
+        ),
+        message: 'Please enter a valid password',
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.red,
+        snackStyle: SnackStyle.FLOATING,
+        snackPosition: SnackPosition.TOP,
+        margin: EdgeInsets.only(top: 10, left: 10, right: 10),
+        borderRadius: 8,
+      ));
       return null;
     }
 
@@ -59,18 +94,69 @@ class SignInController extends GetxController {
         password: passwordController.text,
       );
       isLoading.value = false;
+      Get.showSnackbar(const GetSnackBar(
+        icon: Icon(
+          Icons.check,
+          color: Colors.white,
+        ),
+        message: 'Signed in successfully',
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.green,
+        snackStyle: SnackStyle.FLOATING,
+        snackPosition: SnackPosition.TOP,
+        margin: EdgeInsets.only(top: 10, left: 10, right: 10),
+        borderRadius: 8,
+      ));
       return userCredential.user;
     } on FirebaseAuthException catch (e) {
       isLoading.value = false;
       if (e.code == 'user-not-found') {
-        Get.snackbar('Error', 'No user found for that email.',
-            colorText: Colors.white, backgroundColor: Colors.red);
+        Get.showSnackbar(const GetSnackBar(
+          icon: Icon(
+            Icons.error,
+            color: Colors.white,
+          ),
+          title: 'User Not Found',
+          message: 'No user found for that email.',
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
+          snackStyle: SnackStyle.FLOATING,
+          snackPosition: SnackPosition.TOP,
+          margin: EdgeInsets.only(top: 10, left: 10, right: 10),
+          borderRadius: 8,
+        ));
       } else if (e.code == 'wrong-password') {
-        Get.snackbar('Error', 'Wrong password provided for that user.',
-            colorText: Colors.white, backgroundColor: Colors.red);
+        Get.showSnackbar(const GetSnackBar(
+          icon: Icon(
+            Icons.error,
+            color: Colors.white,
+          ),
+          title: 'Wrong Password',
+          message: 'Wrong password provided for that user.',
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
+          snackStyle: SnackStyle.FLOATING,
+          snackPosition: SnackPosition.TOP,
+          margin: EdgeInsets.only(top: 10, left: 10, right: 10),
+          borderRadius: 8,
+        ));
       } else {
-        Get.snackbar('Error', e.message ?? 'An error occurred',
-            colorText: Colors.white, backgroundColor: Colors.red);
+        Get.showSnackbar(
+          GetSnackBar(
+            icon: const Icon(
+              Icons.error,
+              color: Colors.white,
+            ),
+            title: e.code,
+            message: e.message ?? 'An error occurred',
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.red,
+            snackStyle: SnackStyle.FLOATING,
+            snackPosition: SnackPosition.TOP,
+            margin: const EdgeInsets.only(top: 10, left: 10, right: 10),
+            borderRadius: 8,
+          ),
+        );
       }
       return null;
     }
@@ -97,11 +183,37 @@ class SignInController extends GetxController {
       final UserCredential userCredential =
           await FirebaseAuth.instance.signInWithCredential(credential);
       isLoading.value = false;
+      Get.showSnackbar(const GetSnackBar(
+        icon: Icon(
+          Icons.check,
+          color: Colors.white,
+        ),
+        message: 'Signed in successfully',
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.green,
+        snackStyle: SnackStyle.FLOATING,
+        snackPosition: SnackPosition.TOP,
+        margin: EdgeInsets.only(top: 10, left: 10, right: 10),
+        borderRadius: 8,
+      ));
       return userCredential.user;
     } catch (e) {
       isLoading.value = false;
-      Get.snackbar('Error', e.toString(),
-          colorText: Colors.white, backgroundColor: Colors.red);
+      Get.showSnackbar(
+        GetSnackBar(
+          icon: const Icon(
+            Icons.error,
+            color: Colors.white,
+          ),
+          message: e.toString(),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.red,
+          snackStyle: SnackStyle.FLOATING,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.only(top: 10, left: 10, right: 10),
+          borderRadius: 8,
+        ),
+      );
       return null;
     }
   }
@@ -116,11 +228,37 @@ class SignInController extends GetxController {
       final UserCredential userCredential =
           await FirebaseAuth.instance.signInWithProvider(appleProvider);
       isLoading.value = false;
+      Get.showSnackbar(const GetSnackBar(
+        icon: Icon(
+          Icons.check,
+          color: Colors.white,
+        ),
+        message: 'Signed in successfully',
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.green,
+        snackStyle: SnackStyle.FLOATING,
+        snackPosition: SnackPosition.TOP,
+        margin: EdgeInsets.only(top: 10, left: 10, right: 10),
+        borderRadius: 8,
+      ));
       return userCredential.user;
     } catch (e) {
       isLoading.value = false;
-      Get.snackbar('Error', e.toString(),
-          colorText: Colors.white, backgroundColor: Colors.red);
+      Get.showSnackbar(
+        GetSnackBar(
+          icon: const Icon(
+            Icons.error,
+            color: Colors.white,
+          ),
+          message: e.toString(),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.red,
+          snackStyle: SnackStyle.FLOATING,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.only(top: 10, left: 10, right: 10),
+          borderRadius: 8,
+        ),
+      );
       return null;
     }
   }

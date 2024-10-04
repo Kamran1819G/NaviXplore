@@ -152,8 +152,7 @@ class SignUpScreen extends StatelessWidget {
                         : () async {
                             final user = await controller.signUp();
                             if (user != null) {
-                              Get.offNamed(AppRoutes.USER_REGISTRATION,
-                                  arguments: {'user': user});
+                              Get.offNamed(AppRoutes.USER_REGISTRATION);
                             }
                           },
                     style: ElevatedButton.styleFrom(
@@ -193,8 +192,7 @@ class SignUpScreen extends StatelessWidget {
                       onTap: () async {
                         final user = await controller.signInWithGoogle();
                         if (user != null) {
-                          Get.offNamed(AppRoutes.USER_REGISTRATION,
-                              arguments: {'user': user});
+                          Get.offNamed(AppRoutes.USER_REGISTRATION);
                         }
                       },
                       child: Container(
@@ -213,8 +211,7 @@ class SignUpScreen extends StatelessWidget {
                       onTap: () async {
                         final user = await controller.signInWithGoogle();
                         if (user != null) {
-                          Get.offNamed(AppRoutes.USER_REGISTRATION,
-                              arguments: {'user': user});
+                          Get.offNamed(AppRoutes.USER_REGISTRATION);
                         }
                       },
                       child: Container(

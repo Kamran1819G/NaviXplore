@@ -1,49 +1,45 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel {
-  final String id;
-  final String email;
-  final String photoUrl;
+  final String? id;
   final String username;
-  final List<String> followerIds;
-  final List<String> followingIds;
+  final String bio;
+  final int followerCount;
+  final int followingCount;
   final int postCount;
-  final Timestamp createdAt;
+  final String profileImage;
 
-  const UserModel({
-    required this.id,
-    required this.email,
-    required this.photoUrl,
+  UserModel({
+    this.id,
     required this.username,
-    required this.followerIds,
-    required this.followingIds,
+    required this.bio,
+    required this.followerCount,
+    required this.followingCount,
     required this.postCount,
-    required this.createdAt,
+    required this.profileImage,
   });
 
-  factory UserModel.fromDocument(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory UserModel.fromFirestore(DocumentSnapshot doc) {
+    Map data = doc.data() as Map<String, dynamic>;
     return UserModel(
       id: doc.id,
-      email: data['email'] ?? '',
-      photoUrl: data['photoUrl'] ?? '',
       username: data['username'] ?? '',
-      followerIds: List<String>.from(data['followerIds'] ?? []),
-      followingIds: List<String>.from(data['followingIds'] ?? []),
+      bio: data['bio'] ?? '',
+      followerCount: data['followerCount'] ?? 0,
+      followingCount: data['followingCount'] ?? 0,
       postCount: data['postCount'] ?? 0,
-      createdAt: data['createdAt'] ?? Timestamp.now(),
+      profileImage: data['profileImage'] ?? '',
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toFirestore() {
     return {
-      'email': email,
-      'photoUrl': photoUrl,
       'username': username,
-      'followerIds': followerIds,
-      'followingIds': followingIds,
+      'bio': bio,
+      'followerCount': followerCount,
+      'followingCount': followingCount,
       'postCount': postCount,
-      'createdAt': createdAt,
+      'profileImage': profileImage,
     };
   }
 }
