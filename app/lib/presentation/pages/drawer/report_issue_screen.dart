@@ -19,24 +19,43 @@ class _ReportIssueState extends State<ReportIssue> {
         leading: const BackButton(
           color: Colors.black,
         ),
-        title: Text("Report an Issue", style: TextStyle(color: Theme.of(context).primaryColor),),
+        title: Text(
+          "Report an Issue",
+          style: TextStyle(color: Theme.of(context).primaryColor),
+        ),
       ),
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-             Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("Navi", style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 60)),
-                Text("X", style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 75)),
-                Text("plore", style: TextStyle(color: Theme.of(context).primaryColor, fontFamily: "Fredoka", fontWeight: FontWeight.bold, fontSize: 60)),
+                Text("Navi",
+                    style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontFamily: "Fredoka",
+                        fontWeight: FontWeight.bold,
+                        fontSize: 60)),
+                Text("X",
+                    style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontFamily: "Fredoka",
+                        fontWeight: FontWeight.bold,
+                        fontSize: 75)),
+                Text("plore",
+                    style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontFamily: "Fredoka",
+                        fontWeight: FontWeight.bold,
+                        fontSize: 60)),
               ],
             ),
             const SizedBox(height: 50),
             const Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25),
-              child: Text("Thank you for taking your valuable time and giving your input to shape up the app. Please share your feedback in below form.."),
+              child: Text(
+                  "Thank you for taking your valuable time and giving your input to shape up the app. Please share your feedback in below form.."),
             ),
             const SizedBox(height: 25),
             Padding(
@@ -50,9 +69,7 @@ class _ReportIssueState extends State<ReportIssue> {
                           borderSide: BorderSide(color: Colors.grey)),
                       focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.black)),
-                    )
-                )
-            ),
+                    ))),
             const SizedBox(height: 25),
             Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -64,9 +81,7 @@ class _ReportIssueState extends State<ReportIssue> {
                           borderSide: BorderSide(color: Colors.grey)),
                       focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.black)),
-                    )
-                )
-            ),
+                    ))),
             const SizedBox(height: 25),
             DropdownButtonFormField<String>(
               padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -79,11 +94,12 @@ class _ReportIssueState extends State<ReportIssue> {
               ),
               value: dropdownValue,
               items: const [
-                DropdownMenuItem<String>(value: 'high',child: Text("High")),
-                DropdownMenuItem<String>(value: 'medium',child: Text("Medium")),
+                DropdownMenuItem<String>(value: 'high', child: Text("High")),
+                DropdownMenuItem<String>(
+                    value: 'medium', child: Text("Medium")),
                 DropdownMenuItem<String>(value: 'low', child: Text("Low")),
               ],
-              onChanged: (String? newValue){
+              onChanged: (String? newValue) {
                 setState(() {
                   dropdownValue = newValue!;
                 });
@@ -102,10 +118,7 @@ class _ReportIssueState extends State<ReportIssue> {
                           borderSide: BorderSide(color: Colors.grey)),
                       focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.black)),
-
-                    )
-                )
-            ),
+                    ))),
             const SizedBox(height: 25),
             Container(
               padding: const EdgeInsets.all(25),

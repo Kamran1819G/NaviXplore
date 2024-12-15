@@ -1,6 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NMPlacesController extends GetxController {
   final _storage = GetStorage();
@@ -9,7 +9,9 @@ class NMPlacesController extends GetxController {
   final _touristPlaces = <Map<String, dynamic>>[].obs;
 
   List<Map<String, dynamic>> get allPlaces => _allPlaces;
+
   List<Map<String, dynamic>> get famousPlaces => _famousPlaces;
+
   List<Map<String, dynamic>> get touristPlaces => _touristPlaces;
 
   @override

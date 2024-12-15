@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PostModel {
-  final String id;
+  final String? postId;
   final String userId;
   final String username;
   final String userPhotoUrl;
@@ -13,7 +13,7 @@ class PostModel {
   final int commentCount;
 
   const PostModel({
-    required this.id,
+    this.postId,
     required this.userId,
     required this.username,
     required this.userPhotoUrl,
@@ -28,7 +28,7 @@ class PostModel {
   factory PostModel.fromDocument(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return PostModel(
-      id: doc.id,
+      postId: doc.id,
       userId: data['userId'] ?? '',
       username: data['username'] ?? '',
       userPhotoUrl: data['userPhotoUrl'] ?? '',

@@ -1,45 +1,47 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel {
-  final String? id;
-  final String username;
-  final String bio;
-  final int followerCount;
-  final int followingCount;
-  final int postCount;
-  final String profileImage;
+  String? uid;
+  String username;
+  String displayName;
+  String? profileImage;
+  String? bio;
+  int postCount;
+  int followerCount;
+  int followingCount;
 
   UserModel({
-    this.id,
+    this.uid,
     required this.username,
-    required this.bio,
-    required this.followerCount,
-    required this.followingCount,
-    required this.postCount,
-    required this.profileImage,
+    required this.displayName,
+    this.profileImage,
+    this.bio,
+    this.postCount = 0,
+    this.followerCount = 0,
+    this.followingCount = 0,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
-    Map data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>;
     return UserModel(
-      id: doc.id,
+      uid: doc.id,
       username: data['username'] ?? '',
-      bio: data['bio'] ?? '',
+      displayName: data['displayName'] ?? '',
+      profileImage: data['profileImage'],
+      bio: data['bio'],
+      postCount: data['postCount'] ?? 0,
       followerCount: data['followerCount'] ?? 0,
       followingCount: data['followingCount'] ?? 0,
-      postCount: data['postCount'] ?? 0,
-      profileImage: data['profileImage'] ?? '',
     );
   }
 
-  Map<String, dynamic> toFirestore() {
-    return {
-      'username': username,
-      'bio': bio,
-      'followerCount': followerCount,
-      'followingCount': followingCount,
-      'postCount': postCount,
-      'profileImage': profileImage,
-    };
-  }
+  Map<String, dynamic> toFirestore() => {
+        'username': username,
+        'displayName': displayName,
+        'profileImage': profileImage,
+        'bio': bio,
+        'postCount': postCount,
+        'followerCount': followerCount,
+        'followingCount': followingCount,
+      };
 }

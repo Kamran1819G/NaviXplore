@@ -54,7 +54,8 @@ class DefaultFirebaseOptions {
     appId: '1:92765532974:android:4e392c580e10cecefc40bf',
     messagingSenderId: '92765532974',
     projectId: 'navixplore',
-    databaseURL: 'https://navixplore-default-rtdb.asia-southeast1.firebasedatabase.app',
+    databaseURL:
+        'https://navixplore-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'navixplore.appspot.com',
   );
 
@@ -63,10 +64,11 @@ class DefaultFirebaseOptions {
     appId: '1:92765532974:ios:6cddf81916c07afefc40bf',
     messagingSenderId: '92765532974',
     projectId: 'navixplore',
-    databaseURL: 'https://navixplore-default-rtdb.asia-southeast1.firebasedatabase.app',
+    databaseURL:
+        'https://navixplore-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'navixplore.appspot.com',
-    iosClientId: '92765532974-pi3ahov2u8sng52egej1fbsb3tf74bho.apps.googleusercontent.com',
+    iosClientId:
+        '92765532974-pi3ahov2u8sng52egej1fbsb3tf74bho.apps.googleusercontent.com',
     iosBundleId: 'com.navixplore.navixplore',
   );
-
 }

@@ -1,32 +1,35 @@
 import 'package:flutter/material.dart';
 
 class BusMarker extends StatelessWidget {
-  const BusMarker({super.key, required this.routeNo});
+  const BusMarker({Key? key, required this.routeNo}) : super(key: key);
+
   final String routeNo;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: 8,
-        horizontal: 12,
-      ),
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child:  Row(
+        mainAxisSize: MainAxisSize.min, // Ensure row only takes necessary space
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.directions_bus,
             color: Colors.white,
-            size: 30,
+            size: 15,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 4),
           Text(
             routeNo,
-            style: const TextStyle(fontSize: 26, color: Colors.white,fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

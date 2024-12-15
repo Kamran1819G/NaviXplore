@@ -1,8 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:navixplore/presentation/models/post_model.dart';
 import 'package:navixplore/presentation/models/comment_model.dart';
+import 'package:navixplore/presentation/models/post_model.dart';
 import 'package:navixplore/presentation/pages/profile/user_profile_screen.dart';
 
 class XploreFeedScreen extends StatelessWidget {
@@ -12,7 +12,7 @@ class XploreFeedScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     List<PostModel> dummyPosts = [
       PostModel(
-        id: 'asdjklsajdlkadjfkldsafj',
+        postId: 'asdjklsajdlkadjfkldsafj',
         userId: 'user1',
         username: 'John Doe',
         userPhotoUrl: 'https://example.com/profile1.jpg',
@@ -24,7 +24,7 @@ class XploreFeedScreen extends StatelessWidget {
         commentCount: 0,
       ),
       PostModel(
-        id: 'asdjksafddsafsadlkadjfkldsafj',
+        postId: 'asdjksafddsafsadlkadjfkldsafj',
         userId: 'user2',
         username: 'Jane Smith',
         userPhotoUrl: 'https://example.com/profile2.jpg',
@@ -36,7 +36,7 @@ class XploreFeedScreen extends StatelessWidget {
         commentCount: 0,
       ),
       PostModel(
-        id: 'fdsgfdgdsfljgsafj',
+        postId: 'fdsgfdgdsfljgsafj',
         userId: 'user3',
         username: 'Mike Johnson',
         userPhotoUrl: 'https://example.com/profile3.jpg',
@@ -232,7 +232,7 @@ class _FeedWidgetState extends State<FeedWidget>
                             maxChildSize: 0.95,
                             expand: false,
                             builder: (_, controller) => Comment(
-                                'post', widget.postData.id,
+                                'post', widget.postData.postId ?? '',
                                 scrollController: controller),
                           ),
                         );

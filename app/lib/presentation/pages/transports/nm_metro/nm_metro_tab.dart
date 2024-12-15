@@ -1,14 +1,15 @@
 import 'dart:async';
-import 'package:get/get.dart';
-import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
-import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_upcoming_trains.dart';
+
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
+import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
 import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_fare_calculator.dart';
 import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_map.dart';
 import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_penalties.dart';
 import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_search_page.dart';
+import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_upcoming_trains.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 
 class NMMetroTab extends StatefulWidget {

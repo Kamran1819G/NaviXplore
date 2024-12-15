@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle, rootBundle;
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -16,10 +17,10 @@ class NM_MetroMap extends StatefulWidget {
 }
 
 class _NM_MetroMapState extends State<NM_MetroMap> {
-  Set<Marker> markers = {};
-  Set<Polyline> _polylines = {};
+  List<Marker> markers = [];
+  List<Polyline> _polylines = [];
   final PanelController panelController = PanelController();
-  final Completer<GoogleMapController> _controller = Completer();
+  final MapController mapController = MapController();
   late String _mapStyle;
   bool isLoading = true;
 
@@ -52,10 +53,9 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
     setState(() {
       _polylines.add(
         Polyline(
-          polylineId: PolylineId('polyline'),
-          color: Theme.of(context).primaryColor,
           points: polylinePoints,
-          width: 3,
+          color: Theme.of(context).primaryColor,
+          strokeWidth: 3,
         ),
       );
     });
@@ -64,8 +64,8 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
   Future<void> _addMetroStationMarker() async {
     for (var station in controller.allMetroStations) {
       final markerBitmap =
-          await metroStationMarker(station['stationName']['English'])
-              .toBitmapDescriptor(
+      await metroStationMarker(station['stationName']['English'])
+          .toBitmapDescriptor(
         logicalSize: const Size(500, 250),
         imageSize: const Size(500, 250),
       );
@@ -77,9 +77,17 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
       // Add marker to the set
       markers.add(
         Marker(
-          markerId: MarkerId(station['stationName']['English']),
-          icon: markerBitmap,
-          position: stationLatLng,
+          point: stationLatLng,
+          width: 30,
+          height: 30,
+          child: Container(
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(5),
+                  color: Theme.of(context).primaryColor
+              ),
+              padding: EdgeInsets.all(4),
+              child:  Icon(Icons.tram, color: Colors.white, size: 20,)
+          ),
         ),
       );
     }
@@ -94,6 +102,10 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(0),
         child: AppBar(
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Theme.of(context).primaryColor,
+            statusBarIconBrightness: Brightness.light,
+          ),
           backgroundColor: Colors.transparent,
           elevation: 0,
         ),
@@ -101,101 +113,105 @@ class _NM_MetroMapState extends State<NM_MetroMap> {
       body: isLoading
           ? _buildLoadingScreen()
           : Stack(
+        children: [
+          SlidingUpPanel(
+            defaultPanelState: PanelState.OPEN,
+            maxHeight: 500,
+            minHeight: 100,
+            parallaxEnabled: true,
+            parallaxOffset: 0.5,
+            controller: panelController,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20.0),
+              topRight: Radius.circular(20.0),
+            ),
+            body: FlutterMap(
+              mapController: mapController,
+              options: MapOptions(
+                initialCenter: LatLng(19.038901, 73.06716),
+                initialZoom: 14.0,
+              ),
               children: [
-                SlidingUpPanel(
-                  defaultPanelState: PanelState.OPEN,
-                  maxHeight: 500,
-                  minHeight: 100,
-                  parallaxEnabled: true,
-                  parallaxOffset: 0.5,
-                  controller: panelController,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20.0),
-                    topRight: Radius.circular(20.0),
-                  ),
-                  body: GoogleMap(
-                    mapToolbarEnabled: false,
-                    zoomControlsEnabled: false,
-                    myLocationEnabled: true,
-                    initialCameraPosition: CameraPosition(
-                      target: LatLng(19.038901, 73.06716),
-                      zoom: 14.0,
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.navixplore.navixplore',
+                ),
+                PolylineLayer(
+                  polylines: _polylines,
+                ),
+                MarkerLayer(
+                  markers: markers,
+                ),
+              ],
+            ),
+            panel: Column(
+              children: [
+                InkWell(
+                  onTap: () {
+                    panelController.isPanelOpen
+                        ? panelController.close()
+                        : panelController.open();
+                  },
+                  child: Container(
+                    width: 30,
+                    height: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 15),
+                    decoration: BoxDecoration(
+                      color:
+                      Theme.of(context).primaryColor.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(5),
                     ),
-                    onMapCreated: (GoogleMapController controller) {
-                      _controller.complete(controller);
-                      controller.setMapStyle(_mapStyle);
-                    },
-                    markers: markers,
-                    polylines: _polylines,
-                  ),
-                  panel: Column(
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          panelController.isPanelOpen
-                              ? panelController.close()
-                              : panelController.open();
-                        },
-                        child: Container(
-                          width: 30,
-                          height: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 15),
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).primaryColor.withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                        ),
-                      ),
-                      const Text(
-                        'Navi Mumbai Metro Stations',
-                        style: TextStyle(
-                            fontSize: 22.0, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 10),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: controller.allMetroStations.length,
-                          itemBuilder: (context, index) {
-                            return ListTile(
-                              contentPadding: EdgeInsets.all(10.0),
-                              leading: ClipRRect(
-                                borderRadius: BorderRadius.circular(50),
-                                child: Image.asset(
-                                  'assets/icons/NM_Metro.png',
-                                  width: 50,
-                                  height: 50,
-                                ),
-                              ),
-                              title: Text(controller.allMetroStations[index]
-                                  ['stationName']['English']),
-                              subtitle: Text(controller.allMetroStations[index]
-                                  ['stationName']['Marathi']),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
                   ),
                 ),
-                Positioned(
-                  top: 20,
-                  left: 10,
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
+                const Text(
+                  'Navi Mumbai Metro Stations',
+                  style: TextStyle(
+                      fontSize: 22.0, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: controller.allMetroStations.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        contentPadding: EdgeInsets.all(10.0),
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(50),
+                          child: Image.asset(
+                            'assets/icons/NM_Metro.png',
+                            width: 50,
+                            height: 50,
+                          ),
+                        ),
+                        title: Text(controller.allMetroStations[index]
+                        ['stationName']['English']),
+                        subtitle: Text(controller.allMetroStations[index]
+                        ['stationName']['Marathi']),
+                      );
                     },
-                    child: CircleAvatar(
-                      radius: 25.0,
-                      backgroundColor: Colors.white,
-                      child: BackButton(
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
                   ),
                 ),
               ],
             ),
+          ),
+          Positioned(
+            top: 20,
+            left: 10,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: CircleAvatar(
+                radius: 25.0,
+                backgroundColor: Colors.white,
+                child: BackButton(
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

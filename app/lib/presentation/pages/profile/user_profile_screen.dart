@@ -5,13 +5,16 @@ class UserProfileScreen extends StatefulWidget {
   final String userId;
   final bool isMyProfile;
 
-  const UserProfileScreen({Key? key, required this.userId, required this.isMyProfile}) : super(key: key);
+  const UserProfileScreen(
+      {Key? key, required this.userId, required this.isMyProfile})
+      : super(key: key);
 
   @override
   State<UserProfileScreen> createState() => _UserProfileScreenState();
 }
 
-class _UserProfileScreenState extends State<UserProfileScreen> with SingleTickerProviderStateMixin {
+class _UserProfileScreenState extends State<UserProfileScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool? _isMyProfile;
   bool _isBioExpanded = false;
@@ -29,16 +32,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
   Widget build(BuildContext context) {
     return Scaffold(
       body: CustomScrollView(
-          slivers: [
-            _buildSliverAppBar(),
-            SliverToBoxAdapter(child: _buildProfileInfo()),
-            SliverPersistentHeader(
-              delegate: _SliverAppBarDelegate(_buildTabBar()),
-              pinned: true,
-            ),
-            _buildTabBarView(),
-          ],
-        ),
+        slivers: [
+          _buildSliverAppBar(),
+          SliverToBoxAdapter(child: _buildProfileInfo()),
+          SliverPersistentHeader(
+            delegate: _SliverAppBarDelegate(_buildTabBar()),
+            pinned: true,
+          ),
+          _buildTabBarView(),
+        ],
+      ),
     );
   }
 
@@ -77,7 +80,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
             children: [
               CircleAvatar(
                 radius: 40,
-                backgroundImage: NetworkImage('https://picsum.photos/seed/avatar/200'),
+                backgroundImage:
+                    NetworkImage('https://picsum.photos/seed/avatar/200'),
               ),
               SizedBox(width: 16),
               Expanded(
@@ -86,7 +90,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
                   children: [
                     Text(
                       'Kamran Khan',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     Text(
                       '@kamran_khan',
@@ -149,7 +154,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(count, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(count,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         Text(label, style: TextStyle(fontSize: 12, color: Colors.grey)),
       ],
     );
@@ -235,10 +241,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
       itemBuilder: (context, index) {
         return ListTile(
           leading: CircleAvatar(
-            backgroundImage: NetworkImage('https://picsum.photos/seed/liked${index}/200'),
+            backgroundImage:
+                NetworkImage('https://picsum.photos/seed/liked${index}/200'),
           ),
           title: Text('Liked Post ${index + 1}'),
-          subtitle: Text('You liked this post on ${DateTime.now().subtract(Duration(days: index)).toString().split(' ')[0]}'),
+          subtitle: Text(
+              'You liked this post on ${DateTime.now().subtract(Duration(days: index)).toString().split(' ')[0]}'),
         );
       },
     );
@@ -250,10 +258,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> with SingleTicker
       itemBuilder: (context, index) {
         return ListTile(
           leading: CircleAvatar(
-            backgroundImage: NetworkImage('https://picsum.photos/seed/saved${index}/200'),
+            backgroundImage:
+                NetworkImage('https://picsum.photos/seed/saved${index}/200'),
           ),
           title: Text('Saved Post ${index + 1}'),
-          subtitle: Text('You saved this post on ${DateTime.now().subtract(Duration(days: index)).toString().split(' ')[0]}'),
+          subtitle: Text(
+              'You saved this post on ${DateTime.now().subtract(Duration(days: index)).toString().split(' ')[0]}'),
           trailing: Icon(Icons.bookmark, color: Theme.of(context).primaryColor),
         );
       },
@@ -268,11 +278,13 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   double get minExtent => 56.0;
+
   @override
   double get maxExtent => 56.0;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       child: _tabBar,
     );

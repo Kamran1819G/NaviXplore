@@ -5,7 +5,8 @@ class WebView_Screen extends StatefulWidget {
   final String url;
   final String? title;
 
-  const WebView_Screen({Key? key, required this.url, this.title}) : super(key: key);
+  const WebView_Screen({Key? key, required this.url, this.title})
+      : super(key: key);
 
   @override
   State<WebView_Screen> createState() => _WebView_ScreenState();
@@ -39,6 +40,7 @@ class _WebView_ScreenState extends State<WebView_Screen> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..loadRequest(Uri.parse(widget.url));
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,9 +52,9 @@ class _WebView_ScreenState extends State<WebView_Screen> {
           ),
           title: widget.title != null
               ? Text(
-            widget.title!,
-            style: TextStyle(color: Colors.black),
-          )
+                  widget.title!,
+                  style: TextStyle(color: Colors.black),
+                )
               : null,
         ),
         body: SafeArea(
@@ -64,7 +66,8 @@ class _WebView_ScreenState extends State<WebView_Screen> {
               if (loadingPercentage < 100)
                 LinearProgressIndicator(
                   color: Theme.of(context).primaryColor.withOpacity(0.9),
-                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.3),
+                  backgroundColor:
+                      Theme.of(context).primaryColor.withOpacity(0.3),
                   value: loadingPercentage / 100.0,
                 ),
             ],

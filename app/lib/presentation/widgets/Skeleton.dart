@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 
 class Skeleton extends StatelessWidget {
-   Skeleton({super.key, this.width, this.height});
+  Skeleton({super.key, this.width, this.height});
+
   double? width, height;
 
   @override

@@ -1,5 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+class AppSpaces {
+  static const smallVerticalSpace = SizedBox(height: 8.0);
+  static const mediumVerticalSpace = SizedBox(height: 16.0);
+  static const largeVerticalSpace = SizedBox(height: 24.0);
+}
+
+const commonPadding = EdgeInsets.symmetric(horizontal: 10);
 
 class AnnouncementDetailPage extends StatelessWidget {
   final Map<String, dynamic> announcement;
@@ -17,6 +26,11 @@ class AnnouncementDetailPage extends StatelessWidget {
         backgroundColor: Colors.white,
         foregroundColor: Theme.of(context).primaryColor,
         elevation: 3,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+          color: Theme.of(context).primaryColor,
+        ),
         title: Row(
           children: [
             Text("Navi",
@@ -46,47 +60,48 @@ class AnnouncementDetailPage extends StatelessWidget {
           children: [
             Container(
               height: 300,
-              child: Image.network(
-                announcement['imageUrl'],
-                width: MediaQuery.of(context).size.width,
-                fit: BoxFit.fill,
-              ),
+              child: AspectRatio(
+                  aspectRatio: 16/9,
+                  child: CachedNetworkImage(
+                    imageUrl: announcement['imageUrl'],
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) =>
+                    const Center(child: CircularProgressIndicator()),
+                    errorWidget: (context, url, error) => const Icon(Icons.error),
+                  )),
             ),
-            SizedBox(height: MediaQuery.sizeOf(context).height * 0.025),
+            AppSpaces.mediumVerticalSpace,
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: commonPadding,
               child: Text(
                 announcement['title'],
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
-                  decorationColor: Theme.of(context).primaryColor,
-                  decorationThickness: 3,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            SizedBox(height: 8),
+            AppSpaces.smallVerticalSpace,
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               child: Text(
                 announcement['description'],
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   fontFamily: 'Poppins',
                 ),
                 textAlign: TextAlign.justify,
               ),
             ),
-            SizedBox(height: 8),
-            Divider(height: 1),
+            AppSpaces.smallVerticalSpace,
+            const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: commonPadding,
               child: Text(
                 formattedDate,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: Colors.grey,
                 ),

@@ -1,19 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_number_schedules.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:navixplore/core/utils/api_endpoints.dart';
 import 'package:navixplore/core/utils/color_utils.dart';
+import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_number_schedules.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:timeline_tile/timeline_tile.dart';
-import 'package:widget_to_marker/widget_to_marker.dart';
 import 'package:xml/xml.dart' as xml;
-import 'package:dio/dio.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart'; // Import
 
 class NMMTBusRoutePage extends StatefulWidget {
   final int routeid;
@@ -40,12 +40,11 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
   List<dynamic>? busStopPositionDataList;
   List<dynamic>? busPositionDataList;
   late int routeid;
-  Set<Marker> markers = Set();
-  BitmapDescriptor? busStopMarker;
-  BitmapDescriptor? busMarker;
-  final Completer<GoogleMapController> mapController =
-      Completer<GoogleMapController>();
+  List<Marker> markers = [];
+  final MapController mapController = MapController();
   PanelController panelController = PanelController();
+  List<LatLng> polylinePoints = [];
+  final PolylinePoints polylinePointsHelper = PolylinePoints(); // Initialize
 
   @override
   void initState() {
@@ -57,7 +56,6 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
   void initialize() async {
     await _fetchAllBusStopData();
     await _fetchBusPositionData();
-    await setCustomMarker();
     _timer = Timer.periodic(Duration(seconds: 15), (Timer timer) {
       _fetchBusPositionData();
     });
@@ -69,23 +67,6 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     super.dispose();
   }
 
-  Future<void> setCustomMarker() async {
-    final busStopMarker = await busStopMarkerWidget().toBitmapDescriptor(
-      logicalSize: const Size(150, 150),
-      imageSize: const Size(200, 200),
-    );
-    setState(() {
-      this.busStopMarker = busStopMarker;
-    });
-    final busMarker = await busMarkerWidget().toBitmapDescriptor(
-      logicalSize: const Size(150, 150),
-      imageSize: const Size(200, 200),
-    );
-    setState(() {
-      this.busMarker = busMarker;
-    });
-  }
-
   Future<void> _fetchAllBusStopData() async {
     final busStopQuery = await FirebaseFirestore.instance
         .collection('NMMT-Buses')
@@ -94,7 +75,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
 
     if (busStopQuery.docs.isNotEmpty) {
       final busStopData =
-          busStopQuery.docs.first.data() as Map<String, dynamic>;
+      busStopQuery.docs.first.data() as Map<String, dynamic>;
       setState(() {
         busStopDataList = busStopData['stations'] as List<dynamic>;
       });
@@ -125,21 +106,23 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
 
       if (response.statusCode == 200) {
         if (xml.XmlDocument.parse(response.data)
-                .innerText
-                .trim()
-                .toUpperCase() ==
+            .innerText
+            .trim()
+            .toUpperCase() ==
             "NO DATA FOUND") {
           setState(() {
             busStopPositionDataList = [];
           });
         } else {
           final List<dynamic> busStopPosition =
-              json.decode(xml.XmlDocument.parse(response.data).innerText);
+          json.decode(xml.XmlDocument.parse(response.data).innerText);
 
           setState(() {
             busStopPositionDataList = busStopPosition;
             isLoading = false;
           });
+
+          await _fetchRoutePolyline();
         }
       } else {
         print('Failed to fetch data. Status code: ${response.statusCode}');
@@ -163,16 +146,16 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
 
       if (response.statusCode == 200) {
         if (xml.XmlDocument.parse(response.data)
-                .innerText
-                .trim()
-                .toUpperCase() ==
+            .innerText
+            .trim()
+            .toUpperCase() ==
             "NO DATA FOUND") {
           setState(() {
             busPositionDataList = [];
           });
         } else {
           final List<dynamic> busPosition =
-              json.decode(xml.XmlDocument.parse(response.data).innerText);
+          json.decode(xml.XmlDocument.parse(response.data).innerText);
 
           setState(() {
             busPositionDataList = busPosition;
@@ -182,12 +165,11 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
           // Update the map camera to the current bus position
           if (busPositionDataList != null && busPositionDataList!.isNotEmpty) {
             final busLatitude =
-                double.parse(busPositionDataList![0]["CurrentLat"] ?? '0');
+            double.parse(busPositionDataList![0]["CurrentLat"] ?? '0');
             final busLongitude =
-                double.parse(busPositionDataList![0]["CurrentLong"] ?? '0');
-            (await mapController.future).animateCamera(
-              CameraUpdate.newLatLng(LatLng(busLatitude, busLongitude)),
-            );
+            double.parse(busPositionDataList![0]["CurrentLong"] ?? '0');
+            mapController.move(
+                LatLng(busLatitude, busLongitude), mapController.camera.zoom);
           }
         }
       } else {
@@ -203,6 +185,66 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     }
   }
 
+
+  Future<void> _fetchRoutePolyline() async {
+    if (busStopPositionDataList == null || busStopPositionDataList!.isEmpty) {
+      return;
+    }
+
+    final dio = Dio();
+    List<LatLng> allPoints = [];
+
+    for (int i = 0; i < busStopPositionDataList!.length - 1; i++) {
+      final startLat = double.parse(busStopPositionDataList![i]['STATIONLAT']);
+      final startLng = double.parse(busStopPositionDataList![i]['STATIONLONG']);
+      final endLat = double.parse(busStopPositionDataList![i + 1]['STATIONLAT']);
+      final endLng = double.parse(busStopPositionDataList![i + 1]['STATIONLONG']);
+
+      final url = 'http://router.project-osrm.org/route/v1/driving/$startLng,$startLat;$endLng,$endLat?steps=true';
+
+      try {
+        final response = await dio.get(url);
+        if (response.statusCode == 200) {
+          final data = response.data;
+          print('OSRM API Response Data: $data'); // Debugging print statement
+          if (data != null && data['routes'] != null && data['routes'] is List && data['routes'].isNotEmpty) {
+            final route = data['routes'][0];
+            if (route['geometry'] != null) {
+              if(route['geometry'] is String) {
+                String encodedPolyline = route['geometry'];
+
+                final points = polylinePointsHelper.decodePolyline(encodedPolyline);
+                if (points.isNotEmpty) {
+                  List<LatLng> segmentPoints = points.map((point) => LatLng(point.latitude, point.longitude)).toList();
+                  allPoints.addAll(segmentPoints);
+                }
+
+              } else if(route['geometry'] is Map && route['geometry']['coordinates'] != null && route['geometry']['coordinates'] is List) {
+                List<dynamic> coordinates = route['geometry']['coordinates'];
+                List<LatLng> segmentPoints = coordinates.map((coord) => LatLng(coord[1], coord[0])).toList();
+                allPoints.addAll(segmentPoints);
+              } else{
+                print('Coordinates data structure is invalid for this segment');
+              }
+
+            }else{
+              print('Geometry is null');
+            }
+          } else{
+            print('No routes array found or is empty for this segment');
+          }
+
+        }
+      } catch (e) {
+        print('Error fetching route: $e');
+      }
+    }
+
+    setState(() {
+      polylinePoints = allPoints;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -210,21 +252,21 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
       body: isLoading
           ? _buildLoadingScreen()
           : busStopDataList!.isEmpty
-              ? _buildNoDataScreen()
-              : _buildBusRouteScreen(),
+          ? _buildNoDataScreen()
+          : _buildBusRouteScreen(),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
     return PreferredSize(
-      preferredSize: Size.fromHeight(0), // Set app bar height to zero
+      preferredSize: Size.fromHeight(0),
       child: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Theme.of(context).primaryColor,
           statusBarIconBrightness: Brightness.light,
         ),
         backgroundColor: Colors.transparent,
-        elevation: 0, // Remove app bar shadow
+        elevation: 0,
       ),
     );
   }
@@ -313,20 +355,15 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     if (busStopPositionDataList != null) {
       for (final busStopPosition in busStopPositionDataList!) {
         final busLatitude =
-            double.parse(busStopPosition['STATIONLAT'] as String? ?? '0');
+        double.parse(busStopPosition['STATIONLAT'] as String? ?? '0');
         final busLongitude =
-            double.parse(busStopPosition['STATIONLONG'] as String? ?? '0');
+        double.parse(busStopPosition['STATIONLONG'] as String? ?? '0');
         markers.add(
           Marker(
-            markerId:
-                MarkerId(busStopPosition['STATIONID'] as String? ?? 'Unknown'),
-            position: LatLng(busLatitude, busLongitude),
-            icon: busStopMarker ?? BitmapDescriptor.defaultMarker,
-            infoWindow: InfoWindow(
-              title: busStopPosition['STATIONNAME'] as String? ?? 'Unknown',
-              snippet: busStopPosition['STATIONNAME_M'] as String? ?? 'Unknown',
-            ),
-            zIndex: 1,
+            point: LatLng(busLatitude, busLongitude),
+            width: 30,
+            height: 30,
+            child: busStopMarkerWidget(context),
           ),
         );
       }
@@ -335,16 +372,13 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     if (busPositionDataList != null && busPositionDataList!.isNotEmpty) {
       markers.add(
         Marker(
-          markerId: MarkerId(widget.busName),
-          position: LatLng(
+          point: LatLng(
             double.parse(busPositionDataList![0]["CurrentLat"] ?? '0'),
             double.parse(busPositionDataList![0]["CurrentLong"] ?? '0'),
           ),
-          icon: busMarker ?? BitmapDescriptor.defaultMarker,
-          infoWindow: InfoWindow(
-            title: widget.busName,
-          ),
-          zIndex: 2,
+          width: 30,
+          height: 30,
+          child: busMarkerWidget(context),
         ),
       );
     }
@@ -361,28 +395,40 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
           parallaxOffset: 0.5,
           panelSnapping: false,
           controller: panelController,
-          color: hexToColor('#F5F5F5'),
+          color: ColorUtils.hexToColor('#F5F5F5'),
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20.0),
             topRight: Radius.circular(20.0),
           ),
-          body: GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: LatLng(
+          body: FlutterMap(
+            mapController: mapController,
+            options: MapOptions(
+              initialCenter: LatLng(
                 double.parse(busPositionDataList?[0]["CurrentLat"] ??
                     busStopPositionDataList![0]['STATIONLAT']),
                 double.parse(busPositionDataList?[0]["CurrentLong"] ??
                     busStopPositionDataList![0]['STATIONLONG']),
               ),
-              zoom: 15,
+              initialZoom: 15,
             ),
-            markers: markers,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            onMapCreated: (GoogleMapController controller) {
-              mapController.complete(controller);
-            },
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.navixplore.navixplore',
+              ),
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: polylinePoints,
+                    color: Colors.blue,
+                    strokeWidth: 4.0,
+                  ),
+                ],
+              ),
+              MarkerLayer(
+                markers: markers,
+              ),
+            ],
           ),
           panel: Column(
             children: [
@@ -435,19 +481,19 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: busPositionDataList != null &&
-                                    busPositionDataList!.isNotEmpty &&
-                                    busStopDataList![index]['StationId'] ==
-                                        busPositionDataList![index]['STATIONID']
+                                busPositionDataList!.isNotEmpty &&
+                                busStopDataList![index]['StationId'] ==
+                                    busPositionDataList![index]['STATIONID']
                                 ? busPositionDataList![index]
-                                            ["CoveredStatus"] ==
-                                        "covered"
-                                    ? Theme.of(context).primaryColor
-                                    : busPositionDataList![index]
-                                                ["CoveredStatus"] ==
-                                            "notcovered"
-                                        ? Colors
-                                            .white // Set grey color for notcovered
-                                        : Colors.red
+                            ["CoveredStatus"] ==
+                                "covered"
+                                ? Theme.of(context).primaryColor
+                                : busPositionDataList![index]
+                            ["CoveredStatus"] ==
+                                "notcovered"
+                                ? Colors
+                                .white
+                                : Colors.red
                                 : Colors.white,
                           ),
                         ),
@@ -483,7 +529,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                             Text(
                               busPositionDataList != null
                                   ? _formatTime(
-                                      busPositionDataList![index]["ETA"])
+                                  busPositionDataList![index]["ETA"])
                                   : "",
                               style: TextStyle(
                                 fontSize: 20,
@@ -494,8 +540,8 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                             Text(
                               busPositionDataList != null
                                   ? "Distance: " +
-                                      busPositionDataList![index]["Distance"] +
-                                      "km"
+                                  busPositionDataList![index]["Distance"] +
+                                  "km"
                                   : "",
                             ),
                           ],
@@ -543,7 +589,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                       style: TextStyle(color: Colors.white),
                     ),
                     duration:
-                        Duration(seconds: 2), // Adjust the duration as needed
+                    Duration(seconds: 2),
                   ),
                 );
               },
@@ -601,23 +647,23 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     );
   }
 
-  Widget busStopMarkerWidget() {
+  Widget busStopMarkerWidget(BuildContext context) {
     return CircleAvatar(
-      radius: 30.0,
+      radius: 15.0,
       backgroundColor: Theme.of(context).primaryColor,
       child: CircleAvatar(
-        radius: 25.0,
+        radius: 10.0,
         backgroundColor: Colors.white,
         child: Icon(Icons.directions_bus,
-            color: Theme.of(context).primaryColor, size: 30),
+            color: Theme.of(context).primaryColor, size: 15),
       ),
     );
   }
 
-  Widget busMarkerWidget() {
+  Widget busMarkerWidget(BuildContext context) {
     return CircleAvatar(
-        radius: 30.0,
+        radius: 15.0,
         backgroundColor: Theme.of(context).primaryColor,
-        child: Icon(Icons.directions_bus, color: Colors.white, size: 40));
+        child: Icon(Icons.directions_bus, color: Colors.white, size: 15));
   }
 }

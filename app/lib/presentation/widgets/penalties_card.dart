@@ -29,13 +29,14 @@ class PenaltieCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+          Text(title,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
           Text("Sec. $section"),
           Container(
             padding: EdgeInsets.symmetric(vertical: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children:[
+              children: [
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   margin: EdgeInsets.only(right: 10),
@@ -43,13 +44,17 @@ class PenaltieCard extends StatelessWidget {
                     color: Theme.of(context).primaryColor,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text("Penalty", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),),
+                  child: Text(
+                    "Penalty",
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 Expanded(child: Text(penalty, maxLines: 10)),
               ],
             ),
           ),
-          if(description != null) Text(description!)
+          if (description != null) Text(description!)
         ],
       ),
     );

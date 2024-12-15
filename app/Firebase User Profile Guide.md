@@ -1,9 +1,10 @@
 1. Top-Level Collections
-  - Users Collection: Contains documents for each user profile.
-  - Posts Collection: Stores all posts made by users.
-  - Followers Collection: Stores follow relationships.
-  - Likes Collection: Stores likes on posts.
-  - Comments Collection: Stores comments on posts.
+
+- Users Collection: Contains documents for each user profile.
+- Posts Collection: Stores all posts made by users.
+- Followers Collection: Stores follow relationships.
+- Likes Collection: Stores likes on posts.
+- Comments Collection: Stores comments on posts.
 
 Example Firestore Structure
 
@@ -55,7 +56,8 @@ Collections and Documents
 Users Collection
 
 Each user in the app has a document in the users collection.
-Each document represents a user profile and contains fields like username, displayName, profileImage, bio, and aggregated stats such as postCount, followerCount, and followingCount.
+Each document represents a user profile and contains fields like username, displayName,
+profileImage, bio, and aggregated stats such as postCount, followerCount, and followingCount.
 Example document:
 
 ```{json}
@@ -72,7 +74,8 @@ Example document:
 
 Posts Collection
 
-Each post a user creates is stored in a posts collection, either at the top level or as a subcollection within the user’s document.
+Each post a user creates is stored in a posts collection, either at the top level or as a
+subcollection within the user’s document.
 Fields include imageUrl, caption, createdAt, likeCount, and commentCount.
 Example document:
 
@@ -91,7 +94,8 @@ Example document:
 }
 ```
 
-If you prefer to store posts in the user's document, use a subcollection `/users/{userId}/posts/{postId}`.
+If you prefer to store posts in the user's document, use a subcollection
+`/users/{userId}/posts/{postId}`.
 
 Followers Collection
 
@@ -140,20 +144,26 @@ Firestore Structure Best Practices
 Denormalization (Avoid Joins):
 
 Firestore encourages denormalization since it’s a NoSQL database.
-For example, store likeCount and commentCount directly in the post document to avoid counting likes and comments every time the post is fetched.
+For example, store likeCount and commentCount directly in the post document to avoid counting likes
+and comments every time the post is fetched.
 Subcollections for Related Data:
 
-Use subcollections for related data. E.g., store comments as a subcollection of posts, and posts as a subcollection of users.
+Use subcollections for related data. E.g., store comments as a subcollection of posts, and posts as
+a subcollection of users.
 Aggregated Fields:
 
-Store aggregate counts such as followerCount, followingCount, likeCount, and commentCount directly in documents to minimize reads. These can be updated via Cloud Functions when a follower/like/comment is added or removed.
+Store aggregate counts such as followerCount, followingCount, likeCount, and commentCount directly
+in documents to minimize reads. These can be updated via Cloud Functions when a
+follower/like/comment is added or removed.
 
 Use `startAfter()` for Pagination:
 
-Use pagination techniques like `limit()` and `startAfter()` to fetch a limited number of posts, followers, or comments at a time, minimizing the number of reads.
+Use pagination techniques like `limit()` and `startAfter()` to fetch a limited number of posts,
+followers, or comments at a time, minimizing the number of reads.
 Indexes for Queries:
 
-Firestore creates indexes automatically, but for complex queries (like sorting posts by createdAt), you may need to manually create composite indexes.
+Firestore creates indexes automatically, but for complex queries (like sorting posts by createdAt),
+you may need to manually create composite indexes.
 Example Structure for Efficiency:
 Users Collection:
 
@@ -195,4 +205,5 @@ Likes and Comments Subcollections (inside each post):
 /posts/{postId}/comments/{commentId}
 ```
 
-This flexible and hierarchical structure should help you model the Instagram-like app efficiently with reduced read counts.
+This flexible and hierarchical structure should help you model the Instagram-like app efficiently
+with reduced read counts.

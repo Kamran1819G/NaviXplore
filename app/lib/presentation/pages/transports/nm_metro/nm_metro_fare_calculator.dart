@@ -111,27 +111,31 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
             child: Column(
               children: [
                 // Source Station Search Box
-                TypeAheadField<dynamic>(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: sourceLocationController,
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(
-                        Icons.location_on,
-                        color: Theme.of(context).primaryColor,
+                TypeAheadField(
+                  controller: sourceLocationController,
+                  builder: (context, controller, focusNode) {
+                    return TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(
+                          Icons.location_on,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              sourceLocationController.clear();
+                              sourceMetroStation = null;
+                            });
+                          },
+                          icon: Icon(Icons.clear, color: Colors.grey),
+                        ),
+                        hintText: "Source Metro Station",
+                        border: InputBorder.none,
                       ),
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            sourceLocationController.clear();
-                            sourceMetroStation = null;
-                          });
-                        },
-                        icon: Icon(Icons.clear, color: Colors.grey),
-                      ),
-                      hintText: "Source Metro Station",
-                      border: InputBorder.none,
-                    ),
-                  ),
+                    );
+                  },
                   suggestionsCallback: (pattern) {
                     return controller.allMetroStations
                         .where((station) =>
@@ -153,7 +157,7 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                       title: Text(suggestion['stationName']['English']),
                     );
                   },
-                  onSuggestionSelected: (suggestion) {
+                  onSelected: (suggestion) {
                     setState(() {
                       sourceLocationController.text =
                           suggestion['stationName']['English'];
@@ -163,27 +167,31 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                 ),
                 const SizedBox(height: 10),
                 // Destination Station Search Box
-                TypeAheadField<dynamic>(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: destinationLocationController,
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(
-                        Icons.location_on,
-                        color: Theme.of(context).primaryColor,
+                TypeAheadField(
+                  controller: destinationLocationController,
+                  builder: (context, controller, focusNode) {
+                    return TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(
+                          Icons.location_on,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              destinationLocationController.clear();
+                              destinationMetroStation = null;
+                            });
+                          },
+                          icon: Icon(Icons.clear, color: Colors.grey),
+                        ),
+                        hintText: "Destination Metro Station",
+                        border: InputBorder.none,
                       ),
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            destinationLocationController.clear();
-                            destinationMetroStation = null;
-                          });
-                        },
-                        icon: Icon(Icons.clear, color: Colors.grey),
-                      ),
-                      hintText: "Destination Metro Station",
-                      border: InputBorder.none,
-                    ),
-                  ),
+                    );
+                  },
                   suggestionsCallback: (pattern) {
                     return controller.allMetroStations
                             .where((station) =>
@@ -206,7 +214,7 @@ class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
                       title: Text(suggestion['stationName']['English']),
                     );
                   },
-                  onSuggestionSelected: (suggestion) {
+                  onSelected: (suggestion) {
                     setState(() {
                       destinationLocationController.text =
                           suggestion['stationName']['English'];

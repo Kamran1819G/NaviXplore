@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:get/get.dart';
 
 class TermsAndConditionsScreen extends StatelessWidget {
   TermsAndConditionsScreen({Key? key}) : super(key: key) {}

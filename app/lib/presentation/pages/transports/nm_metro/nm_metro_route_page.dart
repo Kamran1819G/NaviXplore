@@ -1,14 +1,13 @@
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter_map/flutter_map.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
-
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
 
@@ -31,10 +30,10 @@ class NM_MetroRoutePage extends StatefulWidget {
 
 class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
   List<dynamic>? metroScheduleList;
-  Set<Marker> markers = {};
-  Set<Polyline> _polylines = {};
+  List<Marker> markers = [];
+  List<Polyline> _polylines = [];
   final PanelController panelController = PanelController();
-  final Completer<GoogleMapController> _controller = Completer();
+  final MapController mapController = MapController();
   late String _mapStyle;
   bool isLoading = true;
 
@@ -71,7 +70,7 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
       if (metroSchedule.docs.isNotEmpty) {
         // Assuming metroSchedule.docs contains the fetched documents
         final List<dynamic> schedules =
-            metroSchedule.docs.first.get('schedules');
+        metroSchedule.docs.first.get('schedules');
 
         // Process the schedules data
         List<dynamic> trainSchedule = [];
@@ -118,28 +117,23 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
   String _formatTime(String time24) {
     final DateFormat inputFormat = DateFormat.Hm(); // 24-hour format
     final DateFormat outputFormat =
-        DateFormat.jm(); // 12-hour format with AM/PM
+    DateFormat.jm(); // 12-hour format with AM/PM
     final DateTime dateTime = inputFormat.parse(time24);
     return outputFormat.format(dateTime);
   }
 
-  // Function to add polyline based on latitude and longitude points
+
   Future<void> _addPolyline() async {
-    List<LatLng> polylinePoints = [];
+    List<LatLng> polylinePoints = controller.polylines.map((point) {
+      return LatLng(point['latitude'], point['longitude']);
+    }).toList();
 
-    // Convert latitude and longitude points to LatLng objects
-    for (var point in controller.polylines) {
-      polylinePoints.add(LatLng(point['latitude'], point['longitude']));
-    }
-
-    // Add polyline to the map
     setState(() {
       _polylines.add(
         Polyline(
-          polylineId: PolylineId('polyline'),
-          color: Theme.of(context).primaryColor,
           points: polylinePoints,
-          width: 3,
+          color: Theme.of(context).primaryColor,
+          strokeWidth: 3,
         ),
       );
     });
@@ -148,8 +142,8 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
   Future<void> _addMetroStationMarker() async {
     for (var station in controller.allMetroStations) {
       final markerBitmap =
-          await metroStationMarker(station['stationName']['English'])
-              .toBitmapDescriptor(
+      await metroStationMarker(station['stationName']['English'])
+          .toBitmapDescriptor(
         logicalSize: const Size(500, 250),
         imageSize: const Size(500, 250),
       );
@@ -161,9 +155,17 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
       // Add marker to the set
       markers.add(
         Marker(
-          markerId: MarkerId(station['stationName']['English']),
-          icon: markerBitmap,
-          position: stationLatLng,
+          point: stationLatLng,
+          width: 30,
+          height: 30,
+          child: Container(
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(5),
+                  color: Theme.of(context).primaryColor
+              ),
+              padding: EdgeInsets.all(4),
+              child:  Icon(Icons.tram, color: Colors.white, size: 20,)
+          ),
         ),
       );
     }
@@ -185,109 +187,114 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
       body: isLoading
           ? _buildLoadingScreen()
           : Stack(
+        children: [
+          SlidingUpPanel(
+            defaultPanelState: PanelState.OPEN,
+            maxHeight: 500,
+            minHeight: 100,
+            parallaxEnabled: true,
+            parallaxOffset: 0.5,
+            controller: panelController,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20.0),
+              topRight: Radius.circular(20.0),
+            ),
+            body: FlutterMap(
+              mapController: mapController,
+              options: MapOptions(
+                initialCenter: LatLng(19.038901, 73.06716),
+                initialZoom: 14.0,
+              ),
               children: [
-                SlidingUpPanel(
-                  defaultPanelState: PanelState.OPEN,
-                  maxHeight: 500,
-                  minHeight: 100,
-                  parallaxEnabled: true,
-                  parallaxOffset: 0.5,
-                  controller: panelController,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20.0),
-                    topRight: Radius.circular(20.0),
-                  ),
-                  body: GoogleMap(
-                    mapToolbarEnabled: false,
-                    zoomControlsEnabled: false,
-                    myLocationEnabled: true,
-                    initialCameraPosition: CameraPosition(
-                      target: LatLng(19.038901, 73.06716),
-                      zoom: 14.0,
+                TileLayer(
+                  urlTemplate:
+                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.navixplore.navixplore',
+                ),
+                PolylineLayer(
+                  polylines: _polylines,
+                ),
+                MarkerLayer(
+                  markers: markers,
+                ),
+              ],
+            ),
+            panel: Column(
+              children: [
+                InkWell(
+                  onTap: () {
+                    panelController.isPanelOpen
+                        ? panelController.close()
+                        : panelController.open();
+                  },
+                  child: Container(
+                    width: 30,
+                    height: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 15),
+                    decoration: BoxDecoration(
+                      color:
+                      Theme.of(context).primaryColor.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(5),
                     ),
-                    onMapCreated: (GoogleMapController controller) {
-                      _controller.complete(controller);
-                      controller.setMapStyle(_mapStyle);
-                    },
-                    markers: markers,
-                    polylines: _polylines,
-                  ),
-                  panel: Column(
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          panelController.isPanelOpen
-                              ? panelController.close()
-                              : panelController.open();
-                        },
-                        child: Container(
-                          width: 30,
-                          height: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 15),
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).primaryColor.withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                        ),
-                      ),
-                      Text(
-                        widget.trainName,
-                        style: TextStyle(
-                            fontSize: 22.0, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 10),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: metroScheduleList!.length,
-                          itemBuilder: (context, index) {
-                            return ListTile(
-                              contentPadding: EdgeInsets.all(10.0),
-                              leading: ClipRRect(
-                                borderRadius: BorderRadius.circular(50),
-                                child: Image.asset(
-                                  'assets/icons/NM_Metro.png',
-                                  width: 50,
-                                  height: 50,
-                                ),
-                              ),
-                              title: Text(metroScheduleList![index]
-                                  ['stationName']['English']),
-                              subtitle: Text(metroScheduleList![index]
-                                  ['stationName']['Marathi']),
-                              trailing: Text(
-                                _formatTime(metroScheduleList![index]['time']),
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  color: Theme.of(context).primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
                   ),
                 ),
-                Positioned(
-                  top: 20,
-                  left: 10,
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
+                Text(
+                  widget.trainName,
+                  style: TextStyle(
+                      fontSize: 22.0, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: metroScheduleList!.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        contentPadding: EdgeInsets.all(10.0),
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(50),
+                          child: Image.asset(
+                            'assets/icons/NM_Metro.png',
+                            width: 50,
+                            height: 50,
+                          ),
+                        ),
+                        title: Text(metroScheduleList![index]
+                        ['stationName']['English']),
+                        subtitle: Text(metroScheduleList![index]
+                        ['stationName']['Marathi']),
+                        trailing: Text(
+                          _formatTime(metroScheduleList![index]['time']),
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Theme.of(context).primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      );
                     },
-                    child: CircleAvatar(
-                      radius: 25.0,
-                      backgroundColor: Colors.white,
-                      child: BackButton(
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
                   ),
                 ),
               ],
             ),
+          ),
+          Positioned(
+            top: 20,
+            left: 10,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: CircleAvatar(
+                radius: 25.0,
+                backgroundColor: Colors.white,
+                child: BackButton(
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

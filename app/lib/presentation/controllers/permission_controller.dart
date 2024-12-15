@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:navixplore/core/services/permission_handler_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class PermissionController extends GetxController {
   final PermissionHandlerService _permissionHandlerService =

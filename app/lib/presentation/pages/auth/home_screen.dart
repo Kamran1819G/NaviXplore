@@ -1,17 +1,14 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:navixplore/presentation/controllers/auth_controller.dart';
 import 'package:navixplore/presentation/pages/auth/sign_up_screen.dart';
-import 'package:navixplore/presentation/pages/profile/user_profile_screen.dart';
-import 'package:navixplore/presentation/pages/explore/explore_screen.dart';
-import 'package:navixplore/presentation/pages/xplorefeed/xplorefeed_screen.dart';
-import 'package:navixplore/presentation/pages/auth/sign_in_screen.dart';
-import 'package:navixplore/presentation/pages/transports/transports_screen.dart';
-import 'package:navixplore/presentation/pages/drawer/suggest_feature_screen.dart';
 import 'package:navixplore/presentation/pages/drawer/report_issue_screen.dart';
-import 'package:navixplore/core/utils/color_utils.dart';
+import 'package:navixplore/presentation/pages/drawer/suggest_feature_screen.dart';
+import 'package:navixplore/presentation/pages/explore/explore_screen.dart';
+import 'package:navixplore/presentation/pages/profile/user_profile_screen.dart';
+import 'package:navixplore/presentation/pages/transports/transports_screen.dart';
+import 'package:navixplore/presentation/pages/xplorefeed/xplorefeed_screen.dart';
 import 'package:navixplore/presentation/widgets/webview_screen.dart';
 
 class HomeScreen extends StatefulWidget {

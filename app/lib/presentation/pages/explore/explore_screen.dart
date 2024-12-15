@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:navixplore/presentation/controllers/nm_places_controller.dart';
 import 'package:navixplore/presentation/pages/explore/famous_places_tab.dart';
 import 'package:navixplore/presentation/pages/explore/tourist_destinations_tab.dart';
-import 'package:navixplore/presentation/controllers/nm_places_controller.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({Key? key}) : super(key: key);

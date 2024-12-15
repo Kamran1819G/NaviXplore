@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 ThemeData lightMode = ThemeData(
-  primaryColor: Colors.purple.shade700,
+  primaryColor: Colors.deepOrange.shade300,
   scaffoldBackgroundColor: Colors.white,
 );
 

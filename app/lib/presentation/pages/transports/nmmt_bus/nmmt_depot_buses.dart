@@ -1,16 +1,18 @@
 import 'dart:async';
-import 'package:flutter/services.dart';
-import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_number_search_page.dart';
-import 'package:navixplore/core/utils/api_endpoints.dart';
-import 'package:flutter/material.dart';
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:navixplore/core/utils/api_endpoints.dart';
+import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_number_search_page.dart';
 import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_route_page.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:widget_to_marker/widget_to_marker.dart';
-import 'package:dio/dio.dart';
 import 'package:xml/xml.dart' as xml;
-import 'dart:convert';
+
 import '../../../widgets/Skeleton.dart';
 import '../../../widgets/bus_marker.dart';
 
@@ -35,11 +37,12 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
   List<dynamic>? allBuses;
   List<dynamic>? runningBuses;
   List<dynamic>? assignedBuses;
-  Set<Marker> markers = {};
+  List<Marker> markers = [];
   Map<String, dynamic> markerData = {};
   bool isLoading = true;
+  Map<String, dynamic>? selectedBus;
   Timer? _timer;
-  BitmapDescriptor? busStopMarker;
+  final MapController mapController = MapController();
   PanelController panelController = PanelController();
   late TabController _tabController;
 
@@ -67,30 +70,20 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
   Future<void> setCustomMarkers() async {
     final List<Marker> newMarkers = [];
 
-    final busStopMarker = await busStopMarkerWidget().toBitmapDescriptor(
-      logicalSize: const Size(150, 150),
-      imageSize: const Size(200, 200),
-    );
-    setState(() {
-      this.busStopMarker = busStopMarker;
-    });
-
     // Add a marker for the bus stop
     newMarkers.add(
       Marker(
-        markerId: MarkerId(widget.busStopName),
-        position: LatLng(
+        point: LatLng(
           widget.stationLocation['latitude'],
           widget.stationLocation['longitude'],
         ),
-        icon: busStopMarker,
-        infoWindow: InfoWindow(
-          title: widget.busStopName,
-        ),
+        width: 30,
+        height: 30,
+        child: busStopMarkerWidget(context),
       ),
     );
 
-    // Add markers for running buses using WidgetToMarker
+    // Add markers for running buses
     for (final busData in allBuses!) {
       final latitude = busData['lattitude'] as String?;
       final longitude = busData['longitude'] as String?;
@@ -101,47 +94,28 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
         final busLatitude = double.parse(latitude);
         final busLongitude = double.parse(longitude);
 
-        // Check if the marker already exists
-        if (markerData.containsKey(busData['BusNo'])) {
-          // If it exists, update its position and other properties
-          final existingMarker = markerData[busData['BusNo']];
-          final updatedMarker = Marker(
-            markerId: existingMarker.markerId,
-            position: LatLng(busLatitude, busLongitude),
-            icon: existingMarker.icon,
-            infoWindow: existingMarker.infoWindow,
-            // Add other properties as needed
-          );
-          markerData[busData['BusNo']] = updatedMarker;
-          newMarkers.add(updatedMarker);
-        } else {
-          // If it doesn't exist, create a new marker
-          final busMarkerWidget = BusMarker(routeNo: busData['RouteNo']);
-          final busMarkerBitmap = await busMarkerWidget.toBitmapDescriptor(
-            logicalSize: const Size(150, 150),
-            imageSize: const Size(200, 200),
-          );
 
-          final newMarker = Marker(
-            markerId: MarkerId(busData['BusNo'] as String? ?? 'Unknown'),
-            position: LatLng(busLatitude, busLongitude),
-            icon: busMarkerBitmap,
-            infoWindow: InfoWindow(
-              title: '${busData['RouteName'] as String? ?? 'Unknown'}',
-              snippet: busData['BusNo'] as String? ?? 'Unknown',
-            ),
-          );
-
-          // Save the new marker to the mapping
-          markerData[busData['BusNo']] = newMarker;
-          newMarkers.add(newMarker);
-        }
+        final newMarker = Marker(
+          point: LatLng(busLatitude, busLongitude),
+          width: 75,
+          child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedBus = busData;
+                  panelController.open();
+                });
+              },
+              child: BusMarker(routeNo: busData['RouteNo'])
+          ),
+        );
+        markerData[busData['BusNo']] = newMarker;
+        newMarkers.add(newMarker);
       }
     }
 
     // Update the state with the new markers
     setState(() {
-      markers = newMarkers.toSet();
+      markers = newMarkers;
     });
   }
 
@@ -158,9 +132,9 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
 
       if (response.statusCode == 200) {
         if (xml.XmlDocument.parse(response.data)
-                .innerText
-                .trim()
-                .toUpperCase() ==
+            .innerText
+            .trim()
+            .toUpperCase() ==
             "NO BUS AVAILABLE") {
           setState(() {
             allBuses = [];
@@ -296,18 +270,24 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
             ),
             parallaxEnabled: true,
             parallaxOffset: 0.5,
-            body: GoogleMap(
-              myLocationEnabled: true,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              initialCameraPosition: CameraPosition(
-                target: LatLng(
+            body: FlutterMap(
+              mapController: mapController,
+              options: MapOptions(
+                initialCenter: LatLng(
                   widget.stationLocation['latitude'],
                   widget.stationLocation['longitude'],
                 ),
-                zoom: 15.0,
+                initialZoom: 15,
               ),
-              markers: markers,
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.navixplore.navixplore',
+                ),
+                MarkerLayer(
+                  markers: markers,
+                ),
+              ],
             ),
             panel: Column(
               children: [
@@ -390,7 +370,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                         style: TextStyle(color: Colors.white),
                       ),
                       duration:
-                          Duration(seconds: 2), // Adjust the duration as needed
+                      Duration(seconds: 2), // Adjust the duration as needed
                     ),
                   );
                 },
@@ -404,144 +384,201 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
       ),
     );
   }
+  Widget _buildBusDetails() {
+    if (selectedBus == null) {
+      return Container(); // Return an empty container or a loading indicator if needed
+    }
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            selectedBus!['RouteName'],
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          Text(
+              selectedBus!["RouteName_M"],
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              )),
+          SizedBox(height: 10),
+          Text(
+            'Status: ${selectedBus!['BusRunningStatus'] == 'Running' ? 'Running' : 'Scheduled'}',
+            style: TextStyle(
+              color: selectedBus!['BusRunningStatus'] == 'Running'
+                  ? Colors.green
+                  : Colors.red,
+            ),
+          ),
+          SizedBox(height: 10),
+          Text(
+            'Bus No: ${selectedBus!['BusNo']}',
+            style: TextStyle(
+              color: Colors.grey,
+            ),
+          ),
+          SizedBox(height: 10),
+          if(selectedBus!["BusRunningStatus"] == "Running")
+            Row(
+              children: [
+                Text(
+                  '${selectedBus!['ETATimeMinute']} min',
+                  style: TextStyle(
+                    fontSize: 22,
+                    color: Theme.of(context).primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(width: 10),
+                Text('${selectedBus!['ArrivalTime']}'),
+              ],
+            ),
+
+        ],
+      ),
+    );
+  }
 
   Widget _buildBusesList(List<dynamic>? buses) {
     return buses == null
         ? _buildLoadingSkeleton()
         : (buses.isEmpty
-            ? _buildNoBusesAvailable()
-            : ListView.builder(
-                itemCount: buses.length,
-                itemBuilder: (context, index) {
-                  final busData = buses[index];
-                  return ListTile(
-                    contentPadding: EdgeInsets.all(10),
-                    onTap: () async {
-                      if (busData["BusRunningStatus"] == "Running") {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NMMTBusRoutePage(
-                              routeid: int.parse(busData["RouteId"]),
-                              busName: busData["RouteName"],
-                              busTripId: busData["TripId"],
-                              busArrivalTime: busData["ETATime"],
-                            ),
-                          ),
-                        );
-                      } else {
-                        // Bus is scheduled, show dialog and navigate without passing busTripId and ArrivalTime
-                        await showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Text('Bus is Scheduled'),
-                              content: const Text(
-                                  'Currently, you can view the route, but unfortunately, real-time bus tracking is not available.'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(
-                                    'Okay, View Route',
-                                    style: TextStyle(
-                                        color: Theme.of(context).primaryColor),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NMMTBusRoutePage(
-                              routeid: busData["RouteId"],
-                              busName: busData["RouteName"],
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    leading: SizedBox(
-                      width: 75,
-                      child: Row(
-                        children: [
-                          Icon(
-                            CupertinoIcons.bus,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                vertical: 2, horizontal: 2),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(
-                              busData['RouteNo'],
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          )
-                        ],
+        ? _buildNoBusesAvailable()
+        : ListView.builder(
+      itemCount: buses.length,
+      itemBuilder: (context, index) {
+        final busData = buses[index];
+        return ListTile(
+          contentPadding: EdgeInsets.all(10),
+          onTap: () async {
+            if (busData["BusRunningStatus"] == "Running") {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NMMTBusRoutePage(
+                    routeid: int.parse(busData["RouteId"].toString() ?? '0'),
+                    busName: busData["RouteName"],
+                    busTripId: busData["TripId"],
+                    busArrivalTime: busData["ETATime"],
+                  ),
+                ),
+              );
+            } else {
+              // Bus is scheduled, show dialog and navigate without passing busTripId and ArrivalTime
+              await showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Bus is Scheduled'),
+                    content: const Text(
+                        'Currently, you can view the route, but unfortunately, real-time bus tracking is not available.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          'Okay, View Route',
+                          style: TextStyle(
+                              color: Theme.of(context).primaryColor),
+                        ),
                       ),
-                    ),
-                    title: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(busData['RouteName'],
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            )),
-                        Text(busData["RouteName_M"],
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
-                            ))
-                      ],
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Status: ${busData['BusRunningStatus'] == 'Running' ? 'Running' : 'Scheduled'}',
-                          style: TextStyle(
-                            color: busData['BusRunningStatus'] == 'Running'
-                                ? Colors.green
-                                : Colors.red,
-                          ),
-                        ),
-                        Text(
-                          'Bus No: ${busData['BusNo']}',
-                          style: TextStyle(
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${busData['ETATimeMinute']} min',
-                          style: TextStyle(
-                            fontSize: 22,
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text('${busData['ArrivalTime']}'),
-                      ],
-                    ),
+                    ],
                   );
                 },
-              ));
+              );
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NMMTBusRoutePage(
+                    routeid: int.parse(busData["RouteId"].toString() ?? '0'),
+                    busName: busData["RouteName"],
+                  ),
+                ),
+              );
+            }
+          },
+          leading: SizedBox(
+            width: 75,
+            child: Row(
+              children: [
+                Icon(
+                  CupertinoIcons.bus,
+                  color: Theme.of(context).primaryColor,
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                      vertical: 2, horizontal: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(
+                    busData['RouteNo'],
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold),
+                  ),
+                )
+              ],
+            ),
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(busData['RouteName'],
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  )),
+              Text(busData["RouteName_M"],
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ))
+            ],
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Status: ${busData['BusRunningStatus'] == 'Running' ? 'Running' : 'Scheduled'}',
+                style: TextStyle(
+                  color: busData['BusRunningStatus'] == 'Running'
+                      ? Colors.green
+                      : Colors.red,
+                ),
+              ),
+              Text(
+                'Bus No: ${busData['BusNo']}',
+                style: TextStyle(
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+          trailing: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${busData['ETATimeMinute']} min',
+                style: TextStyle(
+                  fontSize: 22,
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text('${busData['ArrivalTime']}'),
+            ],
+          ),
+        );
+      },
+    ));
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -606,15 +643,15 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
     );
   }
 
-  Widget busStopMarkerWidget() {
+  Widget busStopMarkerWidget(BuildContext context) {
     return CircleAvatar(
-      radius: 30.0,
+      radius: 15.0,
       backgroundColor: Theme.of(context).primaryColor,
       child: CircleAvatar(
-        radius: 25.0,
+        radius: 10.0,
         backgroundColor: Colors.white,
         child: Icon(Icons.directions_bus,
-            color: Theme.of(context).primaryColor, size: 30),
+            color: Theme.of(context).primaryColor, size: 15),
       ),
     );
   }

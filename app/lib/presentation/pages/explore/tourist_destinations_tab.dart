@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:navixplore/presentation/controllers/nm_places_controller.dart';
 import 'package:navixplore/presentation/pages/explore/place_details_screen.dart';
 import 'package:navixplore/presentation/widgets/image_container.dart';
-import 'package:navixplore/presentation/controllers/nm_places_controller.dart';
+
 import '../../widgets/Skeleton.dart';
 
 class TouristDestinationsTab extends StatelessWidget {

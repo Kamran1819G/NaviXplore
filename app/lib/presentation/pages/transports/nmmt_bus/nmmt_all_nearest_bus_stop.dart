@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:navixplore/core/utils/api_endpoints.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:widget_to_marker/widget_to_marker.dart';
-import 'package:dio/dio.dart';
 import 'package:xml/xml.dart' as xml;
 
 import '../../../widgets/Skeleton.dart';
+import '../../../widgets/bus_marker.dart';
 import 'nmmt_depot_buses.dart';
 
 class AllNearestBusStop extends StatefulWidget {
@@ -25,14 +26,13 @@ class AllNearestBusStop extends StatefulWidget {
 
 class _AllNearestBusStopState extends State<AllNearestBusStop> {
   List<dynamic>? nearbyBusStop;
-  Set<Marker> markers = Set();
+  List<Marker> markers = [];
+  Map<String, dynamic>? selectedBusStop;
   bool isLoading = true;
   double? latitude;
   double? longitude;
-  BitmapDescriptor? busStopMarker;
   Timer? _timer;
-  final Completer<GoogleMapController> mapController =
-      Completer<GoogleMapController>();
+  final MapController mapController = MapController();
   PanelController panelController = PanelController();
 
   @override
@@ -42,16 +42,40 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
   }
 
   void initialize() async {
-    await setCustomMarker();
     await getCurrentLocation();
     if (widget.nearbyBusStop != null) {
       nearbyBusStop = widget.nearbyBusStop;
+      await setCustomMarkers();
       isLoading = false;
     } else {
-      _getNearbyBusStops();
+      await _getNearbyBusStops();
     }
     _timer = Timer.periodic(const Duration(minutes: 2), (timer) {
       _getNearbyBusStops();
+    });
+  }
+
+  Future<void> setCustomMarkers() async {
+    final List<Marker> newMarkers = [];
+
+    // Add markers for the bus stops
+    for (final busStopData in nearbyBusStop!) {
+      newMarkers.add(
+        Marker(
+          point: LatLng(
+            double.parse(busStopData["Center_Lat"] ?? "0.0"),
+            double.parse(busStopData["Center_Lon"] ?? "0.0"),
+          ),
+          width: 30,
+          height: 30,
+          child: busStopMarkerWidget(context),
+        ),
+      );
+    }
+
+    // Update the state with the new markers
+    setState(() {
+      markers = newMarkers;
     });
   }
 
@@ -61,20 +85,10 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
     super.dispose();
   }
 
-  Future<void> setCustomMarker() async {
-    final busStopMarker = await busStopMarkerWidget().toBitmapDescriptor(
-      logicalSize: const Size(150, 150),
-      imageSize: const Size(200, 200),
-    );
-    setState(() {
-      this.busStopMarker = busStopMarker;
-    });
-  }
-
   Future<void> getCurrentLocation() async {
     try {
       bool isLocationServiceEnabled =
-          await Geolocator.isLocationServiceEnabled();
+      await Geolocator.isLocationServiceEnabled();
       if (isLocationServiceEnabled) {
         final position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high,
@@ -105,12 +119,14 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
 
       if (response.statusCode == 200) {
         final List<dynamic> busStop =
-            json.decode(xml.XmlDocument.parse(response.data).innerText);
+        json.decode(xml.XmlDocument.parse(response.data).innerText);
 
         setState(() {
           nearbyBusStop = busStop;
           isLoading = false;
         });
+
+        await setCustomMarkers();
       } else {
         print('Failed to fetch data. Status code: ${response.statusCode}');
         print('Response body: ${response.data}');
@@ -161,104 +177,104 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
       body: isLoading
           ? _buildLoadingScreen()
           : Stack(
-              children: [
-                SlidingUpPanel(
-                  controller: panelController,
-                  defaultPanelState: PanelState.OPEN,
-                  parallaxEnabled: true,
-                  parallaxOffset: 0.5,
-                  minHeight: 75,
-                  maxHeight: MediaQuery.of(context).size.height * 0.6,
-                  body: buildMap(),
-                  panel: buildPanel(),
-                ),
-                Positioned(
-                  top: 20,
-                  left: 10,
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: CircleAvatar(
-                        radius: 25.0,
-                        backgroundColor: Theme.of(context).primaryColor,
-                        child: BackButton(
-                          color: Colors.white,
-                        )),
-                  ),
-                ),
-                Positioned(
-                  top: 20,
-                  right: 10,
-                  child: GestureDetector(
-                      onTap: () {
-                        _getNearbyBusStops();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: Theme.of(context).primaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(18),
-                                topRight: Radius.circular(18),
-                              ),
-                            ),
-                            content: Text(
-                              'Getting Nearby Bus Stops...',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            duration: Duration(
-                                seconds: 2), // Adjust the duration as needed
-                          ),
-                        );
-                      },
-                      child: CircleAvatar(
-                          radius: 25.0,
-                          backgroundColor: Colors.white,
-                          child: Icon(Icons.refresh,
-                              color: Theme.of(context).primaryColor))),
-                ),
-              ],
+        children: [
+          SlidingUpPanel(
+            controller: panelController,
+            defaultPanelState: PanelState.OPEN,
+            parallaxEnabled: true,
+            parallaxOffset: 0.5,
+            minHeight: 75,
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+            body: buildMap(),
+            panel: buildPanel(),
+          ),
+          Positioned(
+            top: 20,
+            left: 10,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: CircleAvatar(
+                  radius: 25.0,
+                  backgroundColor: Theme.of(context).primaryColor,
+                  child: BackButton(
+                    color: Colors.white,
+                  )),
             ),
+          ),
+          Positioned(
+            top: 20,
+            right: 10,
+            child: GestureDetector(
+                onTap: () {
+                  _getNearbyBusStops();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(18),
+                          topRight: Radius.circular(18),
+                        ),
+                      ),
+                      content: Text(
+                        'Getting Nearby Bus Stops...',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      duration: Duration(
+                          seconds: 2), // Adjust the duration as needed
+                    ),
+                  );
+                },
+                child: CircleAvatar(
+                    radius: 25.0,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.refresh,
+                        color: Theme.of(context).primaryColor))),
+          ),
+        ],
+      ),
     );
   }
 
   Widget buildMap() {
-    markers.clear();
-    for (int i = 0; i < 15; i++) {
-      final busStopData = nearbyBusStop![i];
-      if (busStopData != null) {
-        markers.add(
-          Marker(
-            markerId: MarkerId(busStopData["StationName"] ?? ""),
-            position: LatLng(
-              double.parse(busStopData["Center_Lat"] ?? "0.0"),
-              double.parse(busStopData["Center_Lon"] ?? "0.0"),
-            ),
-            icon: busStopMarker ?? BitmapDescriptor.defaultMarker,
-            infoWindow: InfoWindow(
-              title: busStopData["StationName"] ?? "",
-            ),
-            zIndex: 1,
-          ),
-        );
-        if (i == 9) {
-          break;
-        }
-      }
-    }
-
-    return GoogleMap(
-      initialCameraPosition: CameraPosition(
-        target: LatLng(latitude!, longitude!),
-        zoom: 16,
+    return FlutterMap(
+      mapController: mapController,
+      options: MapOptions(
+        initialCenter: LatLng(
+          latitude!,
+          longitude!,
+        ),
+        initialZoom: 15,
       ),
-      markers: markers,
-      myLocationButtonEnabled: true,
-      myLocationEnabled: true,
-      fortyFiveDegreeImageryEnabled: true,
-      onMapCreated: (GoogleMapController controller) {
-        mapController.complete(controller);
-      },
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.navixplore.navixplore',
+        ),
+        MarkerLayer(
+          markers: markers.map((marker) {
+            final busStopData = nearbyBusStop!.firstWhere((element) =>
+            double.parse(element["Center_Lat"] ?? "0.0") == marker.point.latitude &&
+                double.parse(element["Center_Lon"] ?? "0.0") == marker.point.longitude);
+
+            return Marker(
+              point: marker.point,
+              width: 30,
+              height: 30,
+              child: GestureDetector(
+                  onTap: (){
+                    setState(() {
+                      selectedBusStop = busStopData;
+                      panelController.open();
+                    });
+                  },
+                  child: busStopMarkerWidget(context)),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
@@ -284,15 +300,71 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
           ),
         ),
         Text(
-          "Nearby Bus Stops",
+          selectedBusStop == null
+              ? "Nearby Bus Stops"
+              : selectedBusStop!["StationName"],
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
         Expanded(
-          child: buildBusStopList(),
+          child:  selectedBusStop == null
+              ? buildBusStopList()
+              : buildBusStopDetails(),
         ),
       ],
+    );
+  }
+  Widget buildBusStopDetails() {
+    if (selectedBusStop == null) {
+      return Container(); // Return an empty container or a loading indicator if needed
+    }
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            selectedBusStop!["StationName"],
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            selectedBusStop!["StationName_M"],
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey),
+          ),
+          SizedBox(height: 10),
+          Text(
+            "Buses: ${selectedBusStop!["RouteNo"]}",
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          SizedBox(height: 10),
+          Row(
+            children: [
+              Text(
+                "Time: ${calculateTime(selectedBusStop!["Distance"])}",
+                style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).primaryColor,
+                    fontWeight: FontWeight.bold),
+              ),
+              SizedBox(width: 10),
+              Text(
+                "~ ${formatDistance(selectedBusStop!["Distance"])}",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+            ],
+          ),
+
+        ],
+      ),
     );
   }
 
@@ -441,15 +513,15 @@ class _AllNearestBusStopState extends State<AllNearestBusStop> {
     );
   }
 
-  Widget busStopMarkerWidget() {
+  Widget busStopMarkerWidget(BuildContext context) {
     return CircleAvatar(
-      radius: 30.0,
+      radius: 15.0,
       backgroundColor: Theme.of(context).primaryColor,
       child: CircleAvatar(
-        radius: 25.0,
+        radius: 10.0,
         backgroundColor: Colors.white,
         child: Icon(Icons.directions_bus,
-            color: Theme.of(context).primaryColor, size: 30),
+            color: Theme.of(context).primaryColor, size: 15),
       ),
     );
   }

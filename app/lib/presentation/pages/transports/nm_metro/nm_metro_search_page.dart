@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
+
 import 'nm_metro_upcoming_trains.dart';
 
 class NMMetroSearchPage extends StatefulWidget {

@@ -1,6 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NMMTController extends GetxController {
   final _storage = GetStorage();
@@ -15,29 +15,36 @@ class NMMTController extends GetxController {
   }
 
   void _loadFromStorage() {
-    allBusStops.value = _storage.read('allBusStops') ?? [];
-    allBuses.value = _storage.read('allBuses') ?? [];
-    announcements.value = _storage.read('announcements') ?? [];
+    // Read data as List<Map<String, dynamic>> or null.
+    final List<dynamic>? storedBusStops = _storage.read('allBusStops');
+    final List<dynamic>? storedBuses = _storage.read('allBuses');
+    final List<dynamic>? storedAnnouncements = _storage.read('announcements');
+    // Cast the dynamic lists to the correct type
+    allBusStops.value = (storedBusStops?.cast<Map<String, dynamic>>()) ?? [];
+    allBuses.value = (storedBuses?.cast<Map<String, dynamic>>()) ?? [];
+    announcements.value = (storedAnnouncements?.cast<Map<String, dynamic>>()) ?? [];
   }
 
   Future<void> fetchAllStations() async {
     if (allBusStops.isNotEmpty) return;
     QuerySnapshot querySnapshot =
-        await FirebaseFirestore.instance.collection('NMMT-Stations').get();
-    allBusStops.value = querySnapshot.docs
+    await FirebaseFirestore.instance.collection('NMMT-Stations').get();
+    final List<Map<String, dynamic>> fetchedStops = querySnapshot.docs
         .map((doc) => doc.data() as Map<String, dynamic>)
         .toList();
-    _storage.write('allBusStops', allBusStops);
+    allBusStops.value = fetchedStops;
+    _storage.write('allBusStops', fetchedStops); // Write the raw List
   }
 
   Future<void> fetchAllBuses() async {
     if (allBuses.isNotEmpty) return;
     QuerySnapshot querySnapshot =
-        await FirebaseFirestore.instance.collection('NMMT-Buses').get();
-    allBuses.value = querySnapshot.docs
+    await FirebaseFirestore.instance.collection('NMMT-Buses').get();
+    final List<Map<String, dynamic>> fetchedBuses = querySnapshot.docs
         .map((doc) => doc.data() as Map<String, dynamic>)
         .toList();
-    _storage.write('allBuses', allBuses);
+    allBuses.value = fetchedBuses;
+    _storage.write('allBuses', fetchedBuses); // Write the raw List
   }
 
   Future<void> fetchAnnouncements() async {
@@ -46,9 +53,10 @@ class NMMTController extends GetxController {
         .collection('NMMT-Announcements')
         .orderBy('releaseAt', descending: true)
         .get();
-    announcements.value = querySnapshot.docs
+    final List<Map<String, dynamic>> fetchedAnnouncements = querySnapshot.docs
         .map((doc) => doc.data() as Map<String, dynamic>)
         .toList();
-    _storage.write('announcements', announcements);
+    announcements.value = fetchedAnnouncements;
+    _storage.write('announcements', fetchedAnnouncements); // Write the raw List
   }
 }

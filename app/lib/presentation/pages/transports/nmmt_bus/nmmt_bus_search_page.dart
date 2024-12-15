@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:get/get.dart';
 import 'package:navixplore/core/utils/api_endpoints.dart';
 import 'package:navixplore/presentation/controllers/nmmt_controller.dart';
@@ -30,6 +29,12 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   TextEditingController destinationLocationController = TextEditingController();
   int? sourceLocationId;
   int? destinationLocationId;
+  List<dynamic> _filteredSourceSuggestions = [];
+  List<dynamic> _filteredDestinationSuggestions = [];
+  bool _showSourceSuggestions = false;
+  bool _showDestinationSuggestions = false;
+  final FocusNode _sourceFocusNode = FocusNode();
+  final FocusNode _destinationFocusNode = FocusNode();
 
   final NMMTController controller = Get.find<NMMTController>();
 
@@ -37,6 +42,30 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   void initState() {
     super.initState();
     initialize();
+    _sourceFocusNode.addListener(_onSourceFocusChange);
+    _destinationFocusNode.addListener(_onDestinationFocusChange);
+  }
+
+  void _onSourceFocusChange() {
+    setState(() {
+      _showSourceSuggestions = _sourceFocusNode.hasFocus;
+    });
+  }
+
+  void _onDestinationFocusChange() {
+    setState(() {
+      _showDestinationSuggestions = _destinationFocusNode.hasFocus;
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _sourceFocusNode.removeListener(_onSourceFocusChange);
+    _destinationFocusNode.removeListener(_onDestinationFocusChange);
+    _sourceFocusNode.dispose();
+    _destinationFocusNode.dispose();
+    super.dispose();
   }
 
   void initialize() async {
@@ -46,11 +75,6 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
     });
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
 
   // Method to interchange the source and destination values
   void _interchangeLocations() {
@@ -91,16 +115,16 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
 
       if (response.statusCode == 200) {
         if (xml.XmlDocument.parse(response.data)
-                .innerText
-                .trim()
-                .toUpperCase() ==
+            .innerText
+            .trim()
+            .toUpperCase() ==
             "NO BUS AVAILABLE") {
           setState(() {
             busDataList = [];
           });
         } else {
           final List<dynamic> buses =
-              json.decode(xml.XmlDocument.parse(response.data).innerText);
+          json.decode(xml.XmlDocument.parse(response.data).innerText);
 
           setState(() {
             busDataList = buses;
@@ -119,287 +143,355 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
     }
   }
 
+  void _filterSourceSuggestions(String query) {
+    setState(() {
+      _filteredSourceSuggestions = controller.allBusStops
+          .where((stop) =>
+      stop['stationName']['English']
+          ?.toLowerCase()
+          ?.contains(query.toLowerCase()) ??
+          false ||
+              stop['stationName']['Marathi']
+                  ?.toLowerCase()
+                  ?.contains(query.toLowerCase()) ??
+          false)
+          .toList() ??
+          [];
+      _showSourceSuggestions = true;
+
+    });
+  }
+
+  void _filterDestinationSuggestions(String query) {
+    setState(() {
+      _filteredDestinationSuggestions = controller.allBusStops
+          .where((stop) =>
+      stop['stationName']['English']
+          ?.toLowerCase()
+          ?.contains(query.toLowerCase()) ??
+          false ||
+              stop['stationName']['Marathi']
+                  ?.toLowerCase()
+                  ?.contains(query.toLowerCase()) ??
+          false)
+          .toList() ??
+          [];
+      _showDestinationSuggestions = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 2,
-        backgroundColor: Colors.white,
-        leading: const BackButton(
-          color: Colors.black,
-        ),
-        title: const Text(
-          "Search NMMT Bus",
-          style: TextStyle(color: Colors.black),
-        ),
-      ),
-      body: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.directions_bus,
-                  color: Colors.white,
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Discover NMMT Bus services! Plan your journey and track real-time bus status!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+    return GestureDetector(
+      onTap: () {
+        _sourceFocusNode.unfocus();
+        _destinationFocusNode.unfocus();
+        setState(() {
+          _showSourceSuggestions= false;
+          _showDestinationSuggestions =false;
+        });
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          elevation: 2,
+          backgroundColor: Colors.white,
+          leading: const BackButton(
+            color: Colors.black,
           ),
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Source Station Search Box
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-                  decoration: BoxDecoration(
+          title: const Text(
+            "Search NMMT Bus",
+            style: TextStyle(color: Colors.black),
+          ),
+        ),
+        body: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.directions_bus,
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
                   ),
-                  child: TypeAheadField<dynamic>(
-                    textFieldConfiguration: TextFieldConfiguration(
-                      controller: sourceLocationController,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          Icons.location_on,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            setState(() {
-                              sourceLocationController.clear();
-                              sourceLocationId = null;
-                            });
-                          },
-                          icon: Icon(Icons.clear, color: Colors.grey),
-                        ),
-                        hintText: "Source Bus Station",
-                        border: InputBorder.none,
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Discover NMMT Bus services! Plan your journey and track real-time bus status!',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    suggestionsCallback: (pattern) {
-                      return controller.allBusStops
-                              .where((stop) =>
-                                  stop['stationName']['English']
-                                      ?.toLowerCase()
-                                      ?.contains(pattern.toLowerCase()) ??
-                                  false ||
-                                      stop['stationName']['Marathi']
-                                          ?.toLowerCase()
-                                          ?.contains(pattern.toLowerCase()) ??
-                                  false)
-                              .toList() ??
-                          [];
-                    },
-                    itemBuilder: (context, suggestion) {
-                      return ListTile(
-                        leading: CircleAvatar(
-                          radius: 20.0,
-                          backgroundColor: Theme.of(context).primaryColor,
-                          child: CircleAvatar(
-                            radius: 15.0,
-                            backgroundColor: Colors.white,
-                            child: Icon(Icons.directions_bus,
-                                color: Theme.of(context).primaryColor,
-                                size: 20),
-                          ),
-                        ),
-                        title: Text(suggestion['stationName']['English']),
-                      );
-                    },
-                    onSuggestionSelected: (suggestion) {
-                      setState(() {
-                        sourceLocationController.text =
-                            suggestion['stationName']['English'];
-                        sourceLocationId = suggestion['stationID'];
-                      });
-                    },
                   ),
-                ),
-                const SizedBox(height: 10),
-                // Destination Station Search Box
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: TypeAheadField<dynamic>(
-                    textFieldConfiguration: TextFieldConfiguration(
-                      controller: destinationLocationController,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          Icons.location_on,
-                          color: Theme.of(context).primaryColor,
+                ],
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Source Station Search Box
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
                         ),
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            setState(() {
-                              destinationLocationController.clear();
-                              destinationLocationId = null;
-                              _fetchRunningBusData(
-                                  sourceLocationId, destinationLocationId);
-                            });
-                          },
-                          icon: Icon(Icons.clear, color: Colors.grey),
-                        ),
-                        hintText: "Destination Bus Station",
-                        border: InputBorder.none,
-                      ),
+                      ],
                     ),
-                    suggestionsCallback: (pattern) {
-                      return controller.allBusStops
-                              .where((stop) =>
-                                  stop['stationName']['English']
-                                      ?.toLowerCase()
-                                      ?.contains(pattern.toLowerCase()) ??
-                                  false ||
-                                      stop['stationName']['Marathi']
-                                          ?.toLowerCase()
-                                          ?.contains(pattern.toLowerCase()) ??
-                                  false)
-                              .toList() ??
-                          [];
-                    },
-                    itemBuilder: (context, suggestion) {
-                      return ListTile(
-                        leading: CircleAvatar(
-                          radius: 20.0,
-                          backgroundColor: Theme.of(context).primaryColor,
-                          child: CircleAvatar(
-                            radius: 15.0,
-                            backgroundColor: Colors.white,
-                            child: Icon(Icons.directions_bus,
-                                color: Theme.of(context).primaryColor,
-                                size: 20),
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: sourceLocationController,
+                          focusNode: _sourceFocusNode,
+                          onChanged: _filterSourceSuggestions,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(
+                              Icons.location_on,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  sourceLocationController.clear();
+                                  sourceLocationId = null;
+                                });
+                              },
+                              icon: Icon(Icons.clear, color: Colors.grey),
+                            ),
+                            hintText: "Source Bus Station",
+                            border: InputBorder.none,
                           ),
                         ),
-                        title: Text(suggestion['stationName']['English']),
-                      );
-                    },
-                    onSuggestionSelected: (suggestion) {
-                      setState(() {
-                        destinationLocationController.text =
-                            suggestion['stationName']['English'];
-                        destinationLocationId = suggestion['stationID'];
-                      });
-                    },
+                        if (_showSourceSuggestions && _filteredSourceSuggestions.isNotEmpty)
+                          Container(
+                            constraints: BoxConstraints(maxHeight: 200),
+                            decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12))
+                            ),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: _filteredSourceSuggestions.length,
+                              itemBuilder: (context, index) {
+                                final suggestion =
+                                _filteredSourceSuggestions[index];
+                                return ListTile(
+                                  leading: CircleAvatar(
+                                    radius: 20.0,
+                                    backgroundColor: Theme.of(context).primaryColor,
+                                    child: CircleAvatar(
+                                      radius: 15.0,
+                                      backgroundColor: Colors.white,
+                                      child: Icon(Icons.directions_bus,
+                                          color: Theme.of(context).primaryColor,
+                                          size: 20),
+                                    ),
+                                  ),
+                                  title: Text(
+                                      suggestion['stationName']['English']),
+                                  onTap: () {
+                                    setState(() {
+                                      sourceLocationController.text =
+                                      suggestion['stationName']['English'];
+                                      sourceLocationId =
+                                      suggestion['stationID'];
+                                      _showSourceSuggestions =false;
+                                      _sourceFocusNode.unfocus();
+                                      _filteredSourceSuggestions =[];
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                // Interchange Button and Search Button
-                Row(
+                  const SizedBox(height: 10),
+                  // Destination Station Search Box
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: destinationLocationController,
+                          focusNode: _destinationFocusNode,
+                          onChanged: _filterDestinationSuggestions,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(
+                              Icons.location_on,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  destinationLocationController.clear();
+                                  destinationLocationId = null;
+                                  _fetchRunningBusData(
+                                      sourceLocationId, destinationLocationId);
+                                });
+                              },
+                              icon: Icon(Icons.clear, color: Colors.grey),
+                            ),
+                            hintText: "Destination Bus Station",
+                            border: InputBorder.none,
+                          ),
+                        ),
+                        if (_showDestinationSuggestions && _filteredDestinationSuggestions.isNotEmpty)
+                          Container(
+                            constraints: BoxConstraints(maxHeight: 200),
+                            decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12))
+                            ),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: _filteredDestinationSuggestions.length,
+                              itemBuilder: (context, index) {
+                                final suggestion =
+                                _filteredDestinationSuggestions[index];
+                                return ListTile(
+                                  leading: CircleAvatar(
+                                    radius: 20.0,
+                                    backgroundColor: Theme.of(context).primaryColor,
+                                    child: CircleAvatar(
+                                      radius: 15.0,
+                                      backgroundColor: Colors.white,
+                                      child: Icon(Icons.directions_bus,
+                                          color: Theme.of(context).primaryColor,
+                                          size: 20),
+                                    ),
+                                  ),
+                                  title: Text(
+                                      suggestion['stationName']['English']),
+                                  onTap: () {
+                                    setState(() {
+                                      destinationLocationController.text =
+                                      suggestion['stationName']['English'];
+                                      destinationLocationId =
+                                      suggestion['stationID'];
+                                      _showDestinationSuggestions =false;
+                                      _destinationFocusNode.unfocus();
+                                      _filteredDestinationSuggestions=[];
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Interchange Button and Search Button
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _interchangeLocations,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                          ),
+                          child: Icon(
+                            Icons.swap_vert,
+                            color: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            _fetchRunningBusData(
+                                sourceLocationId, destinationLocationId);
+                            _sourceFocusNode.unfocus();
+                            _destinationFocusNode.unfocus();
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor),
+                          child: Icon(
+                            Icons.search,
+                            color: Colors.white,
+                          ),
+                        )
+                      ]),
+                ],
+              ),
+            ),
+            Expanded(
+              child: isLoading ? _buildLoadingSkeleton() : _buildBusList(),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+              color: Colors.grey.shade100,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Search Using",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      ElevatedButton(
-                        onPressed: _interchangeLocations,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                        ),
-                        child: Icon(
-                          Icons.swap_vert,
-                          color: Colors.white,
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          _fetchRunningBusData(
-                              sourceLocationId, destinationLocationId);
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NMMTBusNumberSearchPage(),
+                            ),
+                          );
                         },
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor),
-                        child: Icon(
-                          Icons.search,
-                          color: Colors.white,
-                        ),
-                      )
-                    ]),
-              ],
-            ),
-          ),
-          Expanded(
-            child: isLoading ? _buildLoadingSkeleton() : _buildBusList(),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-            color: Colors.grey.shade100,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Search Using",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade600,
+                        child: _buildSearchOption(
+                            Icons.numbers_rounded, "Bus Number"),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NMMTBusStopSearchPage(),
+                            ),
+                          );
+                        },
+                        child:
+                        _buildSearchOption(Icons.directions_bus, "Bus Stop"),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 15),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NMMTBusNumberSearchPage(),
-                          ),
-                        );
-                      },
-                      child: _buildSearchOption(
-                          Icons.numbers_rounded, "Bus Number"),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NMMTBusStopSearchPage(),
-                          ),
-                        );
-                      },
-                      child:
-                          _buildSearchOption(Icons.directions_bus, "Bus Stop"),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -467,7 +559,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => NMMTBusRoutePage(
-                          routeid: busData["RouteId"],
+                          routeid: int.parse(busData["RouteId"].toString() ?? ""),
                           busName: busData["RouteName"],
                           busTripId: busData["TripId"],
                           busArrivalTime: busData["ETATime"],
@@ -503,7 +595,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => NMMTBusRoutePage(
-                          routeid: busData["RouteId"],
+                          routeid: int.parse(busData["RouteId"].toString() ?? ""),
                           busName: busData["RouteName"],
                         ),
                       ),
@@ -520,7 +612,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       ),
                       Container(
                         padding:
-                            EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                        EdgeInsets.symmetric(vertical: 2, horizontal: 2),
                         decoration: BoxDecoration(
                           color: Theme.of(context).primaryColor,
                           borderRadius: BorderRadius.circular(5),
