@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:get/get.dart';
+import 'package:navixplore/presentation/controllers/user_profile_controller.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String userId;
@@ -18,10 +20,16 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   late TabController _tabController;
   bool? _isMyProfile;
   bool _isBioExpanded = false;
+  late final UserProfileController _profileController;
+
+  // Default cover image URL
+  static const String _defaultCoverImageUrl =
+      'https://picsum.photos/seed/cover/800/400';
 
   @override
   void initState() {
     super.initState();
+    _profileController = Get.put(UserProfileController(userId: widget.userId));
     setState(() {
       _isMyProfile = widget.isMyProfile;
     });
@@ -29,18 +37,30 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   }
 
   @override
+  void dispose() {
+    Get.delete<UserProfileController>();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(),
-          SliverToBoxAdapter(child: _buildProfileInfo()),
-          SliverPersistentHeader(
-            delegate: _SliverAppBarDelegate(_buildTabBar()),
-            pinned: true,
-          ),
-          _buildTabBarView(),
-        ],
+      body: Obx(
+            () => _profileController.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : NestedScrollView( // Use NestedScrollView for smoother scrolling
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              _buildSliverAppBar(),
+              SliverToBoxAdapter(child: _buildProfileInfo()),
+              SliverPersistentHeader(
+                delegate: _SliverAppBarDelegate(_buildTabBar()),
+                pinned: true,
+              ),
+            ];
+          },
+          body: _buildTabBarView(),
+        ),
       ),
     );
   }
@@ -49,23 +69,21 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     return SliverAppBar(
       expandedHeight: 200.0,
       floating: false,
+      pinned: false,
       flexibleSpace: FlexibleSpaceBar(
         background: Image.network(
-          'https://picsum.photos/seed/cover/800/400',
+          _defaultCoverImageUrl,
           fit: BoxFit.cover,
         ),
       ),
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => Navigator.pop(context),
-      ),
       actions: [
-        IconButton(
-          icon: Icon(Icons.settings, color: Colors.white),
-          onPressed: () {
-            // TODO: Implement settings action
-          },
-        ),
+        if (_isMyProfile!)
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white),
+            onPressed: () {
+              // TODO: Implement settings action
+            },
+          ),
       ],
     );
   }
@@ -78,42 +96,49 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         children: [
           Row(
             children: [
-              CircleAvatar(
+              Obx(() => CircleAvatar(
                 radius: 40,
-                backgroundImage:
-                    NetworkImage('https://picsum.photos/seed/avatar/200'),
-              ),
-              SizedBox(width: 16),
+                backgroundImage: _profileController.user?.profileImage ==
+                    null
+                    ? const NetworkImage(
+                    'https://picsum.photos/seed/avatar/200')
+                    : NetworkImage(_profileController.user!.profileImage!),
+              )),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Kamran Khan',
+                    Obx(() => Text(
+                      _profileController.user?.displayName ?? '',
+                      style: const TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold),
+                    )),
+                    Obx(() => Text(
+                      '@${_profileController.user?.username?.replaceAll(' ', '_').toLowerCase()}',
                       style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '@kamran_khan',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
+                      const TextStyle(fontSize: 16, color: Colors.grey),
+                    )),
                   ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           _buildBioSection(),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildStatColumn('Posts', '42'),
-              _buildStatColumn('Followers', '1.2K'),
-              _buildStatColumn('Following', '567'),
+              Obx(() => _buildStatColumn(
+                  'Posts', _profileController.user?.postCount.toString() ?? '0')),
+              Obx(() => _buildStatColumn('Followers',
+                  _profileController.user?.followerCount.toString() ?? '0')),
+              Obx(() => _buildStatColumn('Following',
+                  _profileController.user?.followingCount.toString() ?? '0')),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           _isMyProfile! ? _buildEditProfileButton() : _buildFollowButton(),
         ],
       ),
@@ -128,22 +153,22 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         });
       },
       child: AnimatedContainer(
-        duration: Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 300),
         height: _isBioExpanded ? null : 80,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Bio',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
-            Text(
-              'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-              style: TextStyle(fontSize: 14),
+            const SizedBox(height: 8),
+            Obx(() => Text(
+              _profileController.user?.bio ?? '',
+              style: const TextStyle(fontSize: 14),
               maxLines: _isBioExpanded ? null : 2,
               overflow: _isBioExpanded ? null : TextOverflow.ellipsis,
-            ),
+            )),
           ],
         ),
       ),
@@ -155,8 +180,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(count,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey)),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
     );
   }
@@ -166,7 +191,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       width: double.infinity,
       child: OutlinedButton(
         onPressed: () {},
-        child: Text('Edit Profile'),
+        child: const Text('Edit Profile'),
         style: OutlinedButton.styleFrom(
           foregroundColor: Theme.of(context).primaryColor,
           side: BorderSide(color: Theme.of(context).primaryColor),
@@ -180,8 +205,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {},
-        child: Text('Follow'),
+        onPressed: _handleFollowUnfollow,
+        child: Obx(() => Text(_profileController.isFollowing ? 'Unfollow' : 'Follow')),
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
           backgroundColor: Theme.of(context).primaryColor,
@@ -189,6 +214,14 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         ),
       ),
     );
+  }
+
+  void _handleFollowUnfollow() {
+    if (_profileController.isFollowing) {
+      _profileController.unfollowUser();
+    } else {
+      _profileController.followUser();
+    }
   }
 
   Widget _buildTabBar() {
@@ -199,7 +232,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         indicatorColor: Theme.of(context).primaryColor,
         labelColor: Theme.of(context).primaryColor,
         unselectedLabelColor: Colors.grey,
-        tabs: [
+        tabs: const [
           Tab(icon: Icon(Icons.grid_on), text: 'Posts'),
           Tab(icon: Icon(Icons.favorite_border), text: 'Likes'),
           Tab(icon: Icon(Icons.bookmark_border), text: 'Saved'),
@@ -209,30 +242,29 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   }
 
   Widget _buildTabBarView() {
-    return SliverFillRemaining(
-      child: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildMasonryGrid(),
-          _buildLikedPosts(),
-          _buildSavedPosts(),
-        ],
-      ),
+    return TabBarView(
+      controller: _tabController,
+      children: [
+        _buildMasonryGrid(),
+        _buildLikedPosts(),
+        _buildSavedPosts(),
+      ],
     );
   }
 
   Widget _buildMasonryGrid() {
-    return MasonryGridView.count(
+    return Obx(() => MasonryGridView.count(
       crossAxisCount: 2,
       mainAxisSpacing: 4,
       crossAxisSpacing: 4,
+      itemCount: _profileController.posts.length,
       itemBuilder: (context, index) {
         return Image.network(
-          'https://picsum.photos/seed/${index + 1}/300/${200 + (index % 3) * 100}',
+          _profileController.posts[index].imageUrl,
           fit: BoxFit.cover,
         );
       },
-    );
+    ));
   }
 
   Widget _buildLikedPosts() {
@@ -242,7 +274,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         return ListTile(
           leading: CircleAvatar(
             backgroundImage:
-                NetworkImage('https://picsum.photos/seed/liked${index}/200'),
+            NetworkImage('https://picsum.photos/seed/liked${index}/200'),
           ),
           title: Text('Liked Post ${index + 1}'),
           subtitle: Text(
@@ -259,7 +291,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         return ListTile(
           leading: CircleAvatar(
             backgroundImage:
-                NetworkImage('https://picsum.photos/seed/saved${index}/200'),
+            NetworkImage('https://picsum.photos/seed/saved${index}/200'),
           ),
           title: Text('Saved Post ${index + 1}'),
           subtitle: Text(

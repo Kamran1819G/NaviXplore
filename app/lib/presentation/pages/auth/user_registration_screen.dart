@@ -9,7 +9,7 @@ import 'package:navixplore/presentation/controllers/user_registration_controller
 
 class UserRegistrationScreen extends StatelessWidget {
   final UserRegistrationController controller =
-      Get.put(UserRegistrationController());
+  Get.put(UserRegistrationController());
   final PageController pageController = PageController();
 
   UserRegistrationScreen({Key? key}) : super(key: key);
@@ -28,10 +28,10 @@ class UserRegistrationScreen extends StatelessWidget {
       body: Column(
         children: [
           LinearProgressIndicator(
-            value: 0.0, // You can update this based on the current page
+            value: pageController.hasClients ?  pageController.page!.round() / 2 : 0.0,
             backgroundColor: Colors.grey[200],
             valueColor:
-                AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+            AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
           ),
           Expanded(
             child: PageView(
@@ -62,19 +62,19 @@ class UserRegistrationScreen extends StatelessWidget {
           ),
           SizedBox(height: 30.h),
           Obx(() => GestureDetector(
-                onTap: () => _showImageSourceDialog(context),
-                child: CircleAvatar(
-                  radius: 80.r,
-                  backgroundColor: Colors.grey[300],
-                  backgroundImage: controller.imageFile.value != null
-                      ? FileImage(File(controller.imageFile.value!.path))
-                      : null,
-                  child: controller.imageFile.value == null
-                      ? Icon(Icons.camera_alt,
-                          size: 50.sp, color: Colors.grey[600])
-                      : null,
-                ),
-              )),
+            onTap: () => _showImageSourceDialog(context),
+            child: CircleAvatar(
+              radius: 80.r,
+              backgroundColor: Colors.grey[300],
+              backgroundImage: controller.imageFile.value != null
+                  ? FileImage(File(controller.imageFile.value!.path))
+                  : null,
+              child: controller.imageFile.value == null
+                  ? Icon(Icons.camera_alt,
+                  size: 50.sp, color: Colors.grey[600])
+                  : null,
+            ),
+          )),
           SizedBox(height: 20.h),
           Text(
             'Tap to select an image',
@@ -109,15 +109,15 @@ class UserRegistrationScreen extends StatelessWidget {
               ),
               prefixIcon: Icon(Icons.person),
               suffixIcon: Obx(() => Icon(
-                    controller.isUsernameValid.value
-                        ? Icons.check
-                        : Icons.close,
-                    color: controller.isUsernameValid.value
-                        ? Colors.green
-                        : Colors.red,
-                  )),
+                controller.isUsernameValid.value
+                    ? Icons.check
+                    : Icons.close,
+                color: controller.isUsernameValid.value
+                    ? Colors.green
+                    : Colors.red,
+              )),
               helperText:
-                  'Username must be at least 3 characters and contain only letters, numbers, and underscores',
+              'Username must be at least 3 characters and contain only letters, numbers, and underscores',
             ),
           ),
         ],
@@ -139,7 +139,6 @@ class UserRegistrationScreen extends StatelessWidget {
           SizedBox(height: 30.h),
           TextField(
             controller: controller.nameController,
-            onChanged: controller.validateName,
             decoration: InputDecoration(
               labelText: 'Full Name',
               fillColor: Colors.white,
@@ -148,18 +147,11 @@ class UserRegistrationScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(15.r),
               ),
               prefixIcon: Icon(Icons.person_outline),
-              suffixIcon: Obx(() => Icon(
-                    controller.isNameValid.value ? Icons.check : Icons.close,
-                    color: controller.isNameValid.value
-                        ? Colors.green
-                        : Colors.red,
-                  )),
             ),
           ),
           SizedBox(height: 20.h),
           TextField(
             controller: controller.bioController,
-            onChanged: controller.validateBio,
             maxLines: 3,
             decoration: InputDecoration(
               labelText: 'Bio',
@@ -169,11 +161,6 @@ class UserRegistrationScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(15.r),
               ),
               prefixIcon: Icon(Icons.description),
-              suffixIcon: Obx(() => Icon(
-                    controller.isBioValid.value ? Icons.check : Icons.close,
-                    color:
-                        controller.isBioValid.value ? Colors.green : Colors.red,
-                  )),
             ),
           ),
         ],
@@ -207,49 +194,51 @@ class UserRegistrationScreen extends StatelessWidget {
                 );
               }
             },
-            child: Text('Back'),
+            child: Text('Back', style:  TextStyle(
+              color: Theme.of(context).primaryColor,
+            )),
           ),
           Obx(() => ElevatedButton(
-                onPressed: controller.isLoading.value
-                    ? null
-                    : () async {
-                        if (pageController.page!.round() < 2) {
-                          pageController.nextPage(
-                            duration: Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        } else {
-                          if (await controller.completeRegistration()) {
-                            Get.offAllNamed(AppRoutes.HOME);
-                          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 30.w, vertical: 10.h),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
-                  backgroundColor: Theme.of(context).primaryColor,
-                ),
-                child: controller.isLoading.value
-                    ? SizedBox(
-                        width: 20.w,
-                        height: 20.h,
-                        child: CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : Text(
-                        pageController.page?.round() == 2 ? "Complete" : "Next",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              )),
+            onPressed: controller.isLoading.value
+                ? null
+                : () async {
+              if (pageController.page!.round() < 2) {
+                pageController.nextPage(
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              } else {
+                if (await controller.completeRegistration()) {
+                  Get.offAllNamed(AppRoutes.HOME);
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              padding:
+              EdgeInsets.symmetric(horizontal: 30.w, vertical: 10.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              backgroundColor: Theme.of(context).primaryColor,
+            ),
+            child: controller.isLoading.value
+                ? SizedBox(
+              width: 20.w,
+              height: 20.h,
+              child: CircularProgressIndicator(
+                valueColor:
+                AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+                : Text(
+              pageController.page?.round() == 2 ? "Complete" : "Next",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          )),
         ],
       ),
     );

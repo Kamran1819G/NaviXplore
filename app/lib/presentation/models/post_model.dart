@@ -25,7 +25,7 @@ class PostModel {
     required this.commentCount,
   });
 
-  factory PostModel.fromDocument(DocumentSnapshot doc) {
+  factory PostModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return PostModel(
       postId: doc.id,
@@ -41,7 +41,7 @@ class PostModel {
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toFirestore() {
     return {
       'userId': userId,
       'username': username,

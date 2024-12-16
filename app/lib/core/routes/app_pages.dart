@@ -9,6 +9,7 @@ import 'package:navixplore/presentation/pages/drawer/terms_and_conditions_screen
 import 'package:navixplore/presentation/pages/explore/explore_screen.dart';
 import 'package:navixplore/presentation/pages/home_screen.dart';
 import 'package:navixplore/presentation/pages/splash_screen.dart';
+import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_route_page.dart';
 import 'package:navixplore/presentation/pages/xplorefeed/xplorefeed_screen.dart';
 
 class AppPages {
@@ -73,6 +74,15 @@ class AppPages {
       name: AppRoutes.TERMS_AND_CONDITIONS,
       page: () => _termsAndConditionsScreen,
       preventDuplicates: true,
+    ),
+    GetPage(
+      name: AppRoutes.NMMT_BUS_ROUTE,
+      page: () => NMMTBusRoutePage(
+        routeid: int.parse(Get.parameters['routeId']!),
+        busName: Get.parameters['busName']!,
+        busTripId: Get.parameters['busTripId'],
+        busArrivalTime: Get.parameters['busArrivalTime'],
+      ),
     ),
   ];
 }

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:lottie/lottie.dart' as lottie;
 import 'package:navixplore/core/utils/api_endpoints.dart';
 import 'package:navixplore/core/utils/color_utils.dart';
 import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_number_schedules.dart';
@@ -14,6 +15,7 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:timeline_tile/timeline_tile.dart';
 import 'package:xml/xml.dart' as xml;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart'; // Import
+import 'package:device_info_plus/device_info_plus.dart';
 
 class NMMTBusRoutePage extends StatefulWidget {
   final int routeid;
@@ -46,6 +48,15 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
   List<LatLng> polylinePoints = [];
   final PolylinePoints polylinePointsHelper = PolylinePoints(); // Initialize
 
+  // Report-related variables
+  String? _selectedReportType;
+  String? _selectedBusStop;
+  final TextEditingController _missingBusStopController =
+  TextEditingController();
+  final TextEditingController _otherIssueController = TextEditingController();
+
+  final _formKey = GlobalKey<FormState>();
+
   @override
   void initState() {
     super.initState();
@@ -55,15 +66,31 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
 
   void initialize() async {
     await _fetchAllBusStopData();
-    await _fetchBusPositionData();
+    await fetchInitialData();
+
     _timer = Timer.periodic(Duration(seconds: 15), (Timer timer) {
       _fetchBusPositionData();
     });
   }
 
+  Future<void> fetchInitialData() async {
+    // Fetch bus stop position and bus position data concurrently
+    setState(() {
+      isLoading = true;
+    });
+    await Future.wait([
+      _fetchBusPositionData(), // Fetch bus position first
+      _fetchRoutePolyline(), // Then fetch route polyline
+    ]);
+    setState(() {
+      isLoading = false;
+    });
+  }
   @override
   void dispose() {
     _timer?.cancel();
+    _missingBusStopController.dispose();
+    _otherIssueController.dispose();
     super.dispose();
   }
 
@@ -122,7 +149,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
             isLoading = false;
           });
 
-          await _fetchRoutePolyline();
+
         }
       } else {
         print('Failed to fetch data. Status code: ${response.statusCode}');
@@ -159,7 +186,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
 
           setState(() {
             busPositionDataList = busPosition;
-            isLoading = false;
+
           });
 
           // Update the map camera to the current bus position
@@ -179,12 +206,9 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     } catch (error) {
       print('Error: $error');
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+
     }
   }
-
 
   Future<void> _fetchRoutePolyline() async {
     if (busStopPositionDataList == null || busStopPositionDataList!.isEmpty) {
@@ -200,40 +224,47 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
       final endLat = double.parse(busStopPositionDataList![i + 1]['STATIONLAT']);
       final endLng = double.parse(busStopPositionDataList![i + 1]['STATIONLONG']);
 
-      final url = 'http://router.project-osrm.org/route/v1/driving/$startLng,$startLat;$endLng,$endLat?steps=true';
+      final url =
+          'http://router.project-osrm.org/route/v1/driving/$startLng,$startLat;$endLng,$endLat?steps=true';
 
       try {
         final response = await dio.get(url);
         if (response.statusCode == 200) {
           final data = response.data;
           print('OSRM API Response Data: $data'); // Debugging print statement
-          if (data != null && data['routes'] != null && data['routes'] is List && data['routes'].isNotEmpty) {
+          if (data != null &&
+              data['routes'] != null &&
+              data['routes'] is List &&
+              data['routes'].isNotEmpty) {
             final route = data['routes'][0];
             if (route['geometry'] != null) {
-              if(route['geometry'] is String) {
+              if (route['geometry'] is String) {
                 String encodedPolyline = route['geometry'];
 
                 final points = polylinePointsHelper.decodePolyline(encodedPolyline);
                 if (points.isNotEmpty) {
-                  List<LatLng> segmentPoints = points.map((point) => LatLng(point.latitude, point.longitude)).toList();
+                  List<LatLng> segmentPoints = points
+                      .map((point) => LatLng(point.latitude, point.longitude))
+                      .toList();
                   allPoints.addAll(segmentPoints);
                 }
-
-              } else if(route['geometry'] is Map && route['geometry']['coordinates'] != null && route['geometry']['coordinates'] is List) {
+              } else if (route['geometry'] is Map &&
+                  route['geometry']['coordinates'] != null &&
+                  route['geometry']['coordinates'] is List) {
                 List<dynamic> coordinates = route['geometry']['coordinates'];
-                List<LatLng> segmentPoints = coordinates.map((coord) => LatLng(coord[1], coord[0])).toList();
+                List<LatLng> segmentPoints = coordinates
+                    .map((coord) => LatLng(coord[1], coord[0]))
+                    .toList();
                 allPoints.addAll(segmentPoints);
-              } else{
+              } else {
                 print('Coordinates data structure is invalid for this segment');
               }
-
-            }else{
+            } else {
               print('Geometry is null');
             }
-          } else{
+          } else {
             print('No routes array found or is empty for this segment');
           }
-
         }
       } catch (e) {
         print('Error fetching route: $e');
@@ -243,6 +274,74 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     setState(() {
       polylinePoints = allPoints;
     });
+  }
+
+  // Report Submission Function
+  Future<void> _submitReport() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    _formKey.currentState!.save();
+
+    try {
+      // Construct report data
+      Map<String, dynamic> reportData = {
+        'reportType': _selectedReportType,
+        'routeId': widget.routeid,
+        'busName': widget.busName,
+        'timestamp': DateTime.now().toIso8601String(),
+        'device': await getDeviceDetails(),
+      };
+
+      // Add sub-options based on selected report type
+      if (_selectedReportType == 'Missing Bus Stop') {
+        reportData['missingBusStopName'] = _missingBusStopController.text;
+      } else if (_selectedReportType == 'Wrong Bus Stop Location') {
+        reportData['wrongBusStop'] = _selectedBusStop;
+      } else if (_selectedReportType == 'Other Issue') {
+        reportData['otherIssueDescription'] = _otherIssueController.text;
+      }
+
+      // Store in Firebase Firestore under a "reports" collection
+      await FirebaseFirestore.instance.collection('reports').add(reportData);
+
+      // Feedback to the user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Report submitted successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.pop(context); // Close the report dialog
+      _clearReportForm(); // Clear report form data
+    } catch (e) {
+      print('Error submitting report: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to submit report. Please try again later.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _clearReportForm() {
+    setState(() {
+      _selectedReportType = null;
+      _selectedBusStop = null;
+    });
+    _missingBusStopController.clear();
+    _otherIssueController.clear();
+  }
+
+  Future<Map<String, String>> getDeviceDetails() async {
+    final deviceInfo = await DeviceInfoPlugin().deviceInfo;
+    return {
+      'os': deviceInfo.data['os'].toString(),
+      'device_name': deviceInfo.data['name'].toString(),
+      'id': deviceInfo.data['id'].toString(),
+    };
   }
 
   @override
@@ -280,30 +379,78 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
   }
 
   Widget _buildLoadingScreen() {
-    return Center(
-      child: Column(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          mapSkeleton(
-            height: 350,
-            width: MediaQuery.of(context).size.width,
+          Image.asset(
+              'assets/animations/bus_loading.gif',
           ),
-          SizedBox(height: 20),
-          Expanded(
-            child: ListView.separated(
-              itemCount: 6,
-              separatorBuilder: (BuildContext context, int index) => Divider(),
-              itemBuilder: (BuildContext context, int index) {
-                return ListTile(
-                  leading: Skeleton(height: 50, width: 50),
-                  title: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Skeleton(height: 8, width: 100),
-                  ),
-                  subtitle: Skeleton(height: 8, width: 50),
-                );
-              },
+
+          const SizedBox(height: 24),
+
+          // Dynamic Loading Text
+          Text(
+            'Tracking Your Bus Route',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).primaryColor,
             ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Descriptive Subtitle
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+            child: Text(
+              'Fetching real-time bus location, route details, and stop information...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Progress Indicator
+          SizedBox(
+            width: double.infinity,
+            height: 5,
+            child: LinearProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Theme.of(context).primaryColor,
+              ),
+              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Connection Status
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.wifi,
+                color: Theme.of(context).primaryColor,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Connecting to NMMT Services',
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -491,8 +638,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                                 : busPositionDataList![index]
                             ["CoveredStatus"] ==
                                 "notcovered"
-                                ? Colors
-                                .white
+                                ? Colors.white
                                 : Colors.red
                                 : Colors.white,
                           ),
@@ -588,8 +734,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                       'Refreshing Map...',
                       style: TextStyle(color: Colors.white),
                     ),
-                    duration:
-                    Duration(seconds: 2),
+                    duration: Duration(seconds: 2),
                   ),
                 );
               },
@@ -599,7 +744,168 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                   child: Icon(Icons.refresh,
                       color: Theme.of(context).primaryColor))),
         ),
+        Positioned(
+          bottom: 20,
+          right: 10,
+          child: GestureDetector(
+            onTap: () {
+              _showReportDialog();
+            },
+            child: CircleAvatar(
+              radius: 25.0,
+              backgroundColor: Colors.white,
+              child: Icon(Icons.report,
+                  color: Theme.of(context).primaryColor),
+            ),
+          ),
+        ),
       ],
+    );
+  }
+
+  // Report dialog code
+  void _showReportDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      builder: (BuildContext context) {
+        return Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 16.0,
+              right: 16.0,
+              top: 20),
+          child: Form(
+            key: _formKey,
+            child: StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.report,
+                            color: Theme.of(context).primaryColor,
+                            size: 30,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Report Issue',
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 30),
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                          labelText: 'Issue Type',
+                          border: OutlineInputBorder(),
+                        ),
+                        value: _selectedReportType,
+                        onChanged: (newValue) {
+                          setState(() {
+                            _selectedReportType = newValue;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please select an issue type';
+                          }
+                          return null;
+                        },
+                        items: [
+                          'Missing Bus Stop',
+                          'Wrong Bus Stop Location',
+                          'Other Issue',
+                        ].map((issue) {
+                          return DropdownMenuItem<String>(
+                            value: issue,
+                            child: Text(issue),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 20),
+                      if (_selectedReportType == 'Missing Bus Stop')
+                        TextFormField(
+                          controller: _missingBusStopController,
+                          decoration: InputDecoration(
+                            labelText: 'Missing Bus Stop Name',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the name of the missing bus stop';
+                            }
+                            return null;
+                          },
+                        ),
+                      if (_selectedReportType == 'Wrong Bus Stop Location')
+                        DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            labelText: 'Select Bus Stop',
+                            border: OutlineInputBorder(),
+                          ),
+                          value: _selectedBusStop,
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedBusStop = newValue;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select the wrong placed bus stop';
+                            }
+                            return null;
+                          },
+                          items: busStopDataList?.map((busStop) {
+                            return DropdownMenuItem<String>(
+                              value: busStop['stationname'],
+                              child: Text(busStop['stationname']),
+                            );
+                          }).toList() ?? [],
+                        ),
+                      if (_selectedReportType == 'Other Issue')
+                        TextFormField(
+                          controller: _otherIssueController,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            labelText: 'Issue Description',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please provide issue description';
+                            }
+                            return null;
+                          },
+                        ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () {
+                          _submitReport();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: Text('Submit Report'),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 

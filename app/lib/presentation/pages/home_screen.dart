@@ -11,6 +11,8 @@ import 'package:navixplore/presentation/pages/profile/user_profile_screen.dart';
 import 'package:navixplore/presentation/pages/transports/transports_screen.dart';
 import 'package:navixplore/presentation/pages/xplorefeed/xplorefeed_screen.dart';
 import 'package:navixplore/presentation/widgets/webview_screen.dart';
+import 'package:quickalert/quickalert.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -30,6 +32,36 @@ class _HomeScreenState extends State<HomeScreen> {
     UserProfileScreen(
         userId:  Get.find<AuthController>().currentUser!.uid, isMyProfile: true),
   ];
+
+  // New SOS Functionality
+  Future<void> _launchSOSCall() async {
+    // Replace with the actual SOS number you want to dial
+    const String emergencyNumber = '112'; // Or a specific contact
+    final Uri phoneUri = Uri(scheme: 'tel', path: emergencyNumber);
+
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.warning,
+      barrierDismissible: false,
+      text: 'Do you want to call the emergency number?',
+      confirmBtnText: 'Yes',
+      confirmBtnColor: Colors.red,
+      showCancelBtn: true,
+      cancelBtnText: 'No',
+      onConfirmBtnTap: () async {
+        if (await canLaunch(phoneUri.toString())) {
+          await launch(phoneUri.toString());
+        } else {
+          QuickAlert.show(
+            context: context,
+            title: 'Error',
+            text: 'Could not launch the phone app.',
+            type: QuickAlertType.error,
+          );
+        }
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(
                     fontSize: 18.sp,
                   )),
+              onTap: _launchSOSCall, // Call SOS Function
             ),
             const Divider(color: Colors.grey),
             ListTile(
@@ -118,13 +151,6 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             const Divider(color: Colors.grey),
-            ListTile(
-              leading: const Icon(Icons.translate),
-              title: const Text("Change Language",
-                  style: TextStyle(
-                    fontSize: 18,
-                  )),
-            ),
             ListTile(
               leading: const Icon(Icons.share),
               title: const Text("Share with Friends",

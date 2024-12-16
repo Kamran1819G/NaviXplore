@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CommentModel {
-  final String id;
+  final String? id; // Id can be null while creating new comment
   final String postId;
   final String userId;
   final String username;
@@ -9,8 +9,8 @@ class CommentModel {
   final String text;
   final Timestamp createdAt;
 
-  const CommentModel({
-    required this.id,
+  CommentModel({
+    this.id,
     required this.postId,
     required this.userId,
     required this.username,
@@ -19,10 +19,11 @@ class CommentModel {
     required this.createdAt,
   });
 
-  factory CommentModel.fromDocument(DocumentSnapshot doc) {
+  factory CommentModel.fromFirestore(
+      DocumentSnapshot doc, String documentId) {
     final data = doc.data() as Map<String, dynamic>;
     return CommentModel(
-      id: doc.id,
+      id: documentId, // Use the document ID as id
       postId: data['postId'] ?? '',
       userId: data['userId'] ?? '',
       username: data['username'] ?? '',
@@ -31,8 +32,7 @@ class CommentModel {
       createdAt: data['createdAt'] ?? Timestamp.now(),
     );
   }
-
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toFirestore() {
     return {
       'postId': postId,
       'userId': userId,

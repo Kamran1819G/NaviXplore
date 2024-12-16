@@ -322,7 +322,18 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                   indicatorColor: Theme.of(context).primaryColor,
                   labelColor: Colors.black,
                   tabs: [
-                    Tab(text: 'Running'),
+                    Tab(child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Running'),
+                        SizedBox(width: 5),
+                        Tooltip(
+                            triggerMode: TooltipTriggerMode.tap,
+                            message: "Shows live GPS-enabled buses.",
+                            child: Icon(Icons.info_outline, size: 16,
+                              color: Theme.of(context).primaryColor,)),
+                      ],
+                    ),),
                     Tab(text: 'Scheduled'),
                   ],
                 ),

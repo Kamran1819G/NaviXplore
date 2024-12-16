@@ -4,9 +4,12 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:navixplore/core/utils/api_endpoints.dart';
 import 'package:navixplore/presentation/controllers/nmmt_controller.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
+import 'package:quickalert/quickalert.dart';
+import 'package:quickalert/widgets/quickalert_container.dart';
 import 'package:xml/xml.dart' as xml;
 
 import 'nmmt_bus_number_search_page.dart';
@@ -35,13 +38,19 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   bool _showDestinationSuggestions = false;
   final FocusNode _sourceFocusNode = FocusNode();
   final FocusNode _destinationFocusNode = FocusNode();
-
   final NMMTController controller = Get.find<NMMTController>();
+  List<Map<String, dynamic>> _savedRoutes = [];
+  bool _showSavedRoutes = false;
+  List<Map<String, dynamic>> _recentSearches = [];
+  bool _showRecentSearches = false;
+  final _storage = GetStorage();
 
   @override
   void initState() {
     super.initState();
     initialize();
+    _loadSavedRoutes();
+    _loadRecentSearches();
     _sourceFocusNode.addListener(_onSourceFocusChange);
     _destinationFocusNode.addListener(_onDestinationFocusChange);
   }
@@ -49,12 +58,14 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   void _onSourceFocusChange() {
     setState(() {
       _showSourceSuggestions = _sourceFocusNode.hasFocus;
+      _showRecentSearches = _sourceFocusNode.hasFocus;
     });
   }
 
   void _onDestinationFocusChange() {
     setState(() {
       _showDestinationSuggestions = _destinationFocusNode.hasFocus;
+      _showRecentSearches = _destinationFocusNode.hasFocus;
     });
   }
 
@@ -70,11 +81,10 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
 
   void initialize() async {
     await controller.fetchAllStations();
-    _timer = Timer.periodic(Duration(minutes: 2), (Timer timer) {
+    _timer = Timer.periodic(const Duration(minutes: 2), (Timer timer) {
       _fetchRunningBusData(sourceLocationId, destinationLocationId);
     });
   }
-
 
   // Method to interchange the source and destination values
   void _interchangeLocations() {
@@ -158,7 +168,6 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
           .toList() ??
           [];
       _showSourceSuggestions = true;
-
     });
   }
 
@@ -180,6 +189,184 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
     });
   }
 
+  // Function to load saved routes from get_storage
+  Future<void> _loadSavedRoutes() async {
+    final savedRoutesJson = _storage.read('savedRoutes');
+    if (savedRoutesJson != null) {
+      setState(() {
+        _savedRoutes = (json.decode(savedRoutesJson) as List)
+            .map((e) => e as Map<String, dynamic>)
+            .toList();
+      });
+    }
+  }
+
+  // Function to load recent searches from get_storage
+  Future<void> _loadRecentSearches() async {
+    final recentSearchesJson = _storage.read('recentSearches');
+    if (recentSearchesJson != null) {
+      setState(() {
+        _recentSearches = (json.decode(recentSearchesJson) as List)
+            .map((e) => e as Map<String, dynamic>)
+            .toList();
+      });
+    }
+  }
+
+  // Function to save a search to get_storage
+  Future<void> _saveSearch(String source, String destination, int sourceId,
+      int destinationId) async {
+    final newSearch = {
+      'source': source,
+      'destination': destination,
+      'sourceId': sourceId,
+      'destinationId': destinationId
+    };
+
+    setState(() {
+      // Remove existing search if it's already present
+      _recentSearches.removeWhere((search) =>
+      search['sourceId'] == sourceId && search['destinationId'] == destinationId);
+
+      _recentSearches.insert(0, newSearch); // Add to the beginning of list
+
+      if (_recentSearches.length > 2) {
+        _recentSearches.removeLast(); // Keep max 2
+      }
+
+      _showRecentSearches = true;
+    });
+    final recentSearchesJson = json.encode(_recentSearches);
+    await _storage.write('recentSearches', recentSearchesJson);
+  }
+
+  // Function to save a route to get_storage
+  Future<void> _saveRoute(String source, String destination, int sourceId,
+      int destinationId) async {
+    final newRoute = {
+      'source': source,
+      'destination': destination,
+      'sourceId': sourceId,
+      'destinationId': destinationId
+    };
+
+    // Check if route already exists
+    final routeExists = _savedRoutes.any((route) =>
+    route['sourceId'] == sourceId &&
+        route['destinationId'] == destinationId);
+
+    if (!routeExists) {
+      setState(() {
+        _savedRoutes.add(newRoute);
+        _showSavedRoutes = true;
+      });
+      final savedRoutesJson = json.encode(_savedRoutes);
+      await _storage.write('savedRoutes', savedRoutesJson);
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.success,
+        title: 'Route Saved',
+        text: 'The route has been successfully added to your saved routes.',
+      );
+    } else {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.info,
+        title: 'Duplicate Route',
+        text: 'This route is already in your saved routes.',
+      );
+    }
+  }
+
+  // Function to delete a saved route from get_storage
+  Future<void> _deleteRoute(int index, VoidCallback refreshCallback) async {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.warning,
+      text: 'Are you sure you want to delete this route?',
+      confirmBtnText: 'Delete',
+      confirmBtnColor: Colors.red,
+      showCancelBtn: true,
+      onConfirmBtnTap: () async {
+        // Delete the route from the list
+        setState(() {
+          _savedRoutes.removeAt(index);
+        });
+        final savedRoutesJson = json.encode(_savedRoutes);
+        await _storage.write('savedRoutes', savedRoutesJson);
+        Navigator.pop(context);
+        refreshCallback(); // Call the refresh callback
+      },
+    );
+  }
+
+  // Function to load a recent search into the text fields
+  void _loadSearch(Map<String, dynamic> search) {
+    setState(() {
+      sourceLocationController.text = search['source'];
+      destinationLocationController.text = search['destination'];
+      sourceLocationId = search['sourceId'];
+      destinationLocationId = search['destinationId'];
+      _showRecentSearches = false;
+    });
+    _fetchRunningBusData(sourceLocationId, destinationLocationId);
+  }
+
+  // Function to load a saved route into the text fields
+  void _loadRoute(Map<String, dynamic> route) {
+    setState(() {
+      sourceLocationController.text = route['source'];
+      destinationLocationController.text = route['destination'];
+      sourceLocationId = route['sourceId'];
+      destinationLocationId = route['destinationId'];
+      _showSavedRoutes = false;
+    });
+    _fetchRunningBusData(sourceLocationId, destinationLocationId);
+  }
+
+  void _showSavedRoutesBottomSheet(BuildContext context, ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (BuildContext bc) {
+        return _SavedRoutesBottomSheetContent(
+          savedRoutes: _savedRoutes,
+          onRouteSelected: _loadRoute,
+          onRouteDeleted: (index, refreshCallback) {
+            _deleteRoute(index, refreshCallback);
+          },
+          onClearAllRoutes: (refreshCallback) {
+            _clearAllRoutes(refreshCallback);
+          },
+        );
+      },
+    );
+  }
+
+  // Add this method to your class
+  void _clearAllRoutes(VoidCallback refreshCallback) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.warning,
+      text: 'Are you sure you want to delete all saved routes?',
+      confirmBtnText: 'Delete All',
+      confirmBtnColor: Colors.red,
+      showCancelBtn: true,
+      onConfirmBtnTap: () async {
+        setState(() {
+          _savedRoutes.clear();
+          // Optionally, update persistent storage
+          _storage.write('savedRoutes', json.encode([]));
+        });
+        Navigator.pop(context);
+        refreshCallback();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -187,8 +374,10 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
         _sourceFocusNode.unfocus();
         _destinationFocusNode.unfocus();
         setState(() {
-          _showSourceSuggestions= false;
-          _showDestinationSuggestions =false;
+          _showSourceSuggestions = false;
+          _showDestinationSuggestions = false;
+          _showRecentSearches = false;
+          _showSavedRoutes = false;
         });
       },
       child: Scaffold(
@@ -202,25 +391,32 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
             "Search NMMT Bus",
             style: TextStyle(color: Colors.black),
           ),
+          actions: [
+            IconButton(
+                onPressed: () {
+                  _showSavedRoutesBottomSheet(context);
+                },
+                icon: const Icon(Icons.bookmark_border))
+          ],
         ),
         body: Column(
           children: [
             Container(
-              padding: EdgeInsets.all(10),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.directions_bus,
                     color: Colors.white,
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Discover NMMT Bus services! Plan your journey and track real-time bus status!',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
@@ -230,7 +426,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
               ),
             ),
             Container(
-              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -246,7 +442,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                           color: Colors.grey.withOpacity(0.2),
                           spreadRadius: 2,
                           blurRadius: 5,
-                          offset: Offset(0, 3),
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
@@ -268,19 +464,50 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                                   sourceLocationId = null;
                                 });
                               },
-                              icon: Icon(Icons.clear, color: Colors.grey),
+                              icon: const Icon(Icons.clear, color: Colors.grey),
                             ),
                             hintText: "Source Bus Station",
                             border: InputBorder.none,
                           ),
                         ),
-                        if (_showSourceSuggestions && _filteredSourceSuggestions.isNotEmpty)
+
+                        if (_showRecentSearches &&
+                            _recentSearches.isNotEmpty &&
+                            _sourceFocusNode.hasFocus)
                           Container(
-                            constraints: BoxConstraints(maxHeight: 200),
+                            constraints: const BoxConstraints(maxHeight: 200),
                             decoration: BoxDecoration(
                                 border: Border.all(color: Colors.grey.shade300),
-                                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12))
-                            ),
+                                borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(12),
+                                    bottomRight: Radius.circular(12))),
+                            child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: _recentSearches.length,
+                                itemBuilder: (context, index) {
+                                  final search = _recentSearches[index];
+                                  return ListTile(
+                                    leading: Icon(
+                                      Icons.history,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                    title: Text(
+                                        "${search['source']} to ${search['destination']}"),
+                                    onTap: () {
+                                      _loadSearch(search);
+                                    },
+                                  );
+                                }),
+                          ),
+                        if (_showSourceSuggestions &&
+                            _filteredSourceSuggestions.isNotEmpty)
+                          Container(
+                            constraints: const BoxConstraints(maxHeight: 200),
+                            decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(12),
+                                    bottomRight: Radius.circular(12))),
                             child: ListView.builder(
                               shrinkWrap: true,
                               itemCount: _filteredSourceSuggestions.length,
@@ -290,7 +517,8 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                                 return ListTile(
                                   leading: CircleAvatar(
                                     radius: 20.0,
-                                    backgroundColor: Theme.of(context).primaryColor,
+                                    backgroundColor:
+                                    Theme.of(context).primaryColor,
                                     child: CircleAvatar(
                                       radius: 15.0,
                                       backgroundColor: Colors.white,
@@ -307,23 +535,22 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                                       suggestion['stationName']['English'];
                                       sourceLocationId =
                                       suggestion['stationID'];
-                                      _showSourceSuggestions =false;
+                                      _showSourceSuggestions = false;
                                       _sourceFocusNode.unfocus();
-                                      _filteredSourceSuggestions =[];
+                                      _filteredSourceSuggestions = [];
                                     });
                                   },
                                 );
                               },
                             ),
                           ),
-
                       ],
                     ),
                   ),
                   const SizedBox(height: 10),
                   // Destination Station Search Box
                   Container(
-                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -332,7 +559,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                           color: Colors.grey.withOpacity(0.2),
                           spreadRadius: 2,
                           blurRadius: 5,
-                          offset: Offset(0, 3),
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
@@ -356,19 +583,49 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                                       sourceLocationId, destinationLocationId);
                                 });
                               },
-                              icon: Icon(Icons.clear, color: Colors.grey),
+                              icon: const Icon(Icons.clear, color: Colors.grey),
                             ),
                             hintText: "Destination Bus Station",
                             border: InputBorder.none,
                           ),
                         ),
-                        if (_showDestinationSuggestions && _filteredDestinationSuggestions.isNotEmpty)
+                        if (_showRecentSearches &&
+                            _recentSearches.isNotEmpty &&
+                            _destinationFocusNode.hasFocus)
                           Container(
-                            constraints: BoxConstraints(maxHeight: 200),
+                            constraints: const BoxConstraints(maxHeight: 200),
                             decoration: BoxDecoration(
                                 border: Border.all(color: Colors.grey.shade300),
-                                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12))
-                            ),
+                                borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(12),
+                                    bottomRight: Radius.circular(12))),
+                            child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: _recentSearches.length,
+                                itemBuilder: (context, index) {
+                                  final search = _recentSearches[index];
+                                  return ListTile(
+                                    leading: Icon(
+                                      Icons.history,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                    title: Text(
+                                        "${search['source']} to ${search['destination']}"),
+                                    onTap: () {
+                                      _loadSearch(search);
+                                    },
+                                  );
+                                }),
+                          ),
+                        if (_showDestinationSuggestions &&
+                            _filteredDestinationSuggestions.isNotEmpty)
+                          Container(
+                            constraints: const BoxConstraints(maxHeight: 200),
+                            decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(12),
+                                    bottomRight: Radius.circular(12))),
                             child: ListView.builder(
                               shrinkWrap: true,
                               itemCount: _filteredDestinationSuggestions.length,
@@ -378,7 +635,8 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                                 return ListTile(
                                   leading: CircleAvatar(
                                     radius: 20.0,
-                                    backgroundColor: Theme.of(context).primaryColor,
+                                    backgroundColor:
+                                    Theme.of(context).primaryColor,
                                     child: CircleAvatar(
                                       radius: 15.0,
                                       backgroundColor: Colors.white,
@@ -395,9 +653,9 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                                       suggestion['stationName']['English'];
                                       destinationLocationId =
                                       suggestion['stationID'];
-                                      _showDestinationSuggestions =false;
+                                      _showDestinationSuggestions = false;
                                       _destinationFocusNode.unfocus();
-                                      _filteredDestinationSuggestions=[];
+                                      _filteredDestinationSuggestions = [];
                                     });
                                   },
                                 );
@@ -417,7 +675,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).primaryColor,
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.swap_vert,
                             color: Colors.white,
                           ),
@@ -426,13 +684,42 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                           onPressed: () {
                             _fetchRunningBusData(
                                 sourceLocationId, destinationLocationId);
+                            if(sourceLocationController.text.isNotEmpty && destinationLocationController.text.isNotEmpty) {
+                              _saveSearch(sourceLocationController.text,
+                                  destinationLocationController.text,
+                                  sourceLocationId ?? -1,
+                                  destinationLocationId ?? -1);
+                            }
                             _sourceFocusNode.unfocus();
                             _destinationFocusNode.unfocus();
                           },
                           style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context).primaryColor),
-                          child: Icon(
+                          child: const Icon(
                             Icons.search,
+                            color: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            if(sourceLocationController.text.isNotEmpty && destinationLocationController.text.isNotEmpty) {
+                              _saveRoute(sourceLocationController.text,
+                                  destinationLocationController.text,
+                                  sourceLocationId ?? -1,
+                                  destinationLocationId ?? -1);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                content: Text("Please fill in Source and Destination to Save"),
+                              ));
+                            }
+                            _sourceFocusNode.unfocus();
+                            _destinationFocusNode.unfocus();
+
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor),
+                          child: const Icon(
+                            Icons.save,
                             color: Colors.white,
                           ),
                         )
@@ -444,7 +731,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
               child: isLoading ? _buildLoadingSkeleton() : _buildBusList(),
             ),
             Container(
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
               color: Colors.grey.shade100,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,7 +753,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => NMMTBusNumberSearchPage(),
+                              builder: (context) => const NMMTBusNumberSearchPage(),
                             ),
                           );
                         },
@@ -478,12 +765,11 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => NMMTBusStopSearchPage(),
+                              builder: (context) => const NMMTBusStopSearchPage(),
                             ),
                           );
                         },
-                        child:
-                        _buildSearchOption(Icons.directions_bus, "Bus Stop"),
+                        child: _buildSearchOption(Icons.directions_bus, "Bus Stop"),
                       ),
                     ],
                   ),
@@ -498,7 +784,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
 
   Widget _buildSearchOption(IconData icon, String label) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(width: 2, color: Theme.of(context).primaryColor),
@@ -511,7 +797,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
             icon,
             color: Theme.of(context).primaryColor,
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Text(
             label,
             style: TextStyle(
@@ -531,7 +817,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
           Expanded(
             child: ListView.separated(
               itemCount: 6,
-              separatorBuilder: (context, index) => SizedBox(height: 30),
+              separatorBuilder: (context, index) => const SizedBox(height: 30),
               itemBuilder: (context, index) => busSkeleton(),
             ),
           ),
@@ -545,14 +831,14 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   Widget _buildBusList() {
     return Column(
       children: [
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         Expanded(
           child: ListView.builder(
             itemCount: busDataList?.length ?? 0,
             itemBuilder: (context, index) {
               final busData = busDataList![index];
               return ListTile(
-                contentPadding: EdgeInsets.all(10),
+                contentPadding: const EdgeInsets.all(10),
                 onTap: () async {
                   if (busData["BusRunningStatus"] == "Running") {
                     Navigator.push(
@@ -612,14 +898,14 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       ),
                       Container(
                         padding:
-                        EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                        const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
                         decoration: BoxDecoration(
                           color: Theme.of(context).primaryColor,
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(
                           busData['RouteNo'],
-                          style: TextStyle(
+                          style: const TextStyle(
                               color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       )
@@ -630,9 +916,9 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(busData['RouteName'],
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                     Text(busData["RouteName_M"],
-                        style: TextStyle(
+                        style: const TextStyle(
                             color: Colors.grey, fontWeight: FontWeight.bold))
                   ],
                 ),
@@ -675,7 +961,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
     return Center(
       child: Column(
         children: [
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -683,7 +969,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                 height: MediaQuery.of(context).size.width * 0.1,
                 width: MediaQuery.of(context).size.width * 0.2,
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -691,14 +977,14 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                     height: 30,
                     width: MediaQuery.of(context).size.width * 0.5,
                   ),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   Skeleton(
                     height: 20,
                     width: MediaQuery.of(context).size.width * 0.3,
                   ),
                 ],
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Skeleton(
                 height: MediaQuery.of(context).size.width * 0.1,
                 width: MediaQuery.of(context).size.width * 0.2,
@@ -707,6 +993,180 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+
+class _SavedRoutesBottomSheetContent extends StatefulWidget {
+  final List<Map<String, dynamic>> savedRoutes;
+  final Function(Map<String, dynamic>) onRouteSelected;
+  final Function(int, VoidCallback) onRouteDeleted;
+  final Function(VoidCallback) onClearAllRoutes;
+
+  const _SavedRoutesBottomSheetContent({
+    Key? key,
+    required this.savedRoutes,
+    required this.onRouteSelected,
+    required this.onRouteDeleted,
+    required this.onClearAllRoutes,
+  }) : super(key: key);
+
+  @override
+  _SavedRoutesBottomSheetContentState createState() => _SavedRoutesBottomSheetContentState();
+}
+
+class _SavedRoutesBottomSheetContentState extends State<_SavedRoutesBottomSheetContent> {
+  late List<Map<String, dynamic>> _savedRoutes;
+
+  @override
+  void initState() {
+    super.initState();
+    _savedRoutes = List.from(widget.savedRoutes);
+  }
+
+  void _handleRouteDeletion(int index) {
+    widget.onRouteDeleted(index, () {
+      //Callback to refresh the widget with the updated _savedRoutes
+      setState(() {
+        _savedRoutes = List.from(widget.savedRoutes);
+      });
+    });
+  }
+
+  void _handleClearAll() {
+    widget.onClearAllRoutes(() {
+      setState(() {
+        _savedRoutes = List.from(widget.savedRoutes);
+      });
+    });
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return  DraggableScrollableSheet(
+      initialChildSize: 0.5,
+      minChildSize: 0.25,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+          ),
+          child: Column(
+            children: [
+              // Drag handle
+              Container(
+                width: 50,
+                height: 6,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Saved Routes",
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (_savedRoutes.isNotEmpty)
+                      TextButton.icon(
+                        icon: const Icon(Icons.clear_all, color: Colors.redAccent),
+                        label: const Text('Clear All', style: TextStyle(color: Colors.redAccent)),
+                        onPressed: () {
+                          _handleClearAll();
+                        },
+                      ),
+                  ],
+                ),
+              ),
+
+              _savedRoutes.isNotEmpty
+                  ? Expanded(
+                child: ListView.separated(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _savedRoutes.length,
+                  separatorBuilder: (context, index) => Divider(
+                    color: Theme.of(context).dividerColor.withOpacity(0.3),
+                  ),
+                  itemBuilder: (context, index) {
+                    final savedRoute = _savedRoutes[index];
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      leading: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        child: Icon(
+                          Icons.directions_bus,
+                          color: Theme.of(context).primaryColor,
+                          size: 24,
+                        ),
+                      ),
+                      title: Text(
+                        '${savedRoute['source']} to ${savedRoute['destination']}',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                        onPressed: () {
+                          _handleRouteDeletion(index);
+                        },
+                      ),
+                      onTap: () {
+                        widget.onRouteSelected(savedRoute);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              )
+                  : Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.bookmark_border,
+                        size: 80,
+                        color: Colors.grey[300],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "No Saved Routes Yet",
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Save your favorite routes for quick access",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

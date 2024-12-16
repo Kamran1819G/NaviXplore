@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import '../models/user_model.dart'; // Import UserModel
 
 class UserRegistrationController extends GetxController {
   final usernameController = TextEditingController();
@@ -13,8 +14,6 @@ class UserRegistrationController extends GetxController {
   final bioController = TextEditingController();
   final Rx<XFile?> imageFile = Rx<XFile?>(null);
   final isUsernameValid = false.obs;
-  final isNameValid = false.obs;
-  final isBioValid = false.obs;
   final isLoading = false.obs;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -33,14 +32,6 @@ class UserRegistrationController extends GetxController {
     final RegExp usernameRegex = RegExp(r'^[a-zA-Z0-9_]+$');
     isUsernameValid.value =
         username.length >= 3 && usernameRegex.hasMatch(username);
-  }
-
-  void validateName(String name) {
-    isNameValid.value = name.length >= 3;
-  }
-
-  void validateBio(String bio) {
-    isBioValid.value = bio.isNotEmpty;
   }
 
   Future<void> getImage(ImageSource source) async {
@@ -74,7 +65,7 @@ class UserRegistrationController extends GetxController {
             color: Colors.white,
           ),
           message:
-              'Username must be at least 3 characters and contain only letters, numbers, and underscores',
+          'Username must be at least 3 characters and contain only letters, numbers, and underscores',
           duration: const Duration(seconds: 2),
           backgroundColor: Colors.red,
           snackStyle: SnackStyle.FLOATING,
@@ -85,16 +76,27 @@ class UserRegistrationController extends GetxController {
       );
       return false;
     }
-    if (!isNameValid.value) {
-      Get.snackbar(
-        'Error',
-        'Please enter a valid name',
-        colorText: Colors.white,
-        backgroundColor: Colors.red,
+
+    if (nameController.text.isEmpty) {
+      Get.showSnackbar(
+        const GetSnackBar(
+          icon: const Icon(
+            Icons.error,
+            color: Colors.white,
+          ),
+          message: 'Please enter a valid name',
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.red,
+          snackStyle: SnackStyle.FLOATING,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.only(top: 10, left: 10, right: 10),
+          borderRadius: 8,
+        ),
       );
       return false;
     }
-    if (!isBioValid.value) {
+
+    if (bioController.text.isEmpty) {
       Get.showSnackbar(
         const GetSnackBar(
           icon: const Icon(
@@ -120,7 +122,7 @@ class UserRegistrationController extends GetxController {
 
       String username = usernameController.text.toLowerCase();
       DocumentReference usernameDoc =
-          _firestore.collection('usernames').doc(username);
+      _firestore.collection('usernames').doc(username);
 
       bool success = await _firestore.runTransaction((transaction) async {
         DocumentSnapshot usernameSnapshot = await transaction.get(usernameDoc);
@@ -137,17 +139,17 @@ class UserRegistrationController extends GetxController {
         // Create both documents in the same transaction
         transaction.set(usernameDoc, {'uid': user.uid});
 
-        transaction.set(_firestore.collection('users').doc(user.uid), {
-          'username': username,
-          'displayUsername': usernameController.text,
-          'name': nameController.text,
-          'bio': bioController.text,
-          'profileImage': imageUrl ?? '',
-          'followerCount': 0,
-          'followingCount': 0,
-          'postCount': 0,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+        UserModel newUser = UserModel(
+          uid: user.uid,
+          username: username,
+          displayName: nameController.text,
+          bio: bioController.text,
+          profileImage: imageUrl,
+        );
+
+        transaction.set(_firestore.collection('users').doc(user.uid),
+            newUser.toFirestore()
+        );
 
         return true;
       });
@@ -189,9 +191,9 @@ class UserRegistrationController extends GetxController {
   Future<String> _uploadImage(String userId) async {
     try {
       Reference storageReference =
-          _storage.ref().child('user_profiles/$userId');
+      _storage.ref().child('user_profiles/$userId');
       UploadTask uploadTask =
-          storageReference.putFile(File(imageFile.value!.path));
+      storageReference.putFile(File(imageFile.value!.path));
 
       TaskSnapshot taskSnapshot = await uploadTask;
       return await taskSnapshot.ref.getDownloadURL();
