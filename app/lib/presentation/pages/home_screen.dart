@@ -225,42 +225,53 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   Widget _buildBottomNavigationBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      child: GNav(
-        color: Colors.black,
-        activeColor: Colors.white,
-        tabBackgroundColor: Theme.of(context).primaryColor,
-        hoverColor: Theme.of(context).primaryColor,
-        gap: 0,
-        iconSize: 24,
-        selectedIndex: _selectedIndex,
-        onTabChange: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        tabs: const [
-          GButton(
-            gap: 10,
-            icon: Icons.emoji_transportation,
-            text: "Transports",
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 2,
+            blurRadius: 7,
+            offset: const Offset(0, 3),
           ),
-          GButton(
-            gap: 10,
-            icon: Icons.explore,
-            text: "Explore",
-          ),
-          GButton(
-            gap: 10,
-            icon: Icons.dynamic_feed,
-            text: "XploreFeed",
-          ),
-          GButton(
-            gap: 10,
-            icon: Icons.person,
-            text: "Profile",
-          )
         ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: GNav(
+          backgroundColor: Colors.white,
+          color: Colors.grey.shade700,
+          activeColor: Colors.white,
+          tabBackgroundColor: Theme.of(context).primaryColor.withOpacity(0.9),
+          gap: 8,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          iconSize: 24,
+          selectedIndex: _selectedIndex,
+          onTabChange: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          tabs: const [
+            GButton(
+              icon: Icons.emoji_transportation,
+              text: "Transports",
+            ),
+            GButton(
+              icon: Icons.explore,
+              text: "Explore",
+            ),
+            GButton(
+              icon: Icons.dynamic_feed,
+              text: "XploreFeed",
+            ),
+            GButton(
+              icon: Icons.person,
+              text: "Profile",
+            )
+          ],
+        ),
       ),
     );
   }

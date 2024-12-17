@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:lottie/lottie.dart' as lottie;
 import 'package:navixplore/core/utils/api_endpoints.dart';
 import 'package:navixplore/core/utils/color_utils.dart';
 import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_number_schedules.dart';
@@ -22,6 +21,7 @@ class NMMTBusRoutePage extends StatefulWidget {
   final String busName;
   final String? busTripId;
   final String? busArrivalTime;
+  final Widget? busMarkerWidget; // Optional bus marker widget
 
   const NMMTBusRoutePage({
     Key? key,
@@ -29,6 +29,7 @@ class NMMTBusRoutePage extends StatefulWidget {
     required this.busName,
     this.busTripId,
     this.busArrivalTime,
+    this.busMarkerWidget, // Optional bus marker widget
   }) : super(key: key);
 
   @override
@@ -52,7 +53,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
   String? _selectedReportType;
   String? _selectedBusStop;
   final TextEditingController _missingBusStopController =
-  TextEditingController();
+      TextEditingController();
   final TextEditingController _otherIssueController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
@@ -86,6 +87,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
       isLoading = false;
     });
   }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -102,7 +104,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
 
     if (busStopQuery.docs.isNotEmpty) {
       final busStopData =
-      busStopQuery.docs.first.data() as Map<String, dynamic>;
+          busStopQuery.docs.first.data() as Map<String, dynamic>;
       setState(() {
         busStopDataList = busStopData['stations'] as List<dynamic>;
       });
@@ -133,23 +135,21 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
 
       if (response.statusCode == 200) {
         if (xml.XmlDocument.parse(response.data)
-            .innerText
-            .trim()
-            .toUpperCase() ==
+                .innerText
+                .trim()
+                .toUpperCase() ==
             "NO DATA FOUND") {
           setState(() {
             busStopPositionDataList = [];
           });
         } else {
           final List<dynamic> busStopPosition =
-          json.decode(xml.XmlDocument.parse(response.data).innerText);
+              json.decode(xml.XmlDocument.parse(response.data).innerText);
 
           setState(() {
             busStopPositionDataList = busStopPosition;
             isLoading = false;
           });
-
-
         }
       } else {
         print('Failed to fetch data. Status code: ${response.statusCode}');
@@ -173,28 +173,27 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
 
       if (response.statusCode == 200) {
         if (xml.XmlDocument.parse(response.data)
-            .innerText
-            .trim()
-            .toUpperCase() ==
+                .innerText
+                .trim()
+                .toUpperCase() ==
             "NO DATA FOUND") {
           setState(() {
             busPositionDataList = [];
           });
         } else {
           final List<dynamic> busPosition =
-          json.decode(xml.XmlDocument.parse(response.data).innerText);
+              json.decode(xml.XmlDocument.parse(response.data).innerText);
 
           setState(() {
             busPositionDataList = busPosition;
-
           });
 
           // Update the map camera to the current bus position
           if (busPositionDataList != null && busPositionDataList!.isNotEmpty) {
             final busLatitude =
-            double.parse(busPositionDataList![0]["CurrentLat"] ?? '0');
+                double.parse(busPositionDataList![0]["CurrentLat"] ?? '0');
             final busLongitude =
-            double.parse(busPositionDataList![0]["CurrentLong"] ?? '0');
+                double.parse(busPositionDataList![0]["CurrentLong"] ?? '0');
             mapController.move(
                 LatLng(busLatitude, busLongitude), mapController.camera.zoom);
           }
@@ -205,9 +204,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
       }
     } catch (error) {
       print('Error: $error');
-    } finally {
-
-    }
+    } finally {}
   }
 
   Future<void> _fetchRoutePolyline() async {
@@ -221,8 +218,10 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     for (int i = 0; i < busStopPositionDataList!.length - 1; i++) {
       final startLat = double.parse(busStopPositionDataList![i]['STATIONLAT']);
       final startLng = double.parse(busStopPositionDataList![i]['STATIONLONG']);
-      final endLat = double.parse(busStopPositionDataList![i + 1]['STATIONLAT']);
-      final endLng = double.parse(busStopPositionDataList![i + 1]['STATIONLONG']);
+      final endLat =
+          double.parse(busStopPositionDataList![i + 1]['STATIONLAT']);
+      final endLng =
+          double.parse(busStopPositionDataList![i + 1]['STATIONLONG']);
 
       final url =
           'http://router.project-osrm.org/route/v1/driving/$startLng,$startLat;$endLng,$endLat?steps=true';
@@ -241,7 +240,8 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
               if (route['geometry'] is String) {
                 String encodedPolyline = route['geometry'];
 
-                final points = polylinePointsHelper.decodePolyline(encodedPolyline);
+                final points =
+                    polylinePointsHelper.decodePolyline(encodedPolyline);
                 if (points.isNotEmpty) {
                   List<LatLng> segmentPoints = points
                       .map((point) => LatLng(point.latitude, point.longitude))
@@ -351,8 +351,8 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
       body: isLoading
           ? _buildLoadingScreen()
           : busStopDataList!.isEmpty
-          ? _buildNoDataScreen()
-          : _buildBusRouteScreen(),
+              ? _buildNoDataScreen()
+              : _buildBusRouteScreen(),
     );
   }
 
@@ -385,7 +385,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Image.asset(
-              'assets/animations/bus_loading.gif',
+            'assets/animations/bus_loading.gif',
           ),
 
           const SizedBox(height: 24),
@@ -502,9 +502,9 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
     if (busStopPositionDataList != null) {
       for (final busStopPosition in busStopPositionDataList!) {
         final busLatitude =
-        double.parse(busStopPosition['STATIONLAT'] as String? ?? '0');
+            double.parse(busStopPosition['STATIONLAT'] as String? ?? '0');
         final busLongitude =
-        double.parse(busStopPosition['STATIONLONG'] as String? ?? '0');
+            double.parse(busStopPosition['STATIONLONG'] as String? ?? '0');
         markers.add(
           Marker(
             point: LatLng(busLatitude, busLongitude),
@@ -515,6 +515,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
         );
       }
     }
+    final busMarker = widget.busMarkerWidget ?? Container();
 
     if (busPositionDataList != null && busPositionDataList!.isNotEmpty) {
       markers.add(
@@ -523,9 +524,8 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
             double.parse(busPositionDataList![0]["CurrentLat"] ?? '0'),
             double.parse(busPositionDataList![0]["CurrentLong"] ?? '0'),
           ),
-          width: 30,
-          height: 30,
-          child: busMarkerWidget(context),
+          width: 75,
+          child: busMarker,
         ),
       );
     }
@@ -628,18 +628,18 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: busPositionDataList != null &&
-                                busPositionDataList!.isNotEmpty &&
-                                busStopDataList![index]['StationId'] ==
-                                    busPositionDataList![index]['STATIONID']
+                                    busPositionDataList!.isNotEmpty &&
+                                    busStopDataList![index]['StationId'] ==
+                                        busPositionDataList![index]['STATIONID']
                                 ? busPositionDataList![index]
-                            ["CoveredStatus"] ==
-                                "covered"
-                                ? Theme.of(context).primaryColor
-                                : busPositionDataList![index]
-                            ["CoveredStatus"] ==
-                                "notcovered"
-                                ? Colors.white
-                                : Colors.red
+                                            ["CoveredStatus"] ==
+                                        "covered"
+                                    ? Theme.of(context).primaryColor
+                                    : busPositionDataList![index]
+                                                ["CoveredStatus"] ==
+                                            "notcovered"
+                                        ? Colors.white
+                                        : Colors.red
                                 : Colors.white,
                           ),
                         ),
@@ -675,7 +675,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                             Text(
                               busPositionDataList != null
                                   ? _formatTime(
-                                  busPositionDataList![index]["ETA"])
+                                      busPositionDataList![index]["ETA"])
                                   : "",
                               style: TextStyle(
                                 fontSize: 20,
@@ -686,8 +686,8 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                             Text(
                               busPositionDataList != null
                                   ? "Distance: " +
-                                  busPositionDataList![index]["Distance"] +
-                                  "km"
+                                      busPositionDataList![index]["Distance"] +
+                                      "km"
                                   : "",
                             ),
                           ],
@@ -754,8 +754,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
             child: CircleAvatar(
               radius: 25.0,
               backgroundColor: Colors.white,
-              child: Icon(Icons.report,
-                  color: Theme.of(context).primaryColor),
+              child: Icon(Icons.report, color: Theme.of(context).primaryColor),
             ),
           ),
         ),
@@ -865,11 +864,12 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                             return null;
                           },
                           items: busStopDataList?.map((busStop) {
-                            return DropdownMenuItem<String>(
-                              value: busStop['stationname'],
-                              child: Text(busStop['stationname']),
-                            );
-                          }).toList() ?? [],
+                                return DropdownMenuItem<String>(
+                                  value: busStop['stationname'],
+                                  child: Text(busStop['stationname']),
+                                );
+                              }).toList() ??
+                              [],
                         ),
                       if (_selectedReportType == 'Other Issue')
                         TextFormField(
@@ -964,12 +964,5 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
             color: Theme.of(context).primaryColor, size: 15),
       ),
     );
-  }
-
-  Widget busMarkerWidget(BuildContext context) {
-    return CircleAvatar(
-        radius: 15.0,
-        backgroundColor: Theme.of(context).primaryColor,
-        child: Icon(Icons.directions_bus, color: Colors.white, size: 15));
   }
 }

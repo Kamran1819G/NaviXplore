@@ -8,8 +8,8 @@ import 'package:get_storage/get_storage.dart';
 import 'package:navixplore/core/utils/api_endpoints.dart';
 import 'package:navixplore/presentation/controllers/nmmt_controller.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
+import 'package:navixplore/presentation/widgets/bus_marker.dart';
 import 'package:quickalert/quickalert.dart';
-import 'package:quickalert/widgets/quickalert_container.dart';
 import 'package:xml/xml.dart' as xml;
 
 import 'nmmt_bus_number_search_page.dart';
@@ -125,16 +125,16 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
 
       if (response.statusCode == 200) {
         if (xml.XmlDocument.parse(response.data)
-            .innerText
-            .trim()
-            .toUpperCase() ==
+                .innerText
+                .trim()
+                .toUpperCase() ==
             "NO BUS AVAILABLE") {
           setState(() {
             busDataList = [];
           });
         } else {
           final List<dynamic> buses =
-          json.decode(xml.XmlDocument.parse(response.data).innerText);
+              json.decode(xml.XmlDocument.parse(response.data).innerText);
 
           setState(() {
             busDataList = buses;
@@ -156,16 +156,16 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   void _filterSourceSuggestions(String query) {
     setState(() {
       _filteredSourceSuggestions = controller.allBusStops
-          .where((stop) =>
-      stop['stationName']['English']
-          ?.toLowerCase()
-          ?.contains(query.toLowerCase()) ??
-          false ||
-              stop['stationName']['Marathi']
-                  ?.toLowerCase()
-                  ?.contains(query.toLowerCase()) ??
-          false)
-          .toList() ??
+              .where((stop) =>
+                  stop['stationName']['English']
+                      ?.toLowerCase()
+                      ?.contains(query.toLowerCase()) ??
+                  false ||
+                      stop['stationName']['Marathi']
+                          ?.toLowerCase()
+                          ?.contains(query.toLowerCase()) ??
+                  false)
+              .toList() ??
           [];
       _showSourceSuggestions = true;
     });
@@ -174,16 +174,16 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   void _filterDestinationSuggestions(String query) {
     setState(() {
       _filteredDestinationSuggestions = controller.allBusStops
-          .where((stop) =>
-      stop['stationName']['English']
-          ?.toLowerCase()
-          ?.contains(query.toLowerCase()) ??
-          false ||
-              stop['stationName']['Marathi']
-                  ?.toLowerCase()
-                  ?.contains(query.toLowerCase()) ??
-          false)
-          .toList() ??
+              .where((stop) =>
+                  stop['stationName']['English']
+                      ?.toLowerCase()
+                      ?.contains(query.toLowerCase()) ??
+                  false ||
+                      stop['stationName']['Marathi']
+                          ?.toLowerCase()
+                          ?.contains(query.toLowerCase()) ??
+                  false)
+              .toList() ??
           [];
       _showDestinationSuggestions = true;
     });
@@ -226,7 +226,8 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
     setState(() {
       // Remove existing search if it's already present
       _recentSearches.removeWhere((search) =>
-      search['sourceId'] == sourceId && search['destinationId'] == destinationId);
+          search['sourceId'] == sourceId &&
+          search['destinationId'] == destinationId);
 
       _recentSearches.insert(0, newSearch); // Add to the beginning of list
 
@@ -252,7 +253,7 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
 
     // Check if route already exists
     final routeExists = _savedRoutes.any((route) =>
-    route['sourceId'] == sourceId &&
+        route['sourceId'] == sourceId &&
         route['destinationId'] == destinationId);
 
     if (!routeExists) {
@@ -324,7 +325,9 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
     _fetchRunningBusData(sourceLocationId, destinationLocationId);
   }
 
-  void _showSavedRoutesBottomSheet(BuildContext context, ) {
+  void _showSavedRoutesBottomSheet(
+    BuildContext context,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -470,7 +473,6 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                             border: InputBorder.none,
                           ),
                         ),
-
                         if (_showRecentSearches &&
                             _recentSearches.isNotEmpty &&
                             _sourceFocusNode.hasFocus)
@@ -513,12 +515,12 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                               itemCount: _filteredSourceSuggestions.length,
                               itemBuilder: (context, index) {
                                 final suggestion =
-                                _filteredSourceSuggestions[index];
+                                    _filteredSourceSuggestions[index];
                                 return ListTile(
                                   leading: CircleAvatar(
                                     radius: 20.0,
                                     backgroundColor:
-                                    Theme.of(context).primaryColor,
+                                        Theme.of(context).primaryColor,
                                     child: CircleAvatar(
                                       radius: 15.0,
                                       backgroundColor: Colors.white,
@@ -532,9 +534,9 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                                   onTap: () {
                                     setState(() {
                                       sourceLocationController.text =
-                                      suggestion['stationName']['English'];
+                                          suggestion['stationName']['English'];
                                       sourceLocationId =
-                                      suggestion['stationID'];
+                                          suggestion['stationID'];
                                       _showSourceSuggestions = false;
                                       _sourceFocusNode.unfocus();
                                       _filteredSourceSuggestions = [];
@@ -550,7 +552,8 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                   const SizedBox(height: 10),
                   // Destination Station Search Box
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 10),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -631,12 +634,12 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                               itemCount: _filteredDestinationSuggestions.length,
                               itemBuilder: (context, index) {
                                 final suggestion =
-                                _filteredDestinationSuggestions[index];
+                                    _filteredDestinationSuggestions[index];
                                 return ListTile(
                                   leading: CircleAvatar(
                                     radius: 20.0,
                                     backgroundColor:
-                                    Theme.of(context).primaryColor,
+                                        Theme.of(context).primaryColor,
                                     child: CircleAvatar(
                                       radius: 15.0,
                                       backgroundColor: Colors.white,
@@ -650,9 +653,9 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                                   onTap: () {
                                     setState(() {
                                       destinationLocationController.text =
-                                      suggestion['stationName']['English'];
+                                          suggestion['stationName']['English'];
                                       destinationLocationId =
-                                      suggestion['stationID'];
+                                          suggestion['stationID'];
                                       _showDestinationSuggestions = false;
                                       _destinationFocusNode.unfocus();
                                       _filteredDestinationSuggestions = [];
@@ -684,8 +687,10 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                           onPressed: () {
                             _fetchRunningBusData(
                                 sourceLocationId, destinationLocationId);
-                            if(sourceLocationController.text.isNotEmpty && destinationLocationController.text.isNotEmpty) {
-                              _saveSearch(sourceLocationController.text,
+                            if (sourceLocationController.text.isNotEmpty &&
+                                destinationLocationController.text.isNotEmpty) {
+                              _saveSearch(
+                                  sourceLocationController.text,
                                   destinationLocationController.text,
                                   sourceLocationId ?? -1,
                                   destinationLocationId ?? -1);
@@ -702,19 +707,22 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            if(sourceLocationController.text.isNotEmpty && destinationLocationController.text.isNotEmpty) {
-                              _saveRoute(sourceLocationController.text,
+                            if (sourceLocationController.text.isNotEmpty &&
+                                destinationLocationController.text.isNotEmpty) {
+                              _saveRoute(
+                                  sourceLocationController.text,
                                   destinationLocationController.text,
                                   sourceLocationId ?? -1,
                                   destinationLocationId ?? -1);
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                                content: Text("Please fill in Source and Destination to Save"),
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(const SnackBar(
+                                content: Text(
+                                    "Please fill in Source and Destination to Save"),
                               ));
                             }
                             _sourceFocusNode.unfocus();
                             _destinationFocusNode.unfocus();
-
                           },
                           style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context).primaryColor),
@@ -753,7 +761,8 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const NMMTBusNumberSearchPage(),
+                              builder: (context) =>
+                                  const NMMTBusNumberSearchPage(),
                             ),
                           );
                         },
@@ -765,11 +774,13 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const NMMTBusStopSearchPage(),
+                              builder: (context) =>
+                                  const NMMTBusStopSearchPage(),
                             ),
                           );
                         },
-                        child: _buildSearchOption(Icons.directions_bus, "Bus Stop"),
+                        child: _buildSearchOption(
+                            Icons.directions_bus, "Bus Stop"),
                       ),
                     ],
                   ),
@@ -845,10 +856,13 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => NMMTBusRoutePage(
-                          routeid: int.parse(busData["RouteId"].toString() ?? ""),
+                          routeid:
+                              int.parse(busData["RouteId"].toString() ?? ""),
                           busName: busData["RouteName"],
                           busTripId: busData["TripId"],
                           busArrivalTime: busData["ETATime"],
+                          busMarkerWidget:
+                              BusMarker(routeNo: busData["RouteNo"]),
                         ),
                       ),
                     );
@@ -881,7 +895,8 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => NMMTBusRoutePage(
-                          routeid: int.parse(busData["RouteId"].toString() ?? ""),
+                          routeid:
+                              int.parse(busData["RouteId"].toString() ?? ""),
                           busName: busData["RouteName"],
                         ),
                       ),
@@ -897,8 +912,8 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
                         color: Theme.of(context).primaryColor,
                       ),
                       Container(
-                        padding:
-                        const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 2, horizontal: 2),
                         decoration: BoxDecoration(
                           color: Theme.of(context).primaryColor,
                           borderRadius: BorderRadius.circular(5),
@@ -997,7 +1012,6 @@ class _NMMTBusSearchPageState extends State<NMMTBusSearchPage> {
   }
 }
 
-
 class _SavedRoutesBottomSheetContent extends StatefulWidget {
   final List<Map<String, dynamic>> savedRoutes;
   final Function(Map<String, dynamic>) onRouteSelected;
@@ -1013,10 +1027,12 @@ class _SavedRoutesBottomSheetContent extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _SavedRoutesBottomSheetContentState createState() => _SavedRoutesBottomSheetContentState();
+  _SavedRoutesBottomSheetContentState createState() =>
+      _SavedRoutesBottomSheetContentState();
 }
 
-class _SavedRoutesBottomSheetContentState extends State<_SavedRoutesBottomSheetContent> {
+class _SavedRoutesBottomSheetContentState
+    extends State<_SavedRoutesBottomSheetContent> {
   late List<Map<String, dynamic>> _savedRoutes;
 
   @override
@@ -1042,10 +1058,9 @@ class _SavedRoutesBottomSheetContentState extends State<_SavedRoutesBottomSheetC
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
-    return  DraggableScrollableSheet(
+    return DraggableScrollableSheet(
       initialChildSize: 0.5,
       minChildSize: 0.25,
       maxChildSize: 0.9,
@@ -1070,20 +1085,24 @@ class _SavedRoutesBottomSheetContentState extends State<_SavedRoutesBottomSheetC
               ),
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       "Saved Routes",
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                     ),
                     if (_savedRoutes.isNotEmpty)
                       TextButton.icon(
-                        icon: const Icon(Icons.clear_all, color: Colors.redAccent),
-                        label: const Text('Clear All', style: TextStyle(color: Colors.redAccent)),
+                        icon: const Icon(Icons.clear_all,
+                            color: Colors.redAccent),
+                        label: const Text('Clear All',
+                            style: TextStyle(color: Colors.redAccent)),
                         onPressed: () {
                           _handleClearAll();
                         },
@@ -1094,75 +1113,86 @@ class _SavedRoutesBottomSheetContentState extends State<_SavedRoutesBottomSheetC
 
               _savedRoutes.isNotEmpty
                   ? Expanded(
-                child: ListView.separated(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _savedRoutes.length,
-                  separatorBuilder: (context, index) => Divider(
-                    color: Theme.of(context).dividerColor.withOpacity(0.3),
-                  ),
-                  itemBuilder: (context, index) {
-                    final savedRoute = _savedRoutes[index];
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                      leading: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
-                          shape: BoxShape.circle,
+                      child: ListView.separated(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: _savedRoutes.length,
+                        separatorBuilder: (context, index) => Divider(
+                          color:
+                              Theme.of(context).dividerColor.withOpacity(0.3),
                         ),
-                        padding: const EdgeInsets.all(8),
-                        child: Icon(
-                          Icons.directions_bus,
-                          color: Theme.of(context).primaryColor,
-                          size: 24,
-                        ),
-                      ),
-                      title: Text(
-                        '${savedRoute['source']} to ${savedRoute['destination']}',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                        onPressed: () {
-                          _handleRouteDeletion(index);
+                        itemBuilder: (context, index) {
+                          final savedRoute = _savedRoutes[index];
+                          return ListTile(
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            leading: Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .primaryColor
+                                    .withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.directions_bus,
+                                color: Theme.of(context).primaryColor,
+                                size: 24,
+                              ),
+                            ),
+                            title: Text(
+                              '${savedRoute['source']} to ${savedRoute['destination']}',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete_outline,
+                                  color: Colors.redAccent),
+                              onPressed: () {
+                                _handleRouteDeletion(index);
+                              },
+                            ),
+                            onTap: () {
+                              widget.onRouteSelected(savedRoute);
+                              Navigator.pop(context);
+                            },
+                          );
                         },
                       ),
-                      onTap: () {
-                        widget.onRouteSelected(savedRoute);
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                ),
-              )
+                    )
                   : Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.bookmark_border,
-                        size: 80,
-                        color: Colors.grey[300],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        "No Saved Routes Yet",
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.grey[600],
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.bookmark_border,
+                              size: 80,
+                              color: Colors.grey[300],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              "No Saved Routes Yet",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Save your favorite routes for quick access",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.grey[500],
+                                  ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Save your favorite routes for quick access",
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                    ),
             ],
           ),
         );

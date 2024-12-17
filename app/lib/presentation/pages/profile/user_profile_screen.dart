@@ -33,7 +33,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     setState(() {
       _isMyProfile = widget.isMyProfile;
     });
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -234,7 +234,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         unselectedLabelColor: Colors.grey,
         tabs: const [
           Tab(icon: Icon(Icons.grid_on), text: 'Posts'),
-          Tab(icon: Icon(Icons.favorite_border), text: 'Likes'),
           Tab(icon: Icon(Icons.bookmark_border), text: 'Saved'),
         ],
       ),
@@ -246,7 +245,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       controller: _tabController,
       children: [
         _buildMasonryGrid(),
-        _buildLikedPosts(),
         _buildSavedPosts(),
       ],
     );
@@ -265,23 +263,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         );
       },
     ));
-  }
-
-  Widget _buildLikedPosts() {
-    return ListView.builder(
-      itemCount: 10,
-      itemBuilder: (context, index) {
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundImage:
-            NetworkImage('https://picsum.photos/seed/liked${index}/200'),
-          ),
-          title: Text('Liked Post ${index + 1}'),
-          subtitle: Text(
-              'You liked this post on ${DateTime.now().subtract(Duration(days: index)).toString().split(' ')[0]}'),
-        );
-      },
-    );
   }
 
   Widget _buildSavedPosts() {
