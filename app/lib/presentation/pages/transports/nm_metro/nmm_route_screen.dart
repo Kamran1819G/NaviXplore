@@ -11,13 +11,13 @@ import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
 
-class NM_MetroRoutePage extends StatefulWidget {
+class NMM_RouteScreen extends StatefulWidget {
   String lineID;
   String direction;
   String trainName;
   int trainNo;
 
-  NM_MetroRoutePage({
+  NMM_RouteScreen({
     required this.lineID,
     required this.direction,
     required this.trainName,
@@ -25,10 +25,10 @@ class NM_MetroRoutePage extends StatefulWidget {
   });
 
   @override
-  State<NM_MetroRoutePage> createState() => _NM_MetroRoutePageState();
+  State<NMM_RouteScreen> createState() => _NMM_RouteScreenState();
 }
 
-class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
+class _NMM_RouteScreenState extends State<NMM_RouteScreen> {
   List<dynamic>? metroScheduleList;
   List<Marker> markers = [];
   List<Polyline> _polylines = [];
@@ -329,8 +329,6 @@ class _NM_MetroRoutePageState extends State<NM_MetroRoutePage> {
         children: [
           Image.asset(
             'assets/animations/metro_loading.gif',
-            width: 200,
-            height: 200,
           ),
           const SizedBox(height: 24),
           Text(

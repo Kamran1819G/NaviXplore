@@ -8,20 +8,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:navixplore/core/utils/api_endpoints.dart';
-import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_number_search_page.dart';
-import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_route_page.dart';
+import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_no_search_screen.dart';
+import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_route_screen.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:xml/xml.dart' as xml;
-
-import '../../../widgets/Skeleton.dart';
 import '../../../widgets/bus_marker.dart';
 
-class NMMTDepotBuses extends StatefulWidget {
+class NMMT_BusStopBusesScreen extends StatefulWidget {
   final int stationid;
   final String busStopName;
   final Map<String, dynamic> stationLocation;
 
-  const NMMTDepotBuses({
+  const NMMT_BusStopBusesScreen({
     Key? key,
     required this.busStopName,
     required this.stationid,
@@ -29,10 +27,11 @@ class NMMTDepotBuses extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<NMMTDepotBuses> createState() => _NMMTDepotBusesState();
+  State<NMMT_BusStopBusesScreen> createState() =>
+      _NMMT_BusStopBusesScreenState();
 }
 
-class _NMMTDepotBusesState extends State<NMMTDepotBuses>
+class _NMMT_BusStopBusesScreenState extends State<NMMT_BusStopBusesScreen>
     with SingleTickerProviderStateMixin {
   List<dynamic>? allBuses;
   List<dynamic>? runningBuses;
@@ -265,7 +264,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => NMMTBusNumberSearchPage()),
+                            builder: (context) => NMMT_BusNumberSearchScreen()),
                       );
                     },
                     child: Text(
@@ -509,14 +508,13 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => NMMTBusRoutePage(
+                            builder: (context) => NMMT_BusRouteScreen(
                               routeid: int.parse(
                                   busData["RouteId"].toString() ?? '0'),
                               busName: busData["RouteName"],
                               busTripId: busData["TripId"],
                               busArrivalTime: busData["ETATime"],
-                              busMarkerWidget:
-                                  BusMarker(routeNo: busData['RouteNo']),
+                              routeNo: busData['RouteNo'],
                             ),
                           ),
                         );
@@ -548,7 +546,7 @@ class _NMMTDepotBusesState extends State<NMMTDepotBuses>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => NMMTBusRoutePage(
+                            builder: (context) => NMMT_BusRouteScreen(
                               routeid: int.parse(
                                   busData["RouteId"].toString() ?? '0'),
                               busName: busData["RouteName"],

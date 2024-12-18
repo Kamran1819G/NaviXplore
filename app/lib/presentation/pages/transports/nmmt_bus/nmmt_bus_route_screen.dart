@@ -8,35 +8,37 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:navixplore/core/utils/api_endpoints.dart';
 import 'package:navixplore/core/utils/color_utils.dart';
-import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_number_schedules.dart';
+import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_no_schedules_screen.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
+import 'package:navixplore/presentation/widgets/bus_marker.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:timeline_tile/timeline_tile.dart';
 import 'package:xml/xml.dart' as xml;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart'; // Import
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:get_storage/get_storage.dart';
 
-class NMMTBusRoutePage extends StatefulWidget {
+class NMMT_BusRouteScreen extends StatefulWidget {
   final int routeid;
   final String busName;
   final String? busTripId;
   final String? busArrivalTime;
-  final Widget? busMarkerWidget; // Optional bus marker widget
+  final String? routeNo;
 
-  const NMMTBusRoutePage({
+  const NMMT_BusRouteScreen({
     Key? key,
     required this.routeid,
     required this.busName,
     this.busTripId,
     this.busArrivalTime,
-    this.busMarkerWidget, // Optional bus marker widget
+    this.routeNo,
   }) : super(key: key);
 
   @override
-  State<NMMTBusRoutePage> createState() => _NMMTBusRoutePageState();
+  State<NMMT_BusRouteScreen> createState() => _NMMT_BusRouteScreenState();
 }
 
-class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
+class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
   bool isLoading = true;
   Timer? _timer;
   List<dynamic>? busStopDataList;
@@ -48,6 +50,8 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
   PanelController panelController = PanelController();
   List<LatLng> polylinePoints = [];
   final PolylinePoints polylinePointsHelper = PolylinePoints(); // Initialize
+  final String _polylineCacheKey = 'polyline_cache'; // Cache key
+  final _storage = GetStorage();
 
   // Report-related variables
   String? _selectedReportType;
@@ -62,7 +66,12 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
   void initState() {
     super.initState();
     routeid = widget.routeid;
+    _initStorage();
     initialize();
+  }
+
+  Future<void> _initStorage() async {
+    await GetStorage.init();
   }
 
   void initialize() async {
@@ -212,68 +221,87 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
       return;
     }
 
+    // Check cache
+    final cachedPolyline = await _getCachedPolyline();
+    if (cachedPolyline != null) {
+      setState(() {
+        polylinePoints = cachedPolyline;
+      });
+      return;
+    }
+
     final dio = Dio();
     List<LatLng> allPoints = [];
 
-    for (int i = 0; i < busStopPositionDataList!.length - 1; i++) {
-      final startLat = double.parse(busStopPositionDataList![i]['STATIONLAT']);
-      final startLng = double.parse(busStopPositionDataList![i]['STATIONLONG']);
-      final endLat =
-          double.parse(busStopPositionDataList![i + 1]['STATIONLAT']);
-      final endLng =
-          double.parse(busStopPositionDataList![i + 1]['STATIONLONG']);
+    // Prepare the waypoints for OSRM
+    String waypoints = '';
+    for (final stop in busStopPositionDataList!) {
+      final lat = double.parse(stop['STATIONLAT']);
+      final lng = double.parse(stop['STATIONLONG']);
+      waypoints += '$lng,$lat;';
+    }
+    waypoints =
+        waypoints.substring(0, waypoints.length - 1); // Remove trailing ';'
 
-      final url =
-          'http://router.project-osrm.org/route/v1/driving/$startLng,$startLat;$endLng,$endLat?steps=true';
-
-      try {
-        final response = await dio.get(url);
-        if (response.statusCode == 200) {
-          final data = response.data;
-          print('OSRM API Response Data: $data'); // Debugging print statement
-          if (data != null &&
-              data['routes'] != null &&
-              data['routes'] is List &&
-              data['routes'].isNotEmpty) {
-            final route = data['routes'][0];
-            if (route['geometry'] != null) {
-              if (route['geometry'] is String) {
-                String encodedPolyline = route['geometry'];
-
-                final points =
-                    polylinePointsHelper.decodePolyline(encodedPolyline);
-                if (points.isNotEmpty) {
-                  List<LatLng> segmentPoints = points
-                      .map((point) => LatLng(point.latitude, point.longitude))
-                      .toList();
-                  allPoints.addAll(segmentPoints);
-                }
-              } else if (route['geometry'] is Map &&
-                  route['geometry']['coordinates'] != null &&
-                  route['geometry']['coordinates'] is List) {
-                List<dynamic> coordinates = route['geometry']['coordinates'];
-                List<LatLng> segmentPoints = coordinates
-                    .map((coord) => LatLng(coord[1], coord[0]))
-                    .toList();
-                allPoints.addAll(segmentPoints);
-              } else {
-                print('Coordinates data structure is invalid for this segment');
-              }
+    final url =
+        'http://router.project-osrm.org/route/v1/driving/$waypoints?steps=true';
+    try {
+      final response = await dio.get(url);
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data != null &&
+            data['routes'] != null &&
+            data['routes'] is List &&
+            data['routes'].isNotEmpty) {
+          final route = data['routes'][0];
+          if (route['geometry'] != null) {
+            String encodedPolyline = route['geometry'];
+            final points = polylinePointsHelper.decodePolyline(encodedPolyline);
+            if (points.isNotEmpty) {
+              List<LatLng> segmentPoints = points
+                  .map((point) => LatLng(point.latitude, point.longitude))
+                  .toList();
+              allPoints.addAll(segmentPoints);
             } else {
-              print('Geometry is null');
+              print('OSRM decoded polyline is empty');
             }
           } else {
-            print('No routes array found or is empty for this segment');
+            print('Geometry is null');
           }
+        } else {
+          print('No routes array found or is empty');
         }
-      } catch (e) {
-        print('Error fetching route: $e');
       }
+    } catch (e) {
+      print('Error fetching route: $e');
     }
-
     setState(() {
       polylinePoints = allPoints;
     });
+    _cachePolyline(allPoints);
+  }
+
+  // Caching mechanism
+  Future<void> _cachePolyline(List<LatLng> polyline) async {
+    final encodedPolyline = jsonEncode(
+        polyline.map((latLng) => [latLng.latitude, latLng.longitude]).toList());
+    await _storage.write(
+        '$_polylineCacheKey${widget.routeid}', encodedPolyline);
+  }
+
+  Future<List<LatLng>?> _getCachedPolyline() async {
+    final cachedPolylineString =
+        await _storage.read('$_polylineCacheKey${widget.routeid}');
+    if (cachedPolylineString != null) {
+      try {
+        final decodedList = jsonDecode(cachedPolylineString) as List;
+        return decodedList.map((coord) => LatLng(coord[0], coord[1])).toList();
+      } catch (e) {
+        print('Error decoding cached polyline: $e');
+        return null;
+      }
+    }
+    return null;
   }
 
   // Report Submission Function
@@ -515,7 +543,7 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
         );
       }
     }
-    final busMarker = widget.busMarkerWidget ?? Container();
+    final busMarker = BusMarker(routeNo: widget.routeNo ?? '');
 
     if (busPositionDataList != null && busPositionDataList!.isNotEmpty) {
       markers.add(
@@ -658,7 +686,8 @@ class _NMMTBusRoutePageState extends State<NMMTBusRoutePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => NMMTBusNumberSchedules(
+                              builder: (context) =>
+                                  NMMT_BusNumberSchedulesScreen(
                                 routeid: routeid,
                                 busName: widget.busName,
                                 busStopName: busStopData["stationname"],

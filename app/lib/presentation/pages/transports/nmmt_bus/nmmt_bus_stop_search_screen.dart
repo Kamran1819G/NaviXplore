@@ -3,16 +3,17 @@ import 'package:get/get.dart';
 import 'package:navixplore/presentation/controllers/nmmt_controller.dart';
 
 import '../../../widgets/Skeleton.dart';
-import 'nmmt_depot_buses.dart';
+import 'nmmt_bus_stop_buses_screen.dart';
 
-class NMMTBusStopSearchPage extends StatefulWidget {
-  const NMMTBusStopSearchPage({super.key});
+class NMMT_BusStopSearchScreen extends StatefulWidget {
+  const NMMT_BusStopSearchScreen({super.key});
 
   @override
-  State<NMMTBusStopSearchPage> createState() => _NMMTBusStopSearchPageState();
+  State<NMMT_BusStopSearchScreen> createState() =>
+      _NMMT_BusStopSearchScreenState();
 }
 
-class _NMMTBusStopSearchPageState extends State<NMMTBusStopSearchPage> {
+class _NMMT_BusStopSearchScreenState extends State<NMMT_BusStopSearchScreen> {
   bool isLoading = true;
   List<dynamic>? filteredBusStopData;
   TextEditingController _searchController = TextEditingController();
@@ -119,7 +120,7 @@ class _NMMTBusStopSearchPageState extends State<NMMTBusStopSearchPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => NMMTDepotBuses(
+                              builder: (context) => NMMT_BusStopBusesScreen(
                                 busStopName: busStopData["stationName"]
                                     ["English"],
                                 stationid: busStopData["stationID"],

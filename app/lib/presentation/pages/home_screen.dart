@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const ExploreScreen(),
     const XploreFeedScreen(),
     UserProfileScreen(
-        userId:  Get.find<AuthController>().currentUser!.uid, isMyProfile: true),
+        userId: Get.find<AuthController>().currentUser!.uid, isMyProfile: true),
   ];
 
   // New SOS Functionality
@@ -112,11 +112,11 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.stars),
               title: Text("What's New?",
                   style: TextStyle(
-                    fontSize: 18.sp,
+                    fontSize: 16,
                   )),
               onTap: () {
                 Get.to(
-                      () => const WebView_Screen(
+                  () => const WebView_Screen(
                       url: 'https://navixplore.vercel.app/changelogs'),
                 );
               },
@@ -125,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.sos_rounded),
               title: Text("SOS",
                   style: TextStyle(
-                    fontSize: 18.sp,
+                    fontSize: 16,
                   )),
               onTap: _launchSOSCall, // Call SOS Function
             ),
@@ -134,20 +134,20 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.chat_outlined),
               title: const Text("Suggest a Feature",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                   )),
               onTap: () {
-                Get.to(() => const SuggestFeature());
+                Get.to(() => const FeatureSuggestionScreen());
               },
             ),
             ListTile(
               leading: const Icon(Icons.bug_report),
               title: const Text("Report an Issue",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                   )),
               onTap: () {
-                Get.to(() => const ReportIssue());
+                Get.to(() => const ReportIssueScreen());
               },
             ),
             const Divider(color: Colors.grey),
@@ -155,18 +155,20 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.share),
               title: const Text("Share with Friends",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                   )),
             ),
             const Divider(color: Colors.grey),
             ListTile(
               leading: const Icon(Icons.newspaper_rounded),
-              title: const Text("Advertise with us",
-                  style: TextStyle(fontSize: 18)),
+              title: const Text(
+                "Advertise with us",
+                style: TextStyle(fontSize: 16),
+              ),
               onTap: () {
-                Get.to(() => const WebView_Screen(
-                    url:
-                    'https://navixplore.vercel.app/advertise-with-us'),
+                Get.to(
+                  () => const WebView_Screen(
+                      url: 'https://navixplore.vercel.app/advertise-with-us'),
                 );
               },
             ),
@@ -174,14 +176,14 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.support),
               title: const Text("Support",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                   )),
             ),
             ListTile(
                 leading: const Icon(Icons.note_alt),
                 title: const Text("Term & Conditions",
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                     )),
                 onTap: () {
                   Get.toNamed(AppRoutes.TERMS_AND_CONDITIONS);
@@ -189,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (authController.isAuthenticated.value == true)
               ListTile(
                 leading:
-                Icon(Icons.logout, color: Theme.of(context).primaryColor),
+                    Icon(Icons.logout, color: Theme.of(context).primaryColor),
                 title: Text("Sign Out",
                     style: TextStyle(
                       fontSize: 18,
@@ -206,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (authController.isAuthenticated.value == false)
               ListTile(
                 leading:
-                Icon(Icons.login, color: Theme.of(context).primaryColor),
+                    Icon(Icons.login, color: Theme.of(context).primaryColor),
                 title: Text("Sign Up",
                     style: TextStyle(
                       fontSize: 18,
@@ -223,6 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
   Widget _buildBottomNavigationBar() {
     return Container(
       decoration: BoxDecoration(

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:navixplore/presentation/widgets/penalties_card.dart';
 
-class NM_MetroPenalties extends StatefulWidget {
-  const NM_MetroPenalties({super.key});
+class NMM_PenaltiesScreen extends StatefulWidget {
+  const NMM_PenaltiesScreen({super.key});
 
   @override
-  State<NM_MetroPenalties> createState() => _NM_MetroPenaltiesState();
+  State<NMM_PenaltiesScreen> createState() => _NMM_PenaltiesScreenState();
 }
 
-class _NM_MetroPenaltiesState extends State<NM_MetroPenalties> {
+class _NMM_PenaltiesScreenState extends State<NMM_PenaltiesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(

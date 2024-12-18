@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:navixplore/presentation/widgets/image_container.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class PlaceDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> place;
@@ -75,30 +76,39 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
               elevation: 3,
               margin: const EdgeInsets.all(10),
               child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                height: 300,
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: LatLng(widget.place['location']['latitude'],
+                        widget.place['location']['longitude']),
+                    initialZoom: 15,
                   ),
-                  height: 300,
-                  child: GoogleMap(
-                      zoomControlsEnabled: false,
-                      fortyFiveDegreeImageryEnabled: true,
-                      initialCameraPosition: CameraPosition(
-                        target: LatLng(widget.place['location']['latitude'],
-                            widget.place['location']['longitude']),
-                        zoom: 15,
-                      ),
-                      markers: <Marker>{
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.app',
+                    ),
+                    MarkerLayer(
+                      markers: [
                         Marker(
-                          markerId: MarkerId(widget.place['name']),
-                          position: LatLng(widget.place['location']['latitude'],
-                              widget.place['location']['longitude']),
-                          infoWindow: InfoWindow(
-                            title: widget.place['name'],
-                            snippet: widget.place['address'],
-                          ),
-                        ),
-                      })),
+                            point: LatLng(widget.place['location']['latitude'],
+                                widget.place['location']['longitude']),
+                            width: 40,
+                            height: 40,
+                            child: Icon(
+                              Icons.location_on,
+                              color: Colors.red,
+                            )),
+                      ],
+                    )
+                  ],
+                ),
+              ),
             )
           ],
         ),

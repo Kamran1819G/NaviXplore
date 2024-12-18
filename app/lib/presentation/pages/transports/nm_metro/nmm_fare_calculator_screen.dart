@@ -4,14 +4,15 @@ import 'package:get/get.dart';
 import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
 import 'package:quickalert/quickalert.dart';
 
-class NM_MetroFareCalculator extends StatefulWidget {
-  NM_MetroFareCalculator({Key? key}) : super(key: key);
+class NMM_FareCalculatorScreen extends StatefulWidget {
+  NMM_FareCalculatorScreen({Key? key}) : super(key: key);
 
   @override
-  State<NM_MetroFareCalculator> createState() => _NM_MetroFareCalculatorState();
+  State<NMM_FareCalculatorScreen> createState() =>
+      _NMM_FareCalculatorScreenState();
 }
 
-class _NM_MetroFareCalculatorState extends State<NM_MetroFareCalculator> {
+class _NMM_FareCalculatorScreenState extends State<NMM_FareCalculatorScreen> {
   TextEditingController sourceLocationController = TextEditingController();
   TextEditingController destinationLocationController = TextEditingController();
   String? sourceMetroStation;

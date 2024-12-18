@@ -5,21 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
-import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_fare_calculator.dart';
-import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_map.dart';
-import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_penalties.dart';
-import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_search_page.dart';
-import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_upcoming_trains.dart';
+import 'package:navixplore/presentation/pages/transports/nm_metro/nmm_fare_calculator_screen.dart';
+import 'package:navixplore/presentation/pages/transports/nm_metro/nmm_map_screen.dart';
+import 'package:navixplore/presentation/pages/transports/nm_metro/nmm_penalties_screen.dart';
+import 'package:navixplore/presentation/pages/transports/nm_metro/nmm_search_screen.dart';
+import 'package:navixplore/presentation/pages/transports/nm_metro/nmm_upcoming_trains_screen.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 
-class NMMetroTab extends StatefulWidget {
-  const NMMetroTab({Key? key}) : super(key: key);
+class NMM_Tab extends StatefulWidget {
+  const NMM_Tab({Key? key}) : super(key: key);
 
   @override
-  State<NMMetroTab> createState() => _NMMetroTabState();
+  State<NMM_Tab> createState() => _NMM_TabState();
 }
 
-class _NMMetroTabState extends State<NMMetroTab> {
+class _NMM_TabState extends State<NMM_Tab> {
   bool isLoading = true;
   late double? _currentLatitude;
   late double? _currentlongitude;
@@ -121,7 +121,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => NMMetroSearchPage(),
+                builder: (context) => NMM_SearchPageScreen(),
               ),
             );
           },
@@ -228,7 +228,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => NM_MetroUpcomingTrains(
+                              builder: (context) => NMM_UpcomingTrainsScreen(
                                   lineID: nearestStationsList![index]["lineID"],
                                   stationID: nearestStationsList![index]
                                       ["stationID"],
@@ -319,7 +319,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => NM_MetroFareCalculator(),
+                          builder: (context) => NMM_FareCalculatorScreen(),
                         ),
                       );
                     },
@@ -348,7 +348,7 @@ class _NMMetroTabState extends State<NMMetroTab> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const NM_MetroPenalties(),
+                          builder: (context) => const NMM_PenaltiesScreen(),
                         ),
                       );
                     },
@@ -375,7 +375,8 @@ class _NMMetroTabState extends State<NMMetroTab> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => NM_MetroMap()),
+                        MaterialPageRoute(
+                            builder: (context) => NMM_MapScreen()),
                       );
                     },
                     child: Column(

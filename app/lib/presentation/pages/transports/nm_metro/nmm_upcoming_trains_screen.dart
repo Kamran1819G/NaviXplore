@@ -4,25 +4,26 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:navixplore/presentation/pages/transports/nm_metro/nm_metro_route_page.dart';
+import 'package:navixplore/presentation/pages/transports/nm_metro/nmm_route_screen.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 
-class NM_MetroUpcomingTrains extends StatefulWidget {
+class NMM_UpcomingTrainsScreen extends StatefulWidget {
   final String lineID;
   final String stationID;
   final String stationName;
 
-  NM_MetroUpcomingTrains({
+  NMM_UpcomingTrainsScreen({
     required this.lineID,
     required this.stationID,
     required this.stationName,
   });
 
   @override
-  _NM_MetroUpcomingTrainsState createState() => _NM_MetroUpcomingTrainsState();
+  _NMM_UpcomingTrainsScreenState createState() =>
+      _NMM_UpcomingTrainsScreenState();
 }
 
-class _NM_MetroUpcomingTrainsState extends State<NM_MetroUpcomingTrains> {
+class _NMM_UpcomingTrainsScreenState extends State<NMM_UpcomingTrainsScreen> {
   Map<String, dynamic>? upcomingTrains;
   String direction = "up";
   final ScrollController _scrollController = ScrollController();
@@ -168,7 +169,7 @@ class _NM_MetroUpcomingTrainsState extends State<NM_MetroUpcomingTrains> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => NM_MetroRoutePage(
+                              builder: (context) => NMM_RouteScreen(
                                 lineID: widget.lineID,
                                 direction: direction,
                                 trainName: upcomingTrains!['trainName'],

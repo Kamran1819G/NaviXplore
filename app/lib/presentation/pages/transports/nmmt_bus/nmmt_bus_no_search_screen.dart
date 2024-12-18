@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:navixplore/presentation/controllers/nmmt_controller.dart';
-import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_route_page.dart';
+import 'package:navixplore/presentation/pages/transports/nmmt_bus/nmmt_bus_route_screen.dart';
 
 import '../../../widgets/Skeleton.dart';
 
-class NMMTBusNumberSearchPage extends StatefulWidget {
-  const NMMTBusNumberSearchPage({super.key});
+class NMMT_BusNumberSearchScreen extends StatefulWidget {
+  const NMMT_BusNumberSearchScreen({super.key});
 
   @override
-  State<NMMTBusNumberSearchPage> createState() =>
-      _NMMTBusNumberSearchPageState();
+  State<NMMT_BusNumberSearchScreen> createState() =>
+      _NMMT_BusNumberSearchScreenState();
 }
 
-class _NMMTBusNumberSearchPageState extends State<NMMTBusNumberSearchPage> {
+class _NMMT_BusNumberSearchScreenState
+    extends State<NMMT_BusNumberSearchScreen> {
   bool isLoading = true;
   List<dynamic>? filteredBusData;
   TextEditingController _searchController = TextEditingController();
@@ -127,7 +128,7 @@ class _NMMTBusNumberSearchPageState extends State<NMMTBusNumberSearchPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => NMMTBusRoutePage(
+                              builder: (context) => NMMT_BusRouteScreen(
                                   routeid: busData["routeID"],
                                   busName: busData["routeName"]['English']),
                             ),

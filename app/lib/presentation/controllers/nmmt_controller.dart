@@ -22,13 +22,14 @@ class NMMTController extends GetxController {
     // Cast the dynamic lists to the correct type
     allBusStops.value = (storedBusStops?.cast<Map<String, dynamic>>()) ?? [];
     allBuses.value = (storedBuses?.cast<Map<String, dynamic>>()) ?? [];
-    announcements.value = (storedAnnouncements?.cast<Map<String, dynamic>>()) ?? [];
+    announcements.value =
+        (storedAnnouncements?.cast<Map<String, dynamic>>()) ?? [];
   }
 
   Future<void> fetchAllStations() async {
     if (allBusStops.isNotEmpty) return;
     QuerySnapshot querySnapshot =
-    await FirebaseFirestore.instance.collection('NMMT-Stations').get();
+        await FirebaseFirestore.instance.collection('NMMT-Stations').get();
     final List<Map<String, dynamic>> fetchedStops = querySnapshot.docs
         .map((doc) => doc.data() as Map<String, dynamic>)
         .toList();
@@ -39,7 +40,7 @@ class NMMTController extends GetxController {
   Future<void> fetchAllBuses() async {
     if (allBuses.isNotEmpty) return;
     QuerySnapshot querySnapshot =
-    await FirebaseFirestore.instance.collection('NMMT-Buses').get();
+        await FirebaseFirestore.instance.collection('NMMT-Buses').get();
     final List<Map<String, dynamic>> fetchedBuses = querySnapshot.docs
         .map((doc) => doc.data() as Map<String, dynamic>)
         .toList();

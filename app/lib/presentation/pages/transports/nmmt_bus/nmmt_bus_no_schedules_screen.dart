@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:navixplore/core/utils/api_endpoints.dart';
 import 'package:xml/xml.dart' as xml;
 
-class NMMTBusNumberSchedules extends StatefulWidget {
+class NMMT_BusNumberSchedulesScreen extends StatefulWidget {
   final int routeid;
   final String busName;
   final int stationid;
   final String busStopName;
 
-  const NMMTBusNumberSchedules({
+  const NMMT_BusNumberSchedulesScreen({
     Key? key,
     required this.routeid,
     required this.busName,
@@ -20,10 +20,12 @@ class NMMTBusNumberSchedules extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<NMMTBusNumberSchedules> createState() => _NMMTBusNumberSchedulesState();
+  State<NMMT_BusNumberSchedulesScreen> createState() =>
+      _NMMT_BusNumberSchedulesScreenState();
 }
 
-class _NMMTBusNumberSchedulesState extends State<NMMTBusNumberSchedules> {
+class _NMMT_BusNumberSchedulesScreenState
+    extends State<NMMT_BusNumberSchedulesScreen> {
   List<dynamic>? busScheduleDataList;
   final ScrollController _scrollController = ScrollController();
   int? nextBusIndex;

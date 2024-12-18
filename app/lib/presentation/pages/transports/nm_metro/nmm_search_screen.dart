@@ -3,16 +3,16 @@ import 'package:get/get.dart';
 import 'package:navixplore/presentation/controllers/nm_metro_controller.dart';
 import 'package:navixplore/presentation/widgets/Skeleton.dart';
 
-import 'nm_metro_upcoming_trains.dart';
+import 'nmm_upcoming_trains_screen.dart';
 
-class NMMetroSearchPage extends StatefulWidget {
-  NMMetroSearchPage({Key? key}) : super(key: key);
+class NMM_SearchPageScreen extends StatefulWidget {
+  NMM_SearchPageScreen({Key? key}) : super(key: key);
 
   @override
-  State<NMMetroSearchPage> createState() => _NMMetroSearchPageState();
+  State<NMM_SearchPageScreen> createState() => _NMM_SearchPageScreenState();
 }
 
-class _NMMetroSearchPageState extends State<NMMetroSearchPage> {
+class _NMM_SearchPageScreenState extends State<NMM_SearchPageScreen> {
   bool isLoading = true;
 
   final NMMetroController controller = Get.find<NMMetroController>();
@@ -81,7 +81,7 @@ class _NMMetroSearchPageState extends State<NMMetroSearchPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => NM_MetroUpcomingTrains(
+                              builder: (context) => NMM_UpcomingTrainsScreen(
                                   lineID: controller.allMetroStations[index]
                                       ["lineID"],
                                   stationID: controller.allMetroStations[index]
