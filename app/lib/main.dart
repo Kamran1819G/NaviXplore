@@ -5,10 +5,12 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:navixplore/core/routes/app_pages.dart';
 import 'package:navixplore/core/routes/app_routes.dart';
-import 'package:navixplore/presentation/controllers/network_controller.dart';
-import 'package:navixplore/presentation/controllers/notification_controller.dart';
-import 'package:navixplore/presentation/controllers/permission_controller.dart';
-import 'package:navixplore/theme/theme.dart';
+import 'package:navixplore/core/controllers/network_controller.dart';
+import 'package:navixplore/core/controllers/notification_controller.dart';
+import 'package:navixplore/core/controllers/permission_controller.dart';
+import 'package:navixplore/core/theme/theme.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'firebase_options.dart';
 
@@ -29,6 +31,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  FirebaseAnalytics analytics = FirebaseAnalytics.instance;
 
   await NotificationController.initialize();
 
