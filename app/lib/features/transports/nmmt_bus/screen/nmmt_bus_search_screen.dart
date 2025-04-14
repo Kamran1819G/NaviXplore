@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:navixplore/core/utils/api_endpoints.dart';
-import 'package:navixplore/features/transports/nmmt_bus/screen/nmmt_controller.dart';
+import 'package:navixplore/features/transports/nmmt_bus/controller/nmmt_controller.dart';
 import 'package:navixplore/features/widgets/Skeleton.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:xml/xml.dart' as xml;

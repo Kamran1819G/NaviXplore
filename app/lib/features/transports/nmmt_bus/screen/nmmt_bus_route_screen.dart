@@ -17,6 +17,14 @@ import 'package:xml/xml.dart' as xml;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart'; // Import
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:get_storage/get_storage.dart';
+// Import DateFormat for robust time formatting (consider adding intl package dependency)
+// import 'package:intl/intl.dart';
+
+// Define constants for cache keys and report issue types
+const String _polylineCacheKey = 'polyline_cache';
+const String reportTypeMissingBusStop = 'Missing Bus Stop';
+const String reportTypeWrongBusStopLocation = 'Wrong Bus Stop Location';
+const String reportTypeOtherIssue = 'Other Issue';
 
 class NMMT_BusRouteScreen extends StatefulWidget {
   final int routeid;
@@ -49,15 +57,15 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
   final MapController mapController = MapController();
   PanelController panelController = PanelController();
   List<LatLng> polylinePoints = [];
-  final PolylinePoints polylinePointsHelper = PolylinePoints(); // Initialize
-  final String _polylineCacheKey = 'polyline_cache'; // Cache key
+  final PolylinePoints polylinePointsHelper = PolylinePoints();
   final _storage = GetStorage();
+  String? errorMessage; // For displaying error messages on screen
 
   // Report-related variables
   String? _selectedReportType;
   String? _selectedBusStop;
   final TextEditingController _missingBusStopController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _otherIssueController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
@@ -76,25 +84,40 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
 
   void initialize() async {
     await _fetchAllBusStopData();
-    await fetchInitialData();
+    if (busStopDataList != null && busStopDataList!.isNotEmpty) {
+      await fetchInitialData();
 
-    _timer = Timer.periodic(Duration(seconds: 15), (Timer timer) {
-      _fetchBusPositionData();
-    });
+      _timer = Timer.periodic(const Duration(seconds: 30), (Timer timer) {
+        _fetchBusPositionData();
+      });
+    } else {
+      setState(() {
+        isLoading = false; // Stop loading if busStopDataList is empty after fetching
+      });
+    }
   }
 
   Future<void> fetchInitialData() async {
-    // Fetch bus stop position and bus position data concurrently
     setState(() {
       isLoading = true;
+      errorMessage = null; // Clear any previous error message
     });
-    await Future.wait([
-      _fetchBusPositionData(), // Fetch bus position first
-      _fetchRoutePolyline(), // Then fetch route polyline
-    ]);
-    setState(() {
-      isLoading = false;
-    });
+    try {
+      await Future.wait([
+        _fetchBusPositionData(),
+        _fetchRoutePolyline(),
+      ]);
+    } catch (e) {
+      print('Error during initial data fetch: $e');
+      setState(() {
+        errorMessage =
+        'Failed to load route data. Please check your connection and try again.';
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override
@@ -106,23 +129,35 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
   }
 
   Future<void> _fetchAllBusStopData() async {
-    final busStopQuery = await FirebaseFirestore.instance
-        .collection('NMMT-Buses')
-        .where('routeID', isEqualTo: widget.routeid)
-        .get();
+    try {
+      final busStopQuery = await FirebaseFirestore.instance
+          .collection('NMMT-Buses')
+          .where('routeID', isEqualTo: widget.routeid)
+          .get();
 
-    if (busStopQuery.docs.isNotEmpty) {
-      final busStopData =
-          busStopQuery.docs.first.data() as Map<String, dynamic>;
-      setState(() {
-        busStopDataList = busStopData['stations'] as List<dynamic>;
-      });
+      if (busStopQuery.docs.isNotEmpty) {
+        final busStopData =
+        busStopQuery.docs.first.data() as Map<String, dynamic>;
+        setState(() {
+          busStopDataList = busStopData['stations'] as List<dynamic>?;
+        });
 
-      if (busStopDataList!.isNotEmpty) {
-        final firstStationID = busStopDataList![0]['stationid'];
-        final lastStationID = busStopDataList!.last['stationid'];
-        await _fetchBusStopPositionData(firstStationID, lastStationID);
+        if (busStopDataList != null && busStopDataList!.isNotEmpty) {
+          final firstStationID = busStopDataList![0]['stationid'];
+          final lastStationID = busStopDataList!.last['stationid'];
+          await _fetchBusStopPositionData(firstStationID, lastStationID);
+        }
+      } else {
+        setState(() {
+          busStopDataList = []; // Set to empty list if no data from Firestore
+        });
       }
+    } catch (e) {
+      print('Error fetching bus stop data from Firestore: $e');
+      setState(() {
+        busStopDataList = null; // Set to null to indicate error
+        errorMessage = 'Failed to load bus route information.';
+      });
     }
   }
 
@@ -133,10 +168,6 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
       String firstStationIDString = firstStationID.toString();
       String lastStationIDString = lastStationID.toString();
 
-      setState(() {
-        isLoading = true;
-      });
-
       final dio = Dio();
       final response = await dio.get(
         '${NMMTApiEndpoints.GetBusStopsBetweenSoureDestination}?RouteId=$routeIDString&FromStaionId=$firstStationIDString&ToStaionId=$lastStationIDString',
@@ -144,37 +175,41 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
 
       if (response.statusCode == 200) {
         if (xml.XmlDocument.parse(response.data)
-                .innerText
-                .trim()
-                .toUpperCase() ==
+            .innerText
+            .trim()
+            .toUpperCase() ==
             "NO DATA FOUND") {
           setState(() {
             busStopPositionDataList = [];
           });
         } else {
           final List<dynamic> busStopPosition =
-              json.decode(xml.XmlDocument.parse(response.data).innerText);
+          json.decode(xml.XmlDocument.parse(response.data).innerText);
 
           setState(() {
             busStopPositionDataList = busStopPosition;
-            isLoading = false;
           });
         }
       } else {
-        print('Failed to fetch data. Status code: ${response.statusCode}');
-        print('Response body: ${response.data}');
+        print(
+            'Failed to fetch bus stop positions. Status code: ${response.statusCode}');
+        _showErrorSnackBar('Failed to load bus stop positions.');
       }
     } catch (error) {
-      print('Error: $error');
+      print('Error fetching bus stop positions: $error');
+      _showErrorSnackBar(
+          'Error loading bus stop positions. Please check your connection.');
     }
   }
 
   Future<void> _fetchBusPositionData() async {
-    try {
-      if (widget.busTripId == null || widget.busArrivalTime == null) {
-        return;
-      }
+    if (widget.busTripId == null || widget.busArrivalTime == null) {
+      print(
+          'Warning: busTripId or busArrivalTime is null, skipping bus position fetch.');
+      return;
+    }
 
+    try {
       final dio = Dio();
       final response = await dio.get(
         '${NMMTApiEndpoints.GetBusTrackerDetails}?TripId=${widget.busTripId}&TripStatus=1&TripStartTime=${widget.busArrivalTime}',
@@ -182,38 +217,45 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
 
       if (response.statusCode == 200) {
         if (xml.XmlDocument.parse(response.data)
-                .innerText
-                .trim()
-                .toUpperCase() ==
+            .innerText
+            .trim()
+            .toUpperCase() ==
             "NO DATA FOUND") {
           setState(() {
             busPositionDataList = [];
           });
         } else {
           final List<dynamic> busPosition =
-              json.decode(xml.XmlDocument.parse(response.data).innerText);
+          json.decode(xml.XmlDocument.parse(response.data).innerText);
 
           setState(() {
             busPositionDataList = busPosition;
           });
 
-          // Update the map camera to the current bus position
           if (busPositionDataList != null && busPositionDataList!.isNotEmpty) {
             final busLatitude =
-                double.parse(busPositionDataList![0]["CurrentLat"] ?? '0');
-            final busLongitude =
-                double.parse(busPositionDataList![0]["CurrentLong"] ?? '0');
-            mapController.move(
-                LatLng(busLatitude, busLongitude), mapController.camera.zoom);
+                double.tryParse(busPositionDataList![0]["CurrentLat"] ?? '') ??
+                    0.0;
+            final busLongitude = double.tryParse(
+                busPositionDataList![0]["CurrentLong"] ?? '') ??
+                0.0;
+            if (mounted) {
+              // Check if widget is still mounted before using mapController
+              mapController.move(
+                  LatLng(busLatitude, busLongitude), mapController.camera.zoom);
+            }
           }
         }
       } else {
-        print('Failed to fetch data. Status code: ${response.statusCode}');
-        print('Response body: ${response.data}');
+        print(
+            'Failed to fetch bus positions. Status code: ${response.statusCode}');
+        _showErrorSnackBar('Failed to update bus location.');
       }
     } catch (error) {
-      print('Error: $error');
-    } finally {}
+      print('Error fetching bus positions: $error');
+      _showErrorSnackBar(
+          'Error updating bus location. Please check your connection.');
+    }
   }
 
   Future<void> _fetchRoutePolyline() async {
@@ -221,7 +263,6 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
       return;
     }
 
-    // Check cache
     final cachedPolyline = await _getCachedPolyline();
     if (cachedPolyline != null) {
       setState(() {
@@ -233,15 +274,13 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
     final dio = Dio();
     List<LatLng> allPoints = [];
 
-    // Prepare the waypoints for OSRM
     String waypoints = '';
     for (final stop in busStopPositionDataList!) {
-      final lat = double.parse(stop['STATIONLAT']);
-      final lng = double.parse(stop['STATIONLONG']);
+      final lat = double.tryParse(stop['STATIONLAT'] ?? '') ?? 0.0;
+      final lng = double.tryParse(stop['STATIONLONG'] ?? '') ?? 0.0;
       waypoints += '$lng,$lat;';
     }
-    waypoints =
-        waypoints.substring(0, waypoints.length - 1); // Remove trailing ';'
+    waypoints = waypoints.substring(0, waypoints.length - 1);
 
     final url =
         'http://router.project-osrm.org/route/v1/driving/$waypoints?steps=true';
@@ -266,22 +305,28 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
               print('OSRM decoded polyline is empty');
             }
           } else {
-            print('Geometry is null');
+            print('Geometry is null in OSRM response');
           }
         } else {
-          print('No routes array found or is empty');
+          print('No routes array found or is empty in OSRM response');
         }
+      } else {
+        print(
+            'Failed to fetch route polyline from OSRM. Status code: ${response.statusCode}');
+        _showErrorSnackBar('Failed to load route path.');
       }
     } catch (e) {
-      print('Error fetching route: $e');
+      print('Error fetching route polyline: $e');
+      _showErrorSnackBar(
+          'Error loading route path. Please check your connection.');
+    } finally {
+      setState(() {
+        polylinePoints = allPoints;
+      });
+      _cachePolyline(allPoints);
     }
-    setState(() {
-      polylinePoints = allPoints;
-    });
-    _cachePolyline(allPoints);
   }
 
-  // Caching mechanism
   Future<void> _cachePolyline(List<LatLng> polyline) async {
     final encodedPolyline = jsonEncode(
         polyline.map((latLng) => [latLng.latitude, latLng.longitude]).toList());
@@ -291,7 +336,7 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
 
   Future<List<LatLng>?> _getCachedPolyline() async {
     final cachedPolylineString =
-        await _storage.read('$_polylineCacheKey${widget.routeid}');
+    await _storage.read('$_polylineCacheKey${widget.routeid}');
     if (cachedPolylineString != null) {
       try {
         final decodedList = jsonDecode(cachedPolylineString) as List;
@@ -304,7 +349,6 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
     return null;
   }
 
-  // Report Submission Function
   Future<void> _submitReport() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -313,7 +357,6 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
     _formKey.currentState!.save();
 
     try {
-      // Construct report data
       Map<String, dynamic> reportData = {
         'reportType': _selectedReportType,
         'routeId': widget.routeid,
@@ -322,31 +365,28 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
         'device': await getDeviceDetails(),
       };
 
-      // Add sub-options based on selected report type
-      if (_selectedReportType == 'Missing Bus Stop') {
+      if (_selectedReportType == reportTypeMissingBusStop) {
         reportData['missingBusStopName'] = _missingBusStopController.text;
-      } else if (_selectedReportType == 'Wrong Bus Stop Location') {
+      } else if (_selectedReportType == reportTypeWrongBusStopLocation) {
         reportData['wrongBusStop'] = _selectedBusStop;
-      } else if (_selectedReportType == 'Other Issue') {
+      } else if (_selectedReportType == reportTypeOtherIssue) {
         reportData['otherIssueDescription'] = _otherIssueController.text;
       }
 
-      // Store in Firebase Firestore under a "reports" collection
       await FirebaseFirestore.instance.collection('reports').add(reportData);
 
-      // Feedback to the user
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Report submitted successfully!'),
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pop(context); // Close the report dialog
-      _clearReportForm(); // Clear report form data
+      Navigator.pop(context);
+      _clearReportForm();
     } catch (e) {
       print('Error submitting report: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Failed to submit report. Please try again later.'),
           backgroundColor: Colors.red,
         ),
@@ -364,29 +404,118 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
   }
 
   Future<Map<String, String>> getDeviceDetails() async {
-    final deviceInfo = await DeviceInfoPlugin().deviceInfo;
-    return {
-      'os': deviceInfo.data['os'].toString(),
-      'device_name': deviceInfo.data['name'].toString(),
-      'id': deviceInfo.data['id'].toString(),
-    };
+    try {
+      final deviceInfo = await DeviceInfoPlugin().deviceInfo;
+      return {
+        'os': deviceInfo.data['os']?.toString() ?? 'Unknown',
+        'device_name': deviceInfo.data['name']?.toString() ?? 'Unknown',
+        'id': deviceInfo.data['id']?.toString() ?? 'Unknown',
+      };
+    } catch (e) {
+      print('Error getting device details: $e');
+      return {
+        'os': 'Unknown',
+        'device_name': 'Unknown',
+        'id': 'Unknown',
+      };
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message, style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(),
-      body: isLoading
-          ? _buildLoadingScreen()
-          : busStopDataList!.isEmpty
-              ? _buildNoDataScreen()
-              : _buildBusRouteScreen(),
+      body: Stack(
+        children: [
+          if (isLoading)
+            _buildLoadingScreen()
+          else if (errorMessage != null)
+            _buildErrorScreen()
+          else if (busStopDataList == null || busStopDataList!.isEmpty)
+              _buildNoDataScreen()
+            else
+              _buildBusRouteScreen(),
+          Positioned(
+            top: 20,
+            left: 10,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: CircleAvatar(
+                  radius: 25.0,
+                  backgroundColor: Colors.white,
+                  child: BackButton(
+                    color: Theme.of(context).primaryColor,
+                  )),
+            ),
+          ),
+          if (!isLoading && errorMessage == null && busStopDataList != null && busStopDataList!.isNotEmpty)
+            Positioned(
+              top: 20,
+              right: 10,
+              child: GestureDetector(
+                  onTap: () {
+                    fetchInitialData(); // Refresh all data on map refresh
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(18),
+                            topRight: Radius.circular(18),
+                          ),
+                        ),
+                        content: const Text(
+                          'Refreshing Map...',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: CircleAvatar(
+                      radius: 25.0,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.refresh,
+                          color: Theme.of(context).primaryColor))),
+            ),
+          if (!isLoading && errorMessage == null && busStopDataList != null && busStopDataList!.isNotEmpty)
+            Positioned(
+              bottom: 20,
+              right: 10,
+              child: GestureDetector(
+                onTap: () {
+                  _showReportDialog();
+                },
+                child: CircleAvatar(
+                  radius: 25.0,
+                  backgroundColor: Colors.white,
+                  child:
+                  Icon(Icons.report, color: Theme.of(context).primaryColor),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
     return PreferredSize(
-      preferredSize: Size.fromHeight(0),
+      preferredSize: const Size.fromHeight(0),
       child: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Theme.of(context).primaryColor,
@@ -399,6 +528,11 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
   }
 
   String _formatTime(String time) {
+    // Consider using DateFormat from intl package for more robust parsing and formatting
+    // Example using intl (add dependency: intl: ^0.18.0 to pubspec.yaml):
+    // final parsedTime = DateFormat('h:mm a').parse(time);
+    // return DateFormat('hh:mm a').format(parsedTime); // Or any desired format
+
     final parts = time.split(' ');
     final timeParts = parts[0].split(':');
     final hour = int.parse(timeParts[0]);
@@ -407,121 +541,129 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
   }
 
   Widget _buildLoadingScreen() {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(
-            'assets/animations/bus_loading.gif',
-          ),
-
-          const SizedBox(height: 24),
-
-          // Dynamic Loading Text
-          Text(
-            'Tracking Your Bus Route',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).primaryColor,
+    return Container(
+      color: Colors.white,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/animations/bus_loading.gif',
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Descriptive Subtitle
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0),
-            child: Text(
-              'Fetching real-time bus location, route details, and stop information...',
-              textAlign: TextAlign.center,
+            const SizedBox(height: 24),
+            Text(
+              'Tracking Your Bus Route',
               style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-                height: 1.5,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // Progress Indicator
-          SizedBox(
-            width: double.infinity,
-            height: 5,
-            child: LinearProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).primaryColor,
-              ),
-              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Connection Status
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.wifi,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
                 color: Theme.of(context).primaryColor,
-                size: 24,
               ),
-              const SizedBox(width: 12),
-              Text(
-                'Connecting to NMMT Services',
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32.0),
+              child: Text(
+                'Fetching real-time bus location, route details, and stop information...',
+                textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Theme.of(context).primaryColor,
                   fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                  color: Colors.grey,
+                  height: 1.5,
                 ),
               ),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 5,
+              child: LinearProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).primaryColor,
+                ),
+                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.wifi,
+                  color: Theme.of(context).primaryColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Connecting to NMMT Services',
+                  style: TextStyle(
+                    color: Theme.of(context).primaryColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorScreen() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 60),
+            const SizedBox(height: 16),
+            Text(
+              errorMessage ?? 'An error occurred while loading data.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, color: Colors.red),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: fetchInitialData,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildNoDataScreen() {
-    return Stack(
-      children: [
-        Positioned(
-          top: 20,
-          left: 10,
-          child: GestureDetector(
-            onTap: () {
-              Navigator.pop(context);
-            },
-            child: CircleAvatar(
-              radius: 25.0,
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Oops! No Data Found',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'This route might be temporarily or permanently closed. 😞',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: initialize, // Retry initialize to refetch bus stop data
+            style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).primaryColor,
-              child: BackButton(
-                color: Colors.white,
-              ),
+              foregroundColor: Colors.white,
             ),
+            child: const Text('Retry'),
           ),
-        ),
-        Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'Oops! No Data Found',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'This route might be temporarily or permanently closed. 😞',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -530,9 +672,11 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
     if (busStopPositionDataList != null) {
       for (final busStopPosition in busStopPositionDataList!) {
         final busLatitude =
-            double.parse(busStopPosition['STATIONLAT'] as String? ?? '0');
+            double.tryParse(busStopPosition['STATIONLAT'] as String? ?? '') ??
+                0.0;
         final busLongitude =
-            double.parse(busStopPosition['STATIONLONG'] as String? ?? '0');
+            double.tryParse(busStopPosition['STATIONLONG'] as String? ?? '') ??
+                0.0;
         markers.add(
           Marker(
             point: LatLng(busLatitude, busLongitude),
@@ -549,8 +693,8 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
       markers.add(
         Marker(
           point: LatLng(
-            double.parse(busPositionDataList![0]["CurrentLat"] ?? '0'),
-            double.parse(busPositionDataList![0]["CurrentLong"] ?? '0'),
+            double.tryParse(busPositionDataList![0]["CurrentLat"] ?? '') ?? 0.0,
+            double.tryParse(busPositionDataList![0]["CurrentLong"] ?? '') ?? 0.0,
           ),
           width: 75,
           child: busMarker,
@@ -560,244 +704,205 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
     double panelMaxHeight = MediaQuery.of(context).size.height * 0.6;
     double panelClosedHeight = 100;
 
-    return Stack(
+    return SlidingUpPanel(
+      defaultPanelState: PanelState.OPEN,
+      maxHeight: panelMaxHeight,
+      minHeight: panelClosedHeight,
+      parallaxEnabled: true,
+      parallaxOffset: 0.5,
+      panelSnapping: false,
+      controller: panelController,
+      color: ColorUtils.hexToColor('#F5F5F5'),
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(20.0),
+        topRight: Radius.circular(20.0),
+      ),
+      body: _buildMap(),
+      panel: _buildPanel(),
+    );
+  }
+
+  Widget _buildMap() {
+    LatLng initialCenter = LatLng(0, 0); // Default center
+    double initialZoom = 15;
+
+    if (busPositionDataList != null && busPositionDataList!.isNotEmpty) {
+      initialCenter = LatLng(
+        double.tryParse(busPositionDataList![0]["CurrentLat"] ?? '') ??
+            (busStopPositionDataList != null && busStopPositionDataList!.isNotEmpty ? double.tryParse(busStopPositionDataList![0]['STATIONLAT'] ?? '') ?? 0.0 : 0.0),
+        double.tryParse(busPositionDataList![0]["CurrentLong"] ?? '') ??
+            (busStopPositionDataList != null && busStopPositionDataList!.isNotEmpty ? double.tryParse(busStopPositionDataList![0]['STATIONLONG'] ?? '') ?? 0.0 : 0.0),
+      );
+    } else if (busStopPositionDataList != null && busStopPositionDataList!.isNotEmpty) {
+      initialCenter = LatLng(
+        double.tryParse(busStopPositionDataList![0]['STATIONLAT'] ?? '') ?? 0.0,
+        double.tryParse(busStopPositionDataList![0]['STATIONLONG'] ?? '') ?? 0.0,
+      );
+    }
+
+    return FlutterMap(
+      mapController: mapController,
+      options: MapOptions(
+        initialCenter: initialCenter,
+        initialZoom: initialZoom,
+      ),
       children: [
-        SlidingUpPanel(
-          defaultPanelState: PanelState.OPEN,
-          maxHeight: panelMaxHeight,
-          minHeight: panelClosedHeight,
-          parallaxEnabled: true,
-          parallaxOffset: 0.5,
-          panelSnapping: false,
-          controller: panelController,
-          color: ColorUtils.hexToColor('#F5F5F5'),
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20.0),
-            topRight: Radius.circular(20.0),
-          ),
-          body: FlutterMap(
-            mapController: mapController,
-            options: MapOptions(
-              initialCenter: LatLng(
-                double.parse(busPositionDataList?[0]["CurrentLat"] ??
-                    busStopPositionDataList![0]['STATIONLAT']),
-                double.parse(busPositionDataList?[0]["CurrentLong"] ??
-                    busStopPositionDataList![0]['STATIONLONG']),
-              ),
-              initialZoom: 15,
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.navixplore.navixplore',
+        ),
+        PolylineLayer(
+          polylines: [
+            Polyline(
+              points: polylinePoints,
+              color: Colors.blue,
+              strokeWidth: 4.0,
             ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.navixplore.navixplore',
-              ),
-              PolylineLayer(
-                polylines: [
-                  Polyline(
-                    points: polylinePoints,
-                    color: Colors.blue,
-                    strokeWidth: 4.0,
-                  ),
-                ],
-              ),
-              MarkerLayer(
-                markers: markers,
-              ),
-            ],
-          ),
-          panel: Column(
-            children: [
-              InkWell(
-                onTap: () {
-                  panelController.isPanelOpen
-                      ? panelController.close()
-                      : panelController.open();
-                },
-                child: Center(
-                  child: Container(
-                    width: 30,
-                    height: 4,
-                    margin: const EdgeInsets.symmetric(vertical: 15),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                widget.busName,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 18.0, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: busStopDataList?.length ?? 0,
-                  itemBuilder: (context, index) {
-                    final busStopData = busStopDataList![index];
-                    return TimelineTile(
-                      alignment: TimelineAlign.manual,
-                      lineXY: 0.075,
-                      isFirst: index == 0,
-                      isLast: index == busStopDataList!.length - 1,
-                      indicatorStyle: IndicatorStyle(
-                        width: 20,
-                        iconStyle: IconStyle(
-                          iconData: Icons.check,
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                        indicator: Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: busPositionDataList != null &&
-                                    busPositionDataList!.isNotEmpty &&
-                                    busStopDataList![index]['StationId'] ==
-                                        busPositionDataList![index]['STATIONID']
-                                ? busPositionDataList![index]
-                                            ["CoveredStatus"] ==
-                                        "covered"
-                                    ? Theme.of(context).primaryColor
-                                    : busPositionDataList![index]
-                                                ["CoveredStatus"] ==
-                                            "notcovered"
-                                        ? Colors.white
-                                        : Colors.red
-                                : Colors.white,
-                          ),
-                        ),
-                      ),
-                      beforeLineStyle: LineStyle(
-                        thickness: 20,
-                        color: Colors.grey.shade300,
-                      ),
-                      afterLineStyle: LineStyle(
-                        thickness: 20,
-                        color: Colors.grey.shade300,
-                      ),
-                      endChild: ListTile(
-                        contentPadding: EdgeInsets.all(16),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  NMMT_BusNumberSchedulesScreen(
-                                routeid: routeid,
-                                busName: widget.busName,
-                                busStopName: busStopData["stationname"],
-                                stationid: busStopData["stationid"],
-                              ),
-                            ),
-                          );
-                        },
-                        title: Text(busStopData['stationname']),
-                        subtitle: Text(busStopData['stationname_m']),
-                        trailing: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              busPositionDataList != null
-                                  ? _formatTime(
-                                      busPositionDataList![index]["ETA"])
-                                  : "",
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Theme.of(context).primaryColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              busPositionDataList != null
-                                  ? "Distance: " +
-                                      busPositionDataList![index]["Distance"] +
-                                      "km"
-                                  : "",
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
-        Positioned(
-          top: 20,
-          left: 10,
-          child: GestureDetector(
-            onTap: () {
-              Navigator.pop(context);
-            },
-            child: CircleAvatar(
-                radius: 25.0,
-                backgroundColor: Colors.white,
-                child: BackButton(
-                  color: Theme.of(context).primaryColor,
-                )),
-          ),
-        ),
-        Positioned(
-          top: 20,
-          right: 10,
-          child: GestureDetector(
-              onTap: () {
-                _fetchBusPositionData();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(18),
-                        topRight: Radius.circular(18),
-                      ),
-                    ),
-                    content: Text(
-                      'Refreshing Map...',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              },
-              child: CircleAvatar(
-                  radius: 25.0,
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.refresh,
-                      color: Theme.of(context).primaryColor))),
-        ),
-        Positioned(
-          bottom: 20,
-          right: 10,
-          child: GestureDetector(
-            onTap: () {
-              _showReportDialog();
-            },
-            child: CircleAvatar(
-              radius: 25.0,
-              backgroundColor: Colors.white,
-              child: Icon(Icons.report, color: Theme.of(context).primaryColor),
-            ),
-          ),
+        MarkerLayer(
+          markers: markers,
         ),
       ],
     );
   }
 
-  // Report dialog code
+  Widget _buildPanel() {
+    return Column(
+      children: [
+        InkWell(
+          onTap: () {
+            panelController.isPanelOpen
+                ? panelController.close()
+                : panelController.open();
+          },
+          child: Center(
+            child: Container(
+              width: 30,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 15),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(5),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          widget.busName,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: _buildBusStopTimeline(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBusStopTimeline() {
+    return ListView.builder(
+      itemCount: busStopDataList?.length ?? 0,
+      itemBuilder: (context, index) {
+        final busStopData = busStopDataList![index];
+        return TimelineTile(
+          alignment: TimelineAlign.manual,
+          lineXY: 0.075,
+          isFirst: index == 0,
+          isLast: index == busStopDataList!.length - 1,
+          indicatorStyle: IndicatorStyle(
+            width: 20,
+            iconStyle: IconStyle(
+              iconData: Icons.check,
+              color: Colors.white,
+              fontSize: 14,
+            ),
+            indicator: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: busPositionDataList != null &&
+                    busPositionDataList!.isNotEmpty &&
+                    busStopDataList![index]['StationId'] ==
+                        busPositionDataList![index]['STATIONID']
+                    ? busPositionDataList![index]["CoveredStatus"] == "covered"
+                    ? Theme.of(context).primaryColor
+                    : busPositionDataList![index]["CoveredStatus"] ==
+                    "notcovered"
+                    ? Colors.white
+                    : Colors.red
+                    : Colors.white,
+              ),
+            ),
+          ),
+          beforeLineStyle: LineStyle(
+            thickness: 20,
+            color: Colors.grey.shade300,
+          ),
+          afterLineStyle: LineStyle(
+            thickness: 20,
+            color: Colors.grey.shade300,
+          ),
+          endChild: _buildTimelineListTile(busStopData, index),
+        );
+      },
+    );
+  }
+
+  Widget _buildTimelineListTile(dynamic busStopData, int index) {
+    return ListTile(
+      contentPadding: const EdgeInsets.all(16),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NMMT_BusNumberSchedulesScreen(
+              routeid: routeid,
+              busName: widget.busName,
+              busStopName: busStopData["stationname"],
+              stationid: busStopData["stationid"],
+            ),
+          ),
+        );
+      },
+      title: Text(busStopData['stationname'] ?? 'N/A'),
+      subtitle: Text(busStopData['stationname_m'] ?? 'N/A'),
+      trailing: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            busPositionDataList != null &&
+                busPositionDataList!.length > index // Check index bounds
+                ? _formatTime(busPositionDataList![index]["ETA"] ?? "")
+                : "",
+            style: TextStyle(
+              fontSize: 20,
+              color: Theme.of(context).primaryColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            busPositionDataList != null &&
+                busPositionDataList!.length > index // Check index bounds
+                ? "Distance: ${busPositionDataList![index]["Distance"] ?? ""} km"
+                : "",
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  // Report dialog code (same as before, no major changes needed here)
   void _showReportDialog() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
       ),
       builder: (BuildContext context) {
@@ -832,7 +937,7 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
                       ),
                       const SizedBox(height: 30),
                       DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Issue Type',
                           border: OutlineInputBorder(),
                         ),
@@ -848,10 +953,10 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
                           }
                           return null;
                         },
-                        items: [
-                          'Missing Bus Stop',
-                          'Wrong Bus Stop Location',
-                          'Other Issue',
+                        items: const [
+                          reportTypeMissingBusStop,
+                          reportTypeWrongBusStopLocation,
+                          reportTypeOtherIssue,
                         ].map((issue) {
                           return DropdownMenuItem<String>(
                             value: issue,
@@ -860,10 +965,10 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
                         }).toList(),
                       ),
                       const SizedBox(height: 20),
-                      if (_selectedReportType == 'Missing Bus Stop')
+                      if (_selectedReportType == reportTypeMissingBusStop)
                         TextFormField(
                           controller: _missingBusStopController,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Missing Bus Stop Name',
                             border: OutlineInputBorder(),
                           ),
@@ -874,9 +979,9 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
                             return null;
                           },
                         ),
-                      if (_selectedReportType == 'Wrong Bus Stop Location')
+                      if (_selectedReportType == reportTypeWrongBusStopLocation)
                         DropdownButtonFormField<String>(
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Select Bus Stop',
                             border: OutlineInputBorder(),
                           ),
@@ -893,18 +998,18 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
                             return null;
                           },
                           items: busStopDataList?.map((busStop) {
-                                return DropdownMenuItem<String>(
-                                  value: busStop['stationname'],
-                                  child: Text(busStop['stationname']),
-                                );
-                              }).toList() ??
+                            return DropdownMenuItem<String>(
+                              value: busStop['stationname'],
+                              child: Text(busStop['stationname'] ?? 'N/A'),
+                            );
+                          }).toList() ??
                               [],
                         ),
-                      if (_selectedReportType == 'Other Issue')
+                      if (_selectedReportType == reportTypeOtherIssue)
                         TextFormField(
                           controller: _otherIssueController,
                           maxLines: 3,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Issue Description',
                             border: OutlineInputBorder(),
                           ),
@@ -924,7 +1029,7 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
                           backgroundColor: Theme.of(context).primaryColor,
                           foregroundColor: Colors.white,
                         ),
-                        child: Text('Submit Report'),
+                        child: const Text('Submit Report'),
                       ),
                       const SizedBox(height: 20),
                     ],
@@ -956,8 +1061,8 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
             height: MediaQuery.of(context).size.width * 0.1,
             width: MediaQuery.of(context).size.width * 0.2,
           ),
-          SizedBox(width: 10),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
+          const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -965,14 +1070,14 @@ class _NMMT_BusRouteScreenState extends State<NMMT_BusRouteScreen> {
                 height: 20,
                 width: MediaQuery.of(context).size.width * 0.5,
               ),
-              SizedBox(height: 5),
+              const SizedBox(height: 5),
               Skeleton(
                 height: 20,
                 width: MediaQuery.of(context).size.width * 0.4,
               ),
             ],
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Skeleton(
             height: 50,
             width: MediaQuery.of(context).size.width * 0.2,

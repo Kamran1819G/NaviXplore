@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:navixplore/features/transports/nmmt_bus/screen/nmmt_controller.dart';
+import 'package:navixplore/features/transports/nmmt_bus/controller/nmmt_controller.dart';
 import 'package:navixplore/features/transports/nmmt_bus/screen/nmmt_bus_route_screen.dart';
 
 import '../../../widgets/Skeleton.dart';
@@ -18,6 +18,7 @@ class _NMMT_BusNumberSearchScreenState
   bool isLoading = true;
   List<dynamic>? filteredBusData;
   TextEditingController _searchController = TextEditingController();
+  String? errorMessage; // To store error message
 
   final NMMTController controller = Get.find<NMMTController>();
 
@@ -28,11 +29,19 @@ class _NMMT_BusNumberSearchScreenState
   }
 
   void initialize() async {
-    await controller.fetchAllBuses();
-    setState(() {
-      filteredBusData = controller.allBuses;
-      isLoading = false;
-    });
+    try {
+      await controller.fetchAllBuses();
+      setState(() {
+        filteredBusData = controller.allBuses;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        errorMessage = "Failed to load bus numbers. Please check your connection.";
+      });
+      print("Error fetching bus numbers: $e"); // Log the error
+    }
   }
 
   @override
@@ -49,9 +58,9 @@ class _NMMT_BusNumberSearchScreenState
     } else {
       setState(() {
         filteredBusData = controller.allBuses
-            .where((busStop) => busStop['routeName']['English']
-                .toLowerCase()
-                .contains(query.toLowerCase()))
+            .where((bus) => bus['routeName']['English']
+            .toLowerCase()
+            .contains(query.toLowerCase()))
             .toList();
       });
     }
@@ -66,7 +75,7 @@ class _NMMT_BusNumberSearchScreenState
         leading: const BackButton(
           color: Colors.black,
         ),
-        title: Text(
+        title: const Text(
           "Search NMMT Bus Number",
           style: TextStyle(color: Colors.black),
         ),
@@ -96,16 +105,16 @@ class _NMMT_BusNumberSearchScreenState
                   },
                   icon: _searchController.text.isNotEmpty
                       ? Icon(Icons.clear,
-                          color:
-                              Theme.of(context).primaryColor.withOpacity(0.9))
+                      color:
+                      Theme.of(context).primaryColor.withOpacity(0.9))
                       : Icon(
-                          Icons.search,
-                          color:
-                              Theme.of(context).primaryColor.withOpacity(0.9),
-                        ),
+                    Icons.search,
+                    color:
+                    Theme.of(context).primaryColor.withOpacity(0.9),
+                  ),
                 ),
                 border: InputBorder.none,
-                hintStyle: TextStyle(
+                hintStyle: const TextStyle(
                   color: Colors.grey,
                 ),
               ),
@@ -114,84 +123,105 @@ class _NMMT_BusNumberSearchScreenState
           Expanded(
             child: isLoading
                 ? ListView.separated(
-                    itemCount: 10,
-                    separatorBuilder: (context, index) => SizedBox(height: 40),
-                    itemBuilder: (context, index) => busSkeleton(),
-                  )
+              itemCount: 10,
+              separatorBuilder: (context, index) =>
+              const SizedBox(height: 10), // Reduced separator height
+              itemBuilder: (context, index) => busSkeleton(context),
+            )
+                : errorMessage != null
+                ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+            )
+                : filteredBusData == null || filteredBusData!.isEmpty
+                ? const Center(
+                child: Text("No bus numbers found.")) // No results message
                 : ListView.builder(
-                    itemCount: filteredBusData?.length ?? 0,
-                    itemBuilder: (context, index) {
-                      final busData = filteredBusData![index];
-                      return ListTile(
-                        contentPadding: EdgeInsets.all(16),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => NMMT_BusRouteScreen(
-                                  routeid: busData["routeID"],
-                                  busName: busData["routeName"]['English']),
-                            ),
-                          );
-                        },
-                        leading: Container(
-                          width: 5,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                        ),
-                        title: Text(
-                          busData["routeName"]['English'],
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          busData["routeName"]['Marathi'],
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        trailing: const Icon(
-                          Icons.arrow_forward_ios,
-                          color: Colors.black,
-                        ),
-                      );
-                    },
+              itemCount: filteredBusData?.length ?? 0,
+              itemBuilder: (context, index) {
+                final busData = filteredBusData![index];
+                return ListTile(
+                  contentPadding: const EdgeInsets.all(16),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NMMT_BusRouteScreen(
+                            routeid: busData["routeID"],
+                            busName: busData["routeName"]
+                            ['English']),
+                      ),
+                    );
+                  },
+                  leading: Container(
+                    width: 5,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
                   ),
+                  title: Text(
+                    busData["routeName"]['English'],
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    busData["routeName"]['Marathi'],
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.black,
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget busSkeleton() {
-    return Center(
+  Widget busSkeleton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), // Added padding to skeleton
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Skeleton(
-            height: MediaQuery.of(context).size.width * 0.1,
-            width: MediaQuery.of(context).size.width * 0.1,
+            height: 40, // Fixed height for leading skeleton
+            width: 40,  // Fixed width for leading skeleton
           ),
-          SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Skeleton(
-                height: 20,
-                width: MediaQuery.of(context).size.width * 0.7,
-              ),
-              SizedBox(height: 5),
-              Skeleton(
-                height: 20,
-                width: MediaQuery.of(context).size.width * 0.5,
-              ),
-            ],
+          const SizedBox(width: 10),
+          Expanded( // Use Expanded to take remaining width
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Skeleton(
+                  height: 20,
+                  width: double.infinity, // Use infinity to fill available width
+                ),
+                const SizedBox(height: 5),
+                Skeleton(
+                  height: 20,
+                  width: MediaQuery.of(context).size.width * 0.5, // Adjusted width for subtitle
+                ),
+              ],
+            ),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Skeleton(
-            height: MediaQuery.of(context).size.width * 0.1,
-            width: MediaQuery.of(context).size.width * 0.1,
+            height: 40, // Fixed height for trailing skeleton
+            width: 40,  // Fixed width for trailing skeleton
           ),
         ],
       ),

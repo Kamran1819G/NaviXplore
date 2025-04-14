@@ -1,11 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:navixplore/core/routes/app_routes.dart';
 import 'package:navixplore/features/transports/express_train/express_tab.dart';
 import 'package:navixplore/features/transports/nm_metro/screen/nmm_tab.dart';
 import 'package:navixplore/features/transports/nmmt_bus/screen/nmmt_tab.dart';
 
 class TransportsScreen extends StatefulWidget {
-  const TransportsScreen({Key? key}) : super(key: key);
+  const TransportsScreen({super.key});
 
   @override
   State<TransportsScreen> createState() => _TransportsScreenState();
@@ -14,6 +16,8 @@ class TransportsScreen extends StatefulWidget {
 class _TransportsScreenState extends State<TransportsScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
+  static const double _tabBarHeight = 90.0; // Constant for TabBar height
+  static const double _sectionVerticalPadding = 25.0; // Constant for vertical spacing
 
   @override
   void initState() {
@@ -22,7 +26,7 @@ class _TransportsScreenState extends State<TransportsScreen>
         length: 3,
         initialIndex: 0,
         vsync: this,
-        animationDuration: Duration(milliseconds: 0));
+        animationDuration: const Duration(milliseconds: 0)); // Explicitly no animation
   }
 
   @override
@@ -41,8 +45,13 @@ class _TransportsScreenState extends State<TransportsScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
+                tooltip: 'Open navigation menu',
                 onPressed: () {
-                  Scaffold.of(context).openDrawer();
+                  if (Scaffold.maybeOf(context) != null && Scaffold.of(context).hasDrawer) {
+                    Scaffold.of(context).openDrawer();
+                  } else {
+                    print("No drawer found in this context."); // Optional: Handle no drawer case
+                  }
                 },
                 icon: Icon(
                   Icons.menu,
@@ -51,9 +60,8 @@ class _TransportsScreenState extends State<TransportsScreen>
                 ),
               ),
               RichText(
-                // Centralized title with RichText for styling parts of the text
                 text: TextSpan(
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontFamily: "Fredoka", fontWeight: FontWeight.bold),
                   children: [
                     TextSpan(
@@ -75,18 +83,18 @@ class _TransportsScreenState extends State<TransportsScreen>
                 ),
               ),
               IconButton(
-                icon: Icon(CupertinoIcons.cube_box_fill,
-                    color: Theme.of(context).primaryColor),
-                onPressed: () {},
-              ),
+                  tooltip: 'Go to Onboarding', // Accessibility tooltip
+                  icon: Icon(CupertinoIcons.cube_box_fill,
+                      color: Theme.of(context).primaryColor),
+                  onPressed: () => Get.toNamed(AppRoutes.ONBOARDING)),
             ],
           ),
         ),
-        const SizedBox(height: 25),
+        SizedBox(height: _sectionVerticalPadding),
         // Tabs
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 20),
-          height: 90,
+          height: _tabBarHeight,
           decoration: BoxDecoration(
             color: Theme.of(context).primaryColor.withOpacity(0.2),
             borderRadius: BorderRadius.circular(22),
@@ -109,7 +117,6 @@ class _TransportsScreenState extends State<TransportsScreen>
                 ),
                 text: "Bus",
               ),
-              // Tab( icon: Image.asset("assets/images/local train.png", height: 45 ), text: "Local"),
               Tab(
                 icon: Image.asset("assets/images/metro.png", height: 40),
                 text: "Metro",
@@ -125,7 +132,7 @@ class _TransportsScreenState extends State<TransportsScreen>
           ),
         ),
 
-        const SizedBox(height: 25),
+        SizedBox(height: _sectionVerticalPadding),
 
         //TabsView
         Expanded(
@@ -133,7 +140,7 @@ class _TransportsScreenState extends State<TransportsScreen>
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: TabBarView(
               controller: _tabController,
-              physics: const NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(), // Consider removing if swipe is desired
               children: [
                 NMMT_Tab(),
                 NMM_Tab(),

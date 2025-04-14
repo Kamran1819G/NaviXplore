@@ -5,8 +5,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:navixplore/features/transports/nmmt_bus/screen/nmmt_controller.dart';
+import 'package:navixplore/features/transports/nmmt_bus/controller/nmmt_controller.dart';
 import 'package:navixplore/features/announcement_detail_screen.dart';
+import 'package:navixplore/features/transports/nmmt_bus/model/nearby_bus_stop_model.dart';
 import 'package:navixplore/features/transports/nmmt_bus/screen/nmmt_nearby_bus_stops_screen.dart';
 import 'package:navixplore/features/widgets/Skeleton.dart';
 import 'package:navixplore/features/widgets/announcement_card.dart';
@@ -22,7 +23,7 @@ class NMMT_Tab extends StatefulWidget {
 }
 
 class _NMMT_TabState extends State<NMMT_Tab> {
-  List<dynamic>? nearbyBusStop;
+  List<NearbyBusStopModel>? nearbyBusStop; // Using NearbyBusStopModel
   List<Marker> markers = [];
   final MapController mapController = MapController();
   bool isLoading = true;
@@ -44,44 +45,119 @@ class _NMMT_TabState extends State<NMMT_Tab> {
     super.dispose();
   }
 
-  void initialize() async {
+  Future<void> initialize() async {
     await _getUserLocation(); // Get user location first
-    await _calculateNearbyBusStops(); // Calculate nearby bus stops
+    if (latitude != null && longitude != null) {
+      await _calculateNearbyBusStops(); // Calculate nearby bus stops if location is available
+    }
     try {
       await controller.fetchAnnouncements();
       setState(() {
         isAnnouncementLoading = false;
       });
     } catch (e) {
-      print('Error: $e');
+      print('Error fetching announcements: $e');
       setState(() {
         isAnnouncementLoading = false;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to load announcements. Please try again later.'),
+          duration: Duration(seconds: 5),
+        ),
+      );
     }
     _timer = Timer.periodic(const Duration(minutes: 2), (Timer timer) {
-      _calculateNearbyBusStops();
+      if (latitude != null && longitude != null) {
+        _calculateNearbyBusStops();
+      }
     });
     await setCustomMarkers();
   }
 
   Future<void> _getUserLocation() async {
+    setState(() {
+      isLoading = true; // Start loading for location and bus stops
+    });
     try {
-      bool isLocationServiceEnabled =
-          await Geolocator.isLocationServiceEnabled();
-      if (isLocationServiceEnabled) {
-        final position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
+      bool serviceEnabled;
+      LocationPermission permission;
+
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Location services are disabled.
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Location services are disabled. Please enable them to find nearby bus stops.'),
+            duration: Duration(seconds: 5),
+          ),
         );
         setState(() {
-          latitude = position.latitude;
-          longitude = position.longitude;
+          isLoading = false; // Stop loading indicator for bus stops
         });
-      } else {
-        await _getUserLocation();
-        return;
+        return; // Exit if location services are disabled
       }
+
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          // Permissions are denied, next time you could try
+          // requesting permissions again (this is also where
+          // Android's shouldShowRequestPermissionRationale could be used).
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Location permissions are denied. Please grant location permission to find nearby bus stops.'),
+              duration: Duration(seconds: 5),
+            ),
+          );
+          setState(() {
+            isLoading = false; // Stop loading indicator for bus stops
+          });
+          return; // Exit if permissions are denied
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        // Permissions are denied forever, handle appropriately.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'Location permissions are permanently denied. Please enable them in app settings to find nearby bus stops.'),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Settings',
+              onPressed: Geolocator.openAppSettings,
+            ),
+          ),
+        );
+        setState(() {
+          isLoading = false; // Stop loading indicator for bus stops
+        });
+        return; // Exit if permissions are denied forever
+      }
+
+      // When permissions are granted, get position.
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      setState(() {
+        latitude = position.latitude;
+        longitude = position.longitude;
+      });
     } catch (e) {
       print('Error getting location: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to get location. Please try again later.'),
+          duration: Duration(seconds: 5),
+        ),
+      );
+      setState(() {
+        isLoading = false; // Stop loading indicator for bus stops
+      });
     }
   }
 
@@ -89,24 +165,34 @@ class _NMMT_TabState extends State<NMMT_Tab> {
     print("Calculating nearby bus stops...");
     print("User Location: Latitude=$latitude, Longitude=$longitude");
     if (latitude == null || longitude == null) {
-      // Handle the case where location isn't available yet
+      // Handle the case where location isn't available yet - should not reach here now due to location check in initialize and timer
       return;
     }
 
     print("allBusStops length: ${controller.allBusStops.length}");
     if (controller.allBusStops.isEmpty) {
       await controller.fetchAllStations();
-      print("allBusStops length: ${controller.allBusStops.length}");
+      print("allBusStops length after fetch: ${controller.allBusStops.length}");
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    if (controller.allBusStops.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to load bus stop data. Please try again later.'),
+          duration: Duration(seconds: 5),
+        ),
+      );
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
 
     final userLatlng = LatLng(latitude!, longitude!);
 
     // Create a list to hold the bus stops with calculated distances
-    List<dynamic> busStopsWithDistance = [];
+    List<NearbyBusStopModel> busStopsWithDistance = []; // Using NearbyBusStopModel
 
     // Iterate through each bus stop in allBuses
     for (final busStop in controller.allBusStops) {
@@ -126,21 +212,21 @@ class _NMMT_TabState extends State<NMMT_Tab> {
 
         double distance = calculateDistance(userLatlng, stationLatlng);
 
-        busStopsWithDistance.add({
-          'StationName': stationNameEnglish,
-          'StationName_M': stationNameMarathi,
-          'StationId': stationId.toString(),
-          'Center_Lat': stationLat.toString(),
-          'Center_Lon': stationLon.toString(),
-          'Distance': distance.toString(),
-          'Buses': buses.toString(),
-        });
+        busStopsWithDistance.add(NearbyBusStopModel( // Using NearbyBusStopModel constructor
+          stationName: stationNameEnglish,
+          stationNameMarathi: stationNameMarathi,
+          stationId: stationId.toString(),
+          centerLat: stationLat,
+          centerLon: stationLon,
+          distance: distance,
+          buses: buses.toString(),
+        ));
       }
     }
     // Sort bus stops by distance
     busStopsWithDistance.sort((a, b) {
-      double distanceA = double.tryParse(a['Distance']?.toString() ?? '0') ?? 0;
-      double distanceB = double.tryParse(b['Distance']?.toString() ?? '0') ?? 0;
+      double distanceA = a.distance ?? 0;
+      double distanceB = b.distance ?? 0;
       return distanceA.compareTo(distanceB);
     });
 
@@ -186,8 +272,8 @@ class _NMMT_TabState extends State<NMMT_Tab> {
         newMarkers.add(
           Marker(
             point: LatLng(
-              double.parse(busStopData["Center_Lat"] ?? "0.0"),
-              double.parse(busStopData["Center_Lon"] ?? "0.0"),
+              busStopData.centerLat,
+              busStopData.centerLon,
             ),
             width: 30,
             height: 30,
@@ -202,20 +288,18 @@ class _NMMT_TabState extends State<NMMT_Tab> {
     }
   }
 
-  String formatDistance(String distanceInKm) {
-    double distance = double.parse(distanceInKm);
+  String formatDistance(double distanceInKm) {
 
-    if (distance >= 1) {
-      return '${distance.toStringAsFixed(2)} km';
+    if (distanceInKm >= 1) {
+      return '${distanceInKm.toStringAsFixed(2)} km';
     } else {
-      int meters = (distance * 1000).round();
+      int meters = (distanceInKm * 1000).round();
       return '$meters m';
     }
   }
 
-  String calculateTime(String distanceInKm) {
-    double distance = double.parse(distanceInKm);
-    double time = distance / 0.08;
+  String calculateTime(double distanceInKm) {
+    double time = distanceInKm / 0.08;
     if (time < 1) {
       return '1 min';
     }
@@ -244,400 +328,430 @@ class _NMMT_TabState extends State<NMMT_Tab> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search Bar
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => NMMT_BusSearchScreen(),
-                ),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.all(4.0),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                border:
-                    Border.all(width: 1, color: Theme.of(context).primaryColor),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Image.asset(
-                        "assets/icons/NMMT.png",
-                        height: 25,
-                      )),
-                  Expanded(
-                    child: Container(
-                      height: 40,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Enter destination or Bus number",
-                        style: TextStyle(
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.search,
-                    color: Theme.of(context).primaryColor.withOpacity(0.9),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          const SizedBox(height: 10),
-          // Nearest Bus Stop Section
-          Row(
+    return RefreshIndicator(
+      onRefresh: _pullToRefresh,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(), // To make RefreshIndicator work always
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 10,
-                height: 10,
-                margin: EdgeInsets.symmetric(vertical: 25),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-              ),
-              SizedBox(width: 10),
-              Text(
-                "Nearest Bus Stop",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              Spacer(),
-              TextButton(
-                onPressed: () {
+              // Search Bar
+              GestureDetector(
+                onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => NMMT_NearbyBusStopsScreen(
-                        nearbyBusStop: nearbyBusStop,
-                      ),
+                      builder: (context) => NMMT_BusSearchScreen(),
                     ),
                   );
                 },
-                child: Text(
-                  "View All",
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor.withOpacity(0.8),
-                    fontWeight: FontWeight.bold,
+                child: Container(
+                  padding: const EdgeInsets.all(4.0),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    border: Border.all(
+                        width: 1, color: Theme.of(context).primaryColor),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Image.asset(
+                            "assets/icons/NMMT.png",
+                            height: 25,
+                          )),
+                      Expanded(
+                        child: Container(
+                          height: 40,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "Enter destination or Bus number",
+                            style: TextStyle(
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.search,
+                        color: Theme.of(context).primaryColor.withOpacity(0.9),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
-          isLoading
-              ? ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: 3,
-                  itemExtent: 70,
-                  itemBuilder: (context, index) => busStopSkeleton(),
-                )
-              : nearbyBusStop == null || nearbyBusStop!.isEmpty
-                  ? const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "😢 Oops! Something went wrong.",
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'We couldn\'t retrieve nearby bus stops at the moment.',
-                            style: TextStyle(fontSize: 16),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: nearbyBusStop!.length > 3
-                          ? 3
-                          : nearbyBusStop!.length, // Limit to 3
-                      itemBuilder: (context, index) {
-                        final busStopData = nearbyBusStop![index];
-                        return ListTile(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 5),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => NMMT_BusStopBusesScreen(
-                                  busStopName: busStopData["StationName"],
-                                  stationid:
-                                      int.parse(busStopData["StationId"]),
-                                  stationLocation: {
-                                    'latitude':
-                                        double.parse(busStopData['Center_Lat']),
-                                    'longitude':
-                                        double.parse(busStopData['Center_Lon']),
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                          leading: CircleAvatar(
-                            radius: 20.0,
-                            backgroundColor: Theme.of(context).primaryColor,
-                            child: CircleAvatar(
-                              radius: 15.0,
-                              backgroundColor: Colors.white,
-                              child: Icon(Icons.directions_bus,
-                                  color: Theme.of(context).primaryColor,
-                                  size: 20),
-                            ),
-                          ),
-                          title: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                busStopData["StationName"],
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                busStopData["StationName_M"],
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                          subtitle: Text(
-                            "${busStopData["Buses"]}",
-                            style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.grey),
-                          ),
-                          trailing: Column(
-                            children: [
-                              Text(
-                                calculateTime(busStopData["Distance"]),
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Theme.of(context).primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                "~ ${formatDistance(busStopData["Distance"])}",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+              const SizedBox(height: 10),
+              const SizedBox(height: 10),
+              // Nearest Bus Stop Section
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    margin: EdgeInsets.symmetric(vertical: 25),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(5),
                     ),
-          const SizedBox(height: 15),
-          // News & Updates Section
-          Row(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                margin: EdgeInsets.symmetric(vertical: 25),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-              ),
-              SizedBox(width: 10),
-              Text(
-                "News & Updates",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(
-            height: 400,
-            child: isAnnouncementLoading
-                ? ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: 2,
-                    itemBuilder: (context, index) => announcementSkeleton(),
-                    separatorBuilder: (context, index) => SizedBox(width: 10),
-                  )
-                : ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: controller.announcements.length,
-                    itemBuilder: (context, index) {
-                      final announcement = controller.announcements[index];
-                      return GestureDetector(
-                        onTap: () => _handleAnnouncementTap(announcement),
-                        child: AnnouncementCard(
-                          imageUrl: announcement["imageUrl"],
-                          title: announcement["title"],
-                          description: announcement["description"],
-                          releaseAt: announcement["releaseAt"],
-                          source: announcement["source"],
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    "Nearest Bus Stop",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  Spacer(),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NMMT_NearbyBusStopsScreen(
+                            nearbyBusStop: nearbyBusStop,
+                          ),
                         ),
                       );
                     },
-                    separatorBuilder: (context, index) => SizedBox(width: 10),
+                    child: Text(
+                      "View All",
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor.withOpacity(0.8),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-          ),
-          const SizedBox(height: 15),
-          // Bus Stops Around You Section
-          Row(
-            children: [
+                ],
+              ),
+              isLoading
+                  ? ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 3,
+                itemExtent: 70,
+                itemBuilder: (context, index) => busStopSkeleton(),
+              )
+                  : nearbyBusStop == null || nearbyBusStop!.isEmpty
+                  ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "😢 Oops! No nearby bus stops found.",
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                        'Please check your location settings or try again later.',
+                        style: TextStyle(fontSize: 16),
+                        textAlign: TextAlign.center),
+                  ],
+                ),
+              )
+                  : ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: nearbyBusStop!.length > 3
+                    ? 3
+                    : nearbyBusStop!.length, // Limit to 3
+                itemBuilder: (context, index) {
+                  final busStopData = nearbyBusStop![index];
+                  return ListTile(
+                    contentPadding:
+                    EdgeInsets.symmetric(horizontal: 5),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              NMMT_BusStopBusesScreen(
+                                busStopName: busStopData.stationName,
+                                stationid:
+                                int.parse(busStopData.stationId),
+                                stationLocation: {
+                                  'latitude':
+                                      busStopData.centerLat,
+                                  'longitude':
+                                      busStopData.centerLon,
+                                },
+                              ),
+                        ),
+                      );
+                    },
+                    leading: CircleAvatar(
+                      radius: 20.0,
+                      backgroundColor: Theme.of(context).primaryColor,
+                      child: CircleAvatar(
+                        radius: 15.0,
+                        backgroundColor: Colors.white,
+                        child: Icon(Icons.directions_bus,
+                            color: Theme.of(context).primaryColor,
+                            size: 20),
+                      ),
+                    ),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          busStopData.stationName,
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          busStopData.stationNameMarathi,
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    subtitle: Text(
+                      "${busStopData.buses}",
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.grey),
+                    ),
+                    trailing: Column(
+                      children: [
+                        Text(
+                          calculateTime(busStopData.distance),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Theme.of(context).primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          "~ ${formatDistance(busStopData.distance)}",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 15),
+              // News & Updates Section
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    margin: EdgeInsets.symmetric(vertical: 25),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    "News & Updates",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: 400,
+                child: isAnnouncementLoading
+                    ? ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: 2,
+                  itemBuilder: (context, index) => announcementSkeleton(),
+                  separatorBuilder: (context, index) =>
+                      SizedBox(width: 10),
+                )
+                    : ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: controller.announcements.length,
+                  itemBuilder: (context, index) {
+                    final announcement = controller.announcements[index];
+                    return GestureDetector(
+                      onTap: () => _handleAnnouncementTap(announcement),
+                      child: AnnouncementCard(
+                        imageUrl: announcement["imageUrl"],
+                        title: announcement["title"],
+                        description: announcement["description"],
+                        releaseAt: announcement["releaseAt"],
+                        source: announcement["source"],
+                      ),
+                    );
+                  },
+                  separatorBuilder: (context, index) =>
+                      SizedBox(width: 10),
+                ),
+              ),
+              const SizedBox(height: 15),
+              // Bus Stops Around You Section
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    margin: EdgeInsets.symmetric(vertical: 25),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    "Bus Stops Around You",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              ),
               Container(
-                width: 10,
-                height: 10,
-                margin: EdgeInsets.symmetric(vertical: 25),
+                height: 200,
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade300,
+                      blurRadius: 5,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: isLoading
+                    ? mapSkeleton(
+                  height: 200,
+                  width: MediaQuery.of(context).size.width,
+                )
+                    : FlutterMap(
+                  mapController: mapController,
+                  options: MapOptions(
+                      initialCenter: LatLng(
+                        latitude ?? 0,
+                        longitude ?? 0,
+                      ),
+                      initialZoom: 16,
+                      onTap: (tapPosition, latLng) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                NMMT_NearbyBusStopsScreen(),
+                          ),
+                        );
+                      }),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.navixplore.navixplore',
+                    ),
+                    MarkerLayer(markers: markers),
+                  ],
+                ),
+              ),
+              SizedBox(height: 15),
+              Container(
+                padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Theme.of(context).primaryColor.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(5),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ),
-              SizedBox(width: 10),
-              Text(
-                "Bus Stops Around You",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  letterSpacing: 1.2,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        "Make your everyday travel easy with NMMT and NaviXplore",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.all(10),
+                      child: Image.asset(
+                        "assets/icons/NMMT.png",
+                        height: 50,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+              )
             ],
           ),
-          Container(
-            height: 200,
-            padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.shade300,
-                  blurRadius: 5,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: isLoading
-                ? mapSkeleton(
-                    height: 200,
-                    width: MediaQuery.of(context).size.width,
-                  )
-                : FlutterMap(
-                    mapController: mapController,
-                    options: MapOptions(
-                        initialCenter: LatLng(
-                          latitude ?? 0,
-                          longitude ?? 0,
-                        ),
-                        initialZoom: 16,
-                        onTap: (tapPosition, latLng) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => NMMT_NearbyBusStopsScreen(),
-                            ),
-                          );
-                        }),
-                    children: [
-                      TileLayer(
-                        urlTemplate:
-                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.navixplore.navixplore',
-                      ),
-                      MarkerLayer(markers: markers),
-                    ],
-                  ),
-          ),
-          SizedBox(height: 15),
-          Container(
-            padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    "Make your everyday travel easy with NMMT and NaviXplore",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.all(10),
-                  child: Image.asset(
-                    "assets/icons/NMMT.png",
-                    height: 50,
-                  ),
-                ),
-              ],
-            ),
-          )
-        ],
+        ),
       ),
     );
   }
 
+  Future<void> _pullToRefresh() async {
+    setState(() {
+      isLoading = true;
+      isAnnouncementLoading = true;
+      nearbyBusStop = null; // Clear existing data to show loading again
+      markers.clear();
+    });
+    await initialize(); // Re-initialize data
+  }
+
   Widget busStopSkeleton() {
-    return Center(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Skeleton(
-            height: 40,
-            width: 40,
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Skeleton(
-                height: 20,
-                width: MediaQuery.of(context).size.width * 0.5,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Skeleton(
+              height: 40,
+              width: 40,
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Skeleton(
+                      height: 20,
+                      width: double.infinity,
+                    ),
+                    SizedBox(height: 5),
+                    Skeleton(
+                      height: 15,
+                      width: MediaQuery.of(context).size.width * 0.4,
+                    ),
+                  ],
+                ),
               ),
-              SizedBox(height: 5),
-              Skeleton(
-                height: 15,
-                width: MediaQuery.of(context).size.width * 0.3,
-              ),
-            ],
-          ),
-          Skeleton(
-            height: 30,
-            width: MediaQuery.of(context).size.width * 0.2,
-          ),
-        ],
+            ),
+            Skeleton(
+              height: 30,
+              width: 70,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -686,7 +800,7 @@ class _NMMT_TabState extends State<NMMT_Tab> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: Skeleton(
               height: 15,
-              width: MediaQuery.of(context).size.width * 0.7,
+              width: double.infinity,
             ),
           ),
           Padding(
@@ -701,14 +815,14 @@ class _NMMT_TabState extends State<NMMT_Tab> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: Skeleton(
               height: 10,
-              width: MediaQuery.of(context).size.width * 0.7,
+              width: double.infinity,
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: Skeleton(
               height: 10,
-              width: MediaQuery.of(context).size.width * 0.7,
+              width: double.infinity,
             ),
           ),
           Padding(

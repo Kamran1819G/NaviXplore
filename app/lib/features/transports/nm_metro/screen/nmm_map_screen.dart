@@ -10,7 +10,7 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:widget_to_marker/widget_to_marker.dart';
 
 class NMM_MapScreen extends StatefulWidget {
-  NMM_MapScreen({Key? key}) : super(key: key);
+  const NMM_MapScreen({super.key});
 
   @override
   State<NMM_MapScreen> createState() => _NMM_MapScreenState();
@@ -18,7 +18,7 @@ class NMM_MapScreen extends StatefulWidget {
 
 class _NMM_MapScreenState extends State<NMM_MapScreen> {
   List<Marker> markers = [];
-  List<Polyline> _polylines = [];
+  final List<Polyline> _polylines = [];
   final PanelController panelController = PanelController();
   final MapController mapController = MapController();
   late String _mapStyle;

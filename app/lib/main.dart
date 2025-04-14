@@ -10,12 +10,15 @@ import 'package:navixplore/core/controllers/notification_controller.dart';
 import 'package:navixplore/core/controllers/permission_controller.dart';
 import 'package:navixplore/core/theme/theme.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  bool onboardingCompleted = prefs.getBool('onBoardingCompleted') ?? false;
 
   // Load environment variables
   // await dotenv.load(fileName: ".env.dev");
@@ -39,11 +42,12 @@ void main() async {
   await GetStorage.init();
 
   // Run the app
-  runApp(const MyApp());
+  runApp(MyApp(onboardingCompleted: onboardingCompleted));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool onboardingCompleted;
+  const MyApp({super.key, required this.onboardingCompleted});
 
   // This widget is the root of your application.
   @override
@@ -56,7 +60,8 @@ class MyApp extends StatelessWidget {
         themeMode: ThemeMode.light,
         theme: lightMode,
         darkTheme: darkMode,
-        initialRoute: AppRoutes.SPLASH,
+        initialRoute:
+            onboardingCompleted ? AppRoutes.SPLASH : AppRoutes.ONBOARDING,
         getPages: AppPages.pages,
       ),
     );

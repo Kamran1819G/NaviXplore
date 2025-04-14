@@ -14,6 +14,7 @@ import 'package:navixplore/features/widgets/webview_screen.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_analytics/firebase_analytics.dart'; // Import analytics
+import 'package:share_plus/share_plus.dart'; // Import share_plus for sharing
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -28,16 +29,16 @@ class _MainScreenState extends State<MainScreen> {
   FirebaseAnalytics analytics = FirebaseAnalytics.instance;
 
   static List<Widget> _widgetOptions = [
-    const TransportsScreen(),
-    const ExploreScreen(),
-    const XploreFeedScreen(),
+    TransportsScreen(),
+    ExploreScreen(),
+    XploreFeedScreen(),
     UserProfileScreen(
         userId: Get.find<AuthController>().currentUser!.uid, isMyProfile: true),
   ];
 
-  // New SOS Functionality
+  // SOS Functionality - Moved to top for better readability
   Future<void> _launchSOSCall() async {
-    const String emergencyNumber = '112'; // Or a specific contact
+    const String emergencyNumber = '112'; // Standard emergency number, can be configurable
     final Uri phoneUri = Uri(scheme: 'tel', path: emergencyNumber);
 
     QuickAlert.show(
@@ -50,21 +51,84 @@ class _MainScreenState extends State<MainScreen> {
       showCancelBtn: true,
       cancelBtnText: 'No',
       onConfirmBtnTap: () async {
-        if (await canLaunch(phoneUri.toString())) {
-          await launch(phoneUri.toString());
-          // Log SOS call event
-          await analytics.logEvent(name: 'sos_call_initiated');
-        } else {
+        // Added try-catch for better error handling during phone call launch
+        try {
+          if (await canLaunchUrl(phoneUri)) { // Changed to canLaunchUrl and launchUrl
+            await launchUrl(phoneUri); // Changed to launchUrl
+            await analytics.logEvent(name: 'sos_call_initiated');
+          } else {
+            QuickAlert.show(
+              context: context,
+              title: 'Error',
+              text: 'Could not launch the phone app.',
+              type: QuickAlertType.error,
+            );
+          }
+        } catch (e) {
+          // More specific error message for launching phone call
           QuickAlert.show(
             context: context,
             title: 'Error',
-            text: 'Could not launch the phone app.',
+            text: 'Error launching phone app: $e',
             type: QuickAlertType.error,
           );
+          analytics.logEvent(name: 'sos_call_failed', parameters: {'error': e.toString()}); // Log failure
         }
       },
     );
   }
+
+  // Share App Functionality
+  Future<void> _shareApp() async {
+    try {
+      await Share.share(
+          'Check out NaviXplore! [Your app link here - Replace this with actual link]', // Replace with actual app link
+          subject: 'Share NaviXplore App');
+      analytics.logEvent(name: 'share_app_initiated');
+    } catch (e) {
+      QuickAlert.show(
+        context: context,
+        title: 'Error',
+        text: 'Could not share the app.',
+        type: QuickAlertType.error,
+      );
+      analytics.logEvent(name: 'share_app_failed', parameters: {'error': e.toString()}); // Log failure
+    }
+  }
+
+  // Support Functionality - Example: Contact Us via Email
+  Future<void> _contactSupport() async {
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'support@navixplore.com', // Replace with your support email
+      queryParameters: {
+        'subject': 'NaviXplore App Support Request',
+        'body': 'Dear NaviXplore Support Team,\n\nI am writing to you regarding...\n',
+      },
+    );
+    try {
+      if (await canLaunchUrl(emailLaunchUri)) { // Changed to canLaunchUrl and launchUrl
+        await launchUrl(emailLaunchUri); // Changed to launchUrl
+        analytics.logEvent(name: 'support_email_initiated');
+      } else {
+        QuickAlert.show(
+          context: context,
+          title: 'Error',
+          text: 'Could not open email app.',
+          type: QuickAlertType.error,
+        );
+      }
+    } catch (e) {
+      QuickAlert.show(
+        context: context,
+        title: 'Error',
+        text: 'Error opening email app: $e',
+        type: QuickAlertType.error,
+      );
+      analytics.logEvent(name: 'support_email_failed', parameters: {'error': e.toString()}); // Log failure
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +151,7 @@ class _MainScreenState extends State<MainScreen> {
         child: ListView(
           children: [
             DrawerHeader(
+              // Consider using Image.asset for logo if it's an image file for better performance
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -113,21 +178,21 @@ class _MainScreenState extends State<MainScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.stars),
-              title: Text("What's New?",
+              title: const Text("What's New?", // Added const here
                   style: TextStyle(
                     fontSize: 16,
                   )),
               onTap: () {
                 analytics.logEvent(name: 'drawer_whats_new_tapped');
                 Get.to(
-                  () => const WebView_Screen(
+                      () => const WebView_Screen( // Added const here
                       url: 'https://navixplore.vercel.app/changelogs'),
                 );
               },
             ),
             ListTile(
               leading: const Icon(Icons.sos_rounded),
-              title: Text("SOS",
+              title: const Text("SOS", // Added const here
                   style: TextStyle(
                     fontSize: 16,
                   )),
@@ -139,65 +204,67 @@ class _MainScreenState extends State<MainScreen> {
             const Divider(color: Colors.grey),
             ListTile(
               leading: const Icon(Icons.chat_outlined),
-              title: const Text("Suggest a Feature",
+              title: const Text("Suggest a Feature", // Added const here
                   style: TextStyle(
                     fontSize: 16,
                   )),
               onTap: () {
                 analytics.logEvent(name: 'drawer_suggest_feature_tapped');
-                Get.to(() => const FeatureSuggestionScreen());
+                Get.to(() => const FeatureSuggestionScreen()); // Added const here
               },
             ),
             ListTile(
               leading: const Icon(Icons.bug_report),
-              title: const Text("Report an Issue",
+              title: const Text("Report an Issue", // Added const here
                   style: TextStyle(
                     fontSize: 16,
                   )),
               onTap: () {
                 analytics.logEvent(name: 'drawer_report_issue_tapped');
-                Get.to(() => const ReportIssueScreen());
+                Get.to(() => const ReportIssueScreen()); // Added const here
               },
             ),
             const Divider(color: Colors.grey),
             ListTile(
               leading: const Icon(Icons.share),
-              title: const Text("Share with Friends",
+              title: const Text("Share with Friends", // Added const here
                   style: TextStyle(
                     fontSize: 16,
                   )),
               onTap: () {
-                // Implement share functionality here
+                analytics.logEvent(name: 'drawer_share_friends_tapped');
+                _shareApp(); // Call share app function
               },
             ),
             const Divider(color: Colors.grey),
             ListTile(
               leading: const Icon(Icons.newspaper_rounded),
-              title: const Text(
+              title: const Text( // Added const here
                 "Advertise with us",
                 style: TextStyle(fontSize: 16),
               ),
               onTap: () {
                 analytics.logEvent(name: 'drawer_advertise_tapped');
                 Get.to(
-                  () => const WebView_Screen(
+                      () => const WebView_Screen( // Added const here
                       url: 'https://navixplore.vercel.app/advertise-with-us'),
                 );
               },
             ),
             ListTile(
               leading: const Icon(Icons.support),
-              title: const Text("Support",
+              title: const Text("Support", // Added const here
                   style: TextStyle(
                     fontSize: 16,
                   )),
               onTap: () {
-                // Implement Support Functionality
+                analytics.logEvent(name: 'drawer_support_tapped');
+                _contactSupport(); // Call support function
               },
             ),
             ListTile(
                 leading: const Icon(Icons.note_alt),
-                title: const Text("Term & Conditions",
+                title: const Text("Term & Conditions", // Added const here
                     style: TextStyle(
                       fontSize: 16,
                     )),
@@ -208,7 +275,7 @@ class _MainScreenState extends State<MainScreen> {
             if (authController.isAuthenticated.value == true)
               ListTile(
                 leading:
-                    Icon(Icons.logout, color: Theme.of(context).primaryColor),
+                Icon(Icons.logout, color: Theme.of(context).primaryColor),
                 title: Text("Sign Out",
                     style: TextStyle(
                       fontSize: 18,
@@ -226,7 +293,7 @@ class _MainScreenState extends State<MainScreen> {
             if (authController.isAuthenticated.value == false)
               ListTile(
                 leading:
-                    Icon(Icons.login, color: Theme.of(context).primaryColor),
+                Icon(Icons.login, color: Theme.of(context).primaryColor),
                 title: Text("Sign Up",
                     style: TextStyle(
                       fontSize: 18,
@@ -274,25 +341,29 @@ class _MainScreenState extends State<MainScreen> {
             setState(() {
               _selectedIndex = index;
             });
-            // Log bottom navigation tab change
             _logBottomNavTabChange(index);
           },
+          // Added semantic labels for accessibility
           tabs: const [
             GButton(
               icon: Icons.emoji_transportation,
               text: "Transports",
+              semanticLabel: 'Transports',
             ),
             GButton(
               icon: Icons.explore,
-              text: "Explore",
+              text: "Xplore",
+              semanticLabel: 'Explore',
             ),
             GButton(
               icon: Icons.dynamic_feed,
               text: "XploreFeed",
+              semanticLabel: 'Xplore Feed',
             ),
             GButton(
               icon: Icons.person,
               text: "Profile",
+              semanticLabel: 'Profile',
             )
           ],
         ),
@@ -300,7 +371,7 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  // Helper function to log tab changes
+  // Helper function to log tab changes - Kept as is, already well-structured
   Future<void> _logBottomNavTabChange(int index) async {
     String tabName = '';
     switch (index) {

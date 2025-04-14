@@ -8,10 +8,12 @@ import 'package:navixplore/features/auth_gate.dart';
 import 'package:navixplore/features/drawer/screen/terms_and_conditions_screen.dart';
 import 'package:navixplore/features/explore/screen/explore_screen.dart';
 import 'package:navixplore/features/main_screen.dart';
+import 'package:navixplore/features/onboarding/screen/onboarding_screen.dart';
 import 'package:navixplore/features/splash_screen.dart';
 import 'package:navixplore/features/xplorefeed/screen/xplorefeed_screen.dart';
 
 class AppPages {
+  static final _onboardingScreen = OnboardingScreen();
   static final _signInScreen = SignInScreen();
   static final _signUpScreen = SignUpScreen();
   static final _forgotPasswordScreen = ForgotPasswordScreen();
@@ -24,6 +26,10 @@ class AppPages {
   static final _termsAndConditionsScreen = TermsAndConditionsScreen();
 
   static final pages = [
+    GetPage(
+        name: AppRoutes.ONBOARDING,
+        page: () => _onboardingScreen,
+        preventDuplicates: true),
     GetPage(
       name: AppRoutes.SIGN_IN,
       page: () => _signInScreen,

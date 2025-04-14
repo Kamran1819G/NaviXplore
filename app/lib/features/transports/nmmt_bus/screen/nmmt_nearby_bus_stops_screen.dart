@@ -1,3 +1,6 @@
+
+
+
 import 'dart:async';
 import 'dart:math';
 
@@ -7,12 +10,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:navixplore/features/transports/nmmt_bus/screen/nmmt_controller.dart';
+import 'package:navixplore/features/transports/nmmt_bus/controller/nmmt_controller.dart';
+import 'package:navixplore/features/transports/nmmt_bus/model/nearby_bus_stop_model.dart';
+import 'package:navixplore/features/transports/nmmt_bus/screen/nmmt_bus_stop_buses_screen.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'nmmt_bus_stop_buses_screen.dart';
 
 class NMMT_NearbyBusStopsScreen extends StatefulWidget {
-  List<dynamic>? nearbyBusStop;
+  List<NearbyBusStopModel>? nearbyBusStop; // Using the model class
 
   NMMT_NearbyBusStopsScreen({Key? key, this.nearbyBusStop}) : super(key: key);
 
@@ -22,9 +26,9 @@ class NMMT_NearbyBusStopsScreen extends StatefulWidget {
 }
 
 class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
-  List<dynamic>? nearbyBusStop;
+  List<NearbyBusStopModel>? nearbyBusStop; // Using the model class
   List<Marker> markers = [];
-  Map<String, dynamic>? selectedBusStop;
+  NearbyBusStopModel? selectedBusStop; // Using the model class
   bool isLoading = true;
   double? latitude;
   double? longitude;
@@ -61,23 +65,93 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
   }
 
   Future<void> _getUserLocation() async {
+    setState(() {
+      isLoading = true; // Start loading when trying to get location
+    });
     try {
-      bool isLocationServiceEnabled =
-          await Geolocator.isLocationServiceEnabled();
-      if (isLocationServiceEnabled) {
-        final position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
-        );
+      bool serviceEnabled;
+      LocationPermission permission;
+
+      // Test if location services are enabled.
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Location services are not enabled don't continue
+        // accessing the position and request users of the
+        // App to enable the location services.
         setState(() {
-          latitude = position.latitude;
-          longitude = position.longitude;
+          isLoading = false; // Stop loading if location service is not enabled
         });
-      } else {
-        await _getUserLocation();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location services are disabled. Please enable them.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
         return;
       }
+
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          // Permissions are denied, next time you could try
+          // requesting permissions again (this is also where
+          // Android's shouldShowRequestPermissionRationale
+          // returned true. According to Android guidelines
+          // your App should show an explanatory UI now.
+          setState(() {
+            isLoading = false; // Stop loading if permission is denied
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permissions are denied.'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        // Permissions are denied forever, handle appropriately.
+        setState(() {
+          isLoading = false; // Stop loading if permission is denied forever
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location permissions are permanently denied, we cannot request permissions.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
+      // When we reach here, permissions are granted and we can
+      // continue accessing the position of the device.
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      setState(() {
+        latitude = position.latitude;
+        longitude = position.longitude;
+      });
     } catch (e) {
       print('Error getting location: $e');
+      setState(() {
+        isLoading = false; // Stop loading on error
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to get location: ${e.toString()}'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      if (latitude == null || longitude == null) {
+        setState(() {
+          isLoading = false; // Ensure loading is false if location is not obtained for any reason
+        });
+      }
     }
   }
 
@@ -91,54 +165,72 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
 
     print("allBusStops length: ${controller.allBusStops.length}");
     if (controller.allBusStops.isEmpty) {
+      setState(() {
+        isLoading = true; // Start loading when fetching stations
+      });
       await controller.fetchAllStations();
+      setState(() {
+        isLoading = false; // Stop loading after fetching stations (or error)
+      });
       print("allBusStops length: ${controller.allBusStops.length}");
+      if (controller.allBusStops.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to fetch bus stop data.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return; // Exit if fetching stations failed
+      }
     }
 
     setState(() {
-      isLoading = true;
+      isLoading = true; // Start loading while calculating nearby stops
     });
 
     final userLatlng = LatLng(latitude!, longitude!);
 
     // Create a list to hold the bus stops with calculated distances
-    List<dynamic> busStopsWithDistance = [];
+    List<NearbyBusStopModel> busStopsWithDistance = []; // Using model class
 
     // Iterate through each bus stop in allBuses
     for (final busStop in controller.allBusStops) {
-      final stationLat = busStop['location']['latitude'] as double?;
-      final stationLon = busStop['location']['longitude'] as double?;
-      final stationNameEnglish = busStop['stationName']['English'] as String?;
-      final stationNameMarathi = busStop['stationName']['Marathi'] as String?;
-      final stationId = busStop['stationID'] as int?;
-      final buses = busStop['buses'] as String?;
+      try {
+        final stationLat = busStop['location']['latitude'] as double?;
+        final stationLon = busStop['location']['longitude'] as double?;
+        final stationNameEnglish = busStop['stationName']['English'] as String?;
+        final stationNameMarathi = busStop['stationName']['Marathi'] as String?;
+        final stationId = busStop['stationID'] as int?;
+        final buses = busStop['buses'] as String?;
 
-      if (stationLat != null &&
-          stationLon != null &&
-          stationNameEnglish != null &&
-          stationNameMarathi != null &&
-          stationId != null) {
-        final stationLatlng = LatLng(stationLat, stationLon);
+        if (stationLat != null &&
+            stationLon != null &&
+            stationNameEnglish != null &&
+            stationNameMarathi != null &&
+            stationId != null) {
+          final stationLatlng = LatLng(stationLat, stationLon);
 
-        double distance = calculateDistance(userLatlng, stationLatlng);
+          double distance = calculateDistance(userLatlng, stationLatlng);
 
-        busStopsWithDistance.add({
-          'StationName': stationNameEnglish,
-          'StationName_M': stationNameMarathi,
-          'StationId': stationId.toString(),
-          'Center_Lat': stationLat.toString(),
-          'Center_Lon': stationLon.toString(),
-          'Distance': distance.toString(),
-          'Buses': buses.toString(),
-        });
+          busStopsWithDistance.add(
+            NearbyBusStopModel( // Using model constructor
+              stationName: stationNameEnglish,
+              stationNameMarathi: stationNameMarathi,
+              stationId: stationId.toString(),
+              centerLat: stationLat,
+              centerLon: stationLon,
+              distance: distance,
+              buses: buses.toString(),
+            ),
+          );
+        }
+      } catch (e) {
+        print('Error processing bus stop: $e');
+        // Consider more specific error handling or logging if needed.
       }
     }
     // Sort bus stops by distance
-    busStopsWithDistance.sort((a, b) {
-      double distanceA = double.tryParse(a['Distance']?.toString() ?? '0') ?? 0;
-      double distanceB = double.tryParse(b['Distance']?.toString() ?? '0') ?? 0;
-      return distanceA.compareTo(distanceB);
-    });
+    busStopsWithDistance.sort((a, b) => a.distance.compareTo(b.distance));
 
     // Get the top 20 bus stops, or all if less than 20
     final top20BusStops = busStopsWithDistance.take(20).toList();
@@ -181,8 +273,8 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
       newMarkers.add(
         Marker(
           point: LatLng(
-            double.parse(busStopData["Center_Lat"] ?? "0.0"),
-            double.parse(busStopData["Center_Lon"] ?? "0.0"),
+            busStopData.centerLat,
+            busStopData.centerLon,
           ),
           width: 30,
           height: 30,
@@ -197,20 +289,17 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
     });
   }
 
-  String formatDistance(String distanceInKm) {
-    double distance = double.parse(distanceInKm);
-
-    if (distance >= 1) {
-      return '${distance.toStringAsFixed(2)} km';
+  String formatDistance(double distanceInKm) { // Accepts double now
+    if (distanceInKm >= 1) {
+      return '${distanceInKm.toStringAsFixed(2)} km';
     } else {
-      int meters = (distance * 1000).round();
+      int meters = (distanceInKm * 1000).round();
       return '$meters m';
     }
   }
 
-  String calculateTime(String distanceInKm) {
-    double distance = double.parse(distanceInKm);
-    double time = distance / 0.08;
+  String calculateTime(double distanceInKm) { // Accepts double now
+    double time = distanceInKm / 0.08;
     if (time < 1) {
       return '1 min';
     }
@@ -218,16 +307,16 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
   }
 
   void _handleBusStopTap(
-      BuildContext context, Map<String, dynamic> busStopData) {
+      BuildContext context, NearbyBusStopModel busStopData) { // Using model class
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => NMMT_BusStopBusesScreen(
-          busStopName: busStopData["StationName"],
-          stationid: int.parse(busStopData["StationId"]),
+          busStopName: busStopData.stationName,
+          stationid: int.parse(busStopData.stationId),
           stationLocation: {
-            'latitude': double.parse(busStopData['Center_Lat']),
-            'longitude': double.parse(busStopData['Center_Lon']),
+            'latitude': busStopData.centerLat,
+            'longitude': busStopData.centerLon,
           },
         ),
       ),
@@ -251,64 +340,64 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
       body: isLoading
           ? _buildLoadingScreen()
           : Stack(
-              children: [
-                SlidingUpPanel(
-                  controller: panelController,
-                  defaultPanelState: PanelState.OPEN,
-                  parallaxEnabled: true,
-                  parallaxOffset: 0.5,
-                  minHeight: 75,
-                  maxHeight: MediaQuery.of(context).size.height * 0.6,
-                  body: buildMap(),
-                  panel: buildPanel(),
-                ),
-                Positioned(
-                  top: 20,
-                  left: 10,
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: CircleAvatar(
-                        radius: 25.0,
-                        backgroundColor: Theme.of(context).primaryColor,
-                        child: BackButton(
-                          color: Colors.white,
-                        )),
-                  ),
-                ),
-                Positioned(
-                  top: 20,
-                  right: 10,
-                  child: GestureDetector(
-                      onTap: () {
-                        _calculateNearbyBusStops();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: Theme.of(context).primaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(18),
-                                topRight: Radius.circular(18),
-                              ),
-                            ),
-                            content: Text(
-                              'Getting Nearby Bus Stops...',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            duration: Duration(
-                                seconds: 2), // Adjust the duration as needed
-                          ),
-                        );
-                      },
-                      child: CircleAvatar(
-                          radius: 25.0,
-                          backgroundColor: Colors.white,
-                          child: Icon(Icons.refresh,
-                              color: Theme.of(context).primaryColor))),
-                ),
-              ],
+        children: [
+          SlidingUpPanel(
+            controller: panelController,
+            defaultPanelState: PanelState.OPEN,
+            parallaxEnabled: true,
+            parallaxOffset: 0.5,
+            minHeight: 75,
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+            body: buildMap(),
+            panel: buildPanel(),
+          ),
+          Positioned(
+            top: 20,
+            left: 10,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+              },
+              child: CircleAvatar(
+                  radius: 25.0,
+                  backgroundColor: Theme.of(context).primaryColor,
+                  child: BackButton(
+                    color: Colors.white,
+                  )),
             ),
+          ),
+          Positioned(
+            top: 20,
+            right: 10,
+            child: GestureDetector(
+                onTap: () {
+                  _calculateNearbyBusStops();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(18),
+                          topRight: Radius.circular(18),
+                        ),
+                      ),
+                      content: Text(
+                        'Getting Nearby Bus Stops...',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      duration: Duration(
+                          seconds: 2), // Adjust the duration as needed
+                    ),
+                  );
+                },
+                child: CircleAvatar(
+                    radius: 25.0,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.refresh,
+                        color: Theme.of(context).primaryColor))),
+          ),
+        ],
+      ),
     );
   }
 
@@ -330,10 +419,8 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
         MarkerLayer(
           markers: markers.map((marker) {
             final busStopData = nearbyBusStop!.firstWhere((element) =>
-                double.parse(element["Center_Lat"] ?? "0.0") ==
-                    marker.point.latitude &&
-                double.parse(element["Center_Lon"] ?? "0.0") ==
-                    marker.point.longitude);
+            element.centerLat == marker.point.latitude &&
+                element.centerLon == marker.point.longitude);
 
             return Marker(
               point: marker.point,
@@ -378,7 +465,7 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
         Text(
           selectedBusStop == null
               ? "Nearby Bus Stops"
-              : selectedBusStop!["StationName"],
+              : selectedBusStop!.stationName,
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
         ),
@@ -402,24 +489,24 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            selectedBusStop!["StationName"],
+            selectedBusStop!.stationName,
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           Text(
-            selectedBusStop!["StationName_M"],
+            selectedBusStop!.stationNameMarathi,
             style: TextStyle(
                 fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey),
           ),
           SizedBox(height: 10),
           Text(
-            "Buses: ${selectedBusStop!["Buses"]}",
+            "Buses: ${selectedBusStop!.buses}",
             style: TextStyle(fontSize: 16, color: Colors.grey),
           ),
           SizedBox(height: 10),
           Row(
             children: [
               Text(
-                "Time: ${calculateTime(selectedBusStop!["Distance"])}",
+                "Time: ${calculateTime(selectedBusStop!.distance)}",
                 style: TextStyle(
                     fontSize: 16,
                     color: Theme.of(context).primaryColor,
@@ -427,7 +514,7 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
               ),
               SizedBox(width: 10),
               Text(
-                "~ ${formatDistance(selectedBusStop!["Distance"])}",
+                "~ ${formatDistance(selectedBusStop!.distance)}",
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey,
@@ -466,11 +553,11 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  busStopData["StationName"],
+                  busStopData.stationName,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  busStopData["StationName_M"],
+                  busStopData.stationNameMarathi,
                   style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -479,13 +566,13 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
               ],
             ),
             subtitle: Text(
-              "Buses: ${busStopData["Buses"]}",
+              "Buses: ${busStopData.buses}",
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             trailing: Column(
               children: [
                 Text(
-                  calculateTime(busStopData["Distance"]),
+                  calculateTime(busStopData.distance),
                   style: TextStyle(
                     fontSize: 18,
                     color: Theme.of(context).primaryColor,
@@ -493,7 +580,7 @@ class _NMMT_NearbyBusStopsScreenState extends State<NMMT_NearbyBusStopsScreen> {
                   ),
                 ),
                 Text(
-                  "~ ${formatDistance(busStopData["Distance"])}",
+                  "~ ${formatDistance(busStopData.distance)}",
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey,

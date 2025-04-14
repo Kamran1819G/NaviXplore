@@ -86,27 +86,30 @@ class _NMMT_BusStopBusesScreenState extends State<NMMT_BusStopBusesScreen>
     for (final busData in allBuses!) {
       final latitude = busData['lattitude'] as String?;
       final longitude = busData['longitude'] as String?;
-      if (latitude != null &&
-          longitude != null &&
-          latitude.isNotEmpty &&
-          longitude.isNotEmpty) {
-        final busLatitude = double.parse(latitude);
-        final busLongitude = double.parse(longitude);
 
-        final newMarker = Marker(
-          point: LatLng(busLatitude, busLongitude),
-          width: 75,
-          child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  selectedBus = busData;
-                  panelController.open();
-                });
-              },
-              child: BusMarker(routeNo: busData['RouteNo'])),
-        );
-        markerData[busData['BusNo']] = newMarker;
-        newMarkers.add(newMarker);
+      if (latitude != null && longitude != null) {
+        final busLatitude = double.tryParse(latitude);
+        final busLongitude = double.tryParse(longitude);
+
+        if (busLatitude != null && busLongitude != null) {
+          final newMarker = Marker(
+            point: LatLng(busLatitude, busLongitude),
+            width: 75,
+            child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedBus = busData;
+                    panelController.open();
+                  });
+                },
+                child: BusMarker(routeNo: busData['RouteNo'])),
+          );
+          markerData[busData['BusNo']] = newMarker;
+          newMarkers.add(newMarker);
+        } else {
+          print('Warning: Invalid latitude or longitude for bus ${busData['BusNo']}');
+          // Optionally, handle invalid coordinates (e.g., skip marker, log error)
+        }
       }
     }
 
@@ -117,6 +120,9 @@ class _NMMT_BusStopBusesScreenState extends State<NMMT_BusStopBusesScreen>
   }
 
   Future<void> _fetchAllBusesData() async {
+    setState(() {
+      isLoading = true;
+    });
     try {
       DateTime now = DateTime.now();
       String scheduleDate =
@@ -129,9 +135,9 @@ class _NMMT_BusStopBusesScreenState extends State<NMMT_BusStopBusesScreen>
 
       if (response.statusCode == 200) {
         if (xml.XmlDocument.parse(response.data)
-                .innerText
-                .trim()
-                .toUpperCase() ==
+            .innerText
+            .trim()
+            .toUpperCase() ==
             "NO BUS AVAILABLE") {
           setState(() {
             allBuses = [];
@@ -147,21 +153,93 @@ class _NMMT_BusStopBusesScreenState extends State<NMMT_BusStopBusesScreen>
             assignedBuses = allBuses
                 ?.where((bus) => bus['BusRunningStatus'] == 'Assigned')
                 .toList();
-            isLoading = false;
           });
         }
       } else {
-        print('Failed to fetch data. Status code: ${response.statusCode}');
-        print('Response body: ${response.data}');
+        // Handle HTTP errors more explicitly
+        print('HTTP Error: ${response.statusCode}');
+        _showErrorSnackbar('Failed to fetch bus data. HTTP Error: ${response.statusCode}');
       }
+    } on DioException catch (e) {
+      // Handle Dio specific errors (network issues, timeouts etc.)
+      print('Dio Error: $e');
+      _showErrorSnackbar('Network error. Please check your connection.');
     } catch (e) {
+      // Catch other general errors (like JSON parsing errors)
       print('Error: $e');
+      _showErrorSnackbar('An unexpected error occurred.');
     } finally {
       setState(() {
         isLoading = false;
       });
     }
   }
+
+  void _showErrorSnackbar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text(message, style: TextStyle(color: Colors.white)),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  void _navigateToBusRouteScreen(BuildContext context, dynamic busData) async {
+    if (busData["BusRunningStatus"] == "Running") {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NMMT_BusRouteScreen(
+            routeid: int.parse(
+                busData["RouteId"].toString() ?? '0'),
+            busName: busData["RouteName"],
+            busTripId: busData["TripId"],
+            busArrivalTime: busData["ETATime"],
+            routeNo: busData['RouteNo'],
+          ),
+        ),
+      );
+    } else {
+      // Bus is scheduled, show dialog and navigate without passing busTripId and ArrivalTime
+      await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Bus is Scheduled'),
+            content: const Text(
+                'Currently, you can view the route, but unfortunately, real-time bus tracking is not available.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text(
+                  'Okay, View Route',
+                  style: TextStyle(
+                      color: Theme.of(context).primaryColor),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NMMT_BusRouteScreen(
+            routeid: int.parse(
+                busData["RouteId"].toString() ?? '0'),
+            busName: busData["RouteName"],
+          ),
+        ),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +279,7 @@ class _NMMT_BusStopBusesScreenState extends State<NMMT_BusStopBusesScreen>
                   Theme.of(context).primaryColor,
                 ),
                 backgroundColor:
-                    Theme.of(context).primaryColor.withOpacity(0.2),
+                Theme.of(context).primaryColor.withOpacity(0.2),
               ),
             ),
 
@@ -352,6 +430,8 @@ class _NMMT_BusStopBusesScreenState extends State<NMMT_BusStopBusesScreen>
                       fontSize: 22.0, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
+                if (selectedBus != null)
+                  _buildBusDetails(), // Show bus details if a bus is selected
                 TabBar(
                   controller: _tabController,
                   indicatorColor: Theme.of(context).primaryColor,
@@ -421,7 +501,7 @@ class _NMMT_BusStopBusesScreenState extends State<NMMT_BusStopBusesScreen>
                         style: TextStyle(color: Colors.white),
                       ),
                       duration:
-                          Duration(seconds: 2), // Adjust the duration as needed
+                      Duration(seconds: 2), // Adjust the duration as needed
                     ),
                   );
                 },
@@ -496,142 +576,91 @@ class _NMMT_BusStopBusesScreenState extends State<NMMT_BusStopBusesScreen>
     return buses == null
         ? _buildLoadingScreen()
         : (buses.isEmpty
-            ? _buildNoBusesAvailable()
-            : ListView.builder(
-                itemCount: buses.length,
-                itemBuilder: (context, index) {
-                  final busData = buses[index];
-                  return ListTile(
-                    contentPadding: EdgeInsets.all(10),
-                    onTap: () async {
-                      if (busData["BusRunningStatus"] == "Running") {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NMMT_BusRouteScreen(
-                              routeid: int.parse(
-                                  busData["RouteId"].toString() ?? '0'),
-                              busName: busData["RouteName"],
-                              busTripId: busData["TripId"],
-                              busArrivalTime: busData["ETATime"],
-                              routeNo: busData['RouteNo'],
-                            ),
-                          ),
-                        );
-                      } else {
-                        // Bus is scheduled, show dialog and navigate without passing busTripId and ArrivalTime
-                        await showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Text('Bus is Scheduled'),
-                              content: const Text(
-                                  'Currently, you can view the route, but unfortunately, real-time bus tracking is not available.'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(
-                                    'Okay, View Route',
-                                    style: TextStyle(
-                                        color: Theme.of(context).primaryColor),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NMMT_BusRouteScreen(
-                              routeid: int.parse(
-                                  busData["RouteId"].toString() ?? '0'),
-                              busName: busData["RouteName"],
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    leading: SizedBox(
-                      width: 75,
-                      child: Row(
-                        children: [
-                          Icon(
-                            CupertinoIcons.bus,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                vertical: 2, horizontal: 2),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(
-                              busData['RouteNo'],
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                    title: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(busData['RouteName'],
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            )),
-                        Text(busData["RouteName_M"],
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
-                            ))
-                      ],
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Status: ${busData['BusRunningStatus'] == 'Running' ? 'Running' : 'Scheduled'}',
-                          style: TextStyle(
-                            color: busData['BusRunningStatus'] == 'Running'
-                                ? Colors.green
-                                : Colors.red,
-                          ),
-                        ),
-                        Text(
-                          'Bus No: ${busData['BusNo']}',
-                          style: TextStyle(
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${busData['ETATimeMinute']} min',
-                          style: TextStyle(
-                            fontSize: 22,
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text('${busData['ArrivalTime']}'),
-                      ],
-                    ),
-                  );
-                },
-              ));
+        ? _buildNoBusesAvailable()
+        : ListView.builder(
+      itemCount: buses.length,
+      itemBuilder: (context, index) {
+        final busData = buses[index];
+        return ListTile(
+          contentPadding: EdgeInsets.all(10),
+          onTap: () => _navigateToBusRouteScreen(context, busData),
+          leading: SizedBox(
+            width: 75,
+            child: Row(
+              children: [
+                Icon(
+                  CupertinoIcons.bus,
+                  color: Theme.of(context).primaryColor,
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                      vertical: 2, horizontal: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(
+                    busData['RouteNo'],
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold),
+                  ),
+                )
+              ],
+            ),
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(busData['RouteName'],
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  )),
+              Text(busData["RouteName_M"],
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ))
+            ],
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Status: ${busData['BusRunningStatus'] == 'Running' ? 'Running' : 'Scheduled'}',
+                style: TextStyle(
+                  color: busData['BusRunningStatus'] == 'Running'
+                      ? Colors.green
+                      : Colors.red,
+                ),
+              ),
+              Text(
+                'Bus No: ${busData['BusNo']}',
+                style: TextStyle(
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+          trailing: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${busData['ETATimeMinute']} min',
+                style: TextStyle(
+                  fontSize: 22,
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text('${busData['ArrivalTime']}'),
+            ],
+          ),
+        );
+      },
+    ));
   }
 
   PreferredSizeWidget _buildAppBar() {

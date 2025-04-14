@@ -79,6 +79,9 @@ dependencies:
   google_mobile_ads: ^2.4.0
   geocoding: ^3.0.0
   shimmer: ^3.0.0
+  shared_preferences: ^2.5.3
+  dots_indicator: ^4.0.1
+  share_plus: ^10.1.4
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.2
