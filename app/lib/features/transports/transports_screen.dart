@@ -137,7 +137,6 @@ class _TransportsScreenState extends State<TransportsScreen>
         //TabsView
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: TabBarView(
               controller: _tabController,
               physics: const NeverScrollableScrollPhysics(), // Consider removing if swipe is desired

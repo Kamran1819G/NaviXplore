@@ -1,9 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:navixplore/features/explore/controller/nm_places_controller.dart';
-import 'package:navixplore/features/models/restaurant_model.dart';
-import 'package:navixplore/features/explore/widget/famous_places_tab.dart';
-import 'package:navixplore/features/explore/widget/tourist_destinations_tab.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({Key? key}) : super(key: key);
@@ -12,248 +8,405 @@ class ExploreScreen extends StatefulWidget {
   State<ExploreScreen> createState() => _ExploreScreenState();
 }
 
-class _ExploreScreenState extends State<ExploreScreen>
-    with TickerProviderStateMixin {
-  late TabController _tabController;
-  final NMPlacesController _placesController = Get.put(NMPlacesController());
+class _ExploreScreenState extends State<ExploreScreen> {
+  String _searchQuery = '';
+  String _selectedCategory = 'All';
 
-  // Dummy Restaurant Data (replace with your actual data source)
-  final List<RestaurantModel> _restaurants = [
-    RestaurantModel(
-        id: 'restaurant1',
-        name: "Hotel ABC",
-        imageUrl: "https://via.placeholder.com/150",
-        isOnboarded: true,
-        memberDiscount: 15.0, // 15% discount for app members
-        totalMembershipDeals: 5,
-        contactPerson: "John Doe",
-        contactEmail: "john@hotelABC.com",
-        contactPhone: "+91 1234567890",
-        address: "123 Main Street, Navi Mumbai",
-        cuisineType: "Multi-cuisine",
-        averageMealPrice: 500.0,
-        membershipBenefits: [
-          "15% off on total bill",
-          "Free appetizer with main course",
-          "Priority seating"
-        ]),
-    RestaurantModel(
-        id: 'restaurant2',
-        name: "Tadka Restaurant",
-        imageUrl: "https://via.placeholder.com/150",
-        isOnboarded: false,
-        memberDiscount: 0.0,
-        totalMembershipDeals: 0,
-        contactPerson: "John Doe",
-        contactEmail: "john@tadka.com",
-        contactPhone: "+91 1234567890",
-        address: "456 XYZ Street, Navi Mumbai",
-        cuisineType: "Indian",
-        averageMealPrice: 400.0,
-        membershipBenefits: [
-        ]
-    ),
+  // Updated categories based on the JSON data
+  final List<String> _categories = const [
+    'All',
+    'Mall',
+    'Religious Place',
+    'Park',
+    'Hospital',
+    'Market',
+    'Restaurant',
+    'Library',
+    'Electronics Store',
+    'Grocery Store',
+    'Fast Food Restaurant',
+    'Road',
+    'Furniture Store',
+    'Landmark',
+    'Garden',
+    'Stadium'
   ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, initialIndex: 0, vsync: this);
-    _placesController.fetchAllPlaces();
+    // initState logic if needed
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
     super.dispose();
+    // dispose logic if needed
   }
 
-  void _viewRestaurantDetails(RestaurantModel restaurant) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true, // Allows full-screen bottom sheet
-      backgroundColor: Colors.transparent, // Make background transparent
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.95, // Increased max size for more scrolling space
-        builder: (_, controller) => Container(
-          decoration: BoxDecoration(
-            color: Colors.white, // White background for content
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                spreadRadius: 5,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      // Light background color for modern look
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Xplore - Navi Mumbai",
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontFamily: "Fredoka",
+                  fontWeight: FontWeight.bold,
+                  fontSize: 25,
+                ),
               ),
-            ],
-          ),
-          child: SingleChildScrollView(
-            controller: controller,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  alignment: Alignment.topRight,
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(10.0),
-                        topRight: Radius.circular(10.0),
-                      ),
-                      child: Image.network(
-                        restaurant.imageUrl,
-                        height: 250,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
+
+              const SizedBox(height: 16),
+
+              // Modern search bar with shadow
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        restaurant.name,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      if (restaurant.memberDiscount > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).primaryColor.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Text(
-                            "🎉 ${restaurant.memberDiscount}% Off for Members",
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search for grocery shop, gardens, restaurants',
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                    prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                    border: InputBorder.none,
+                    contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Categories with improved spacing
+              SizedBox(
+                height: 40,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _categories.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: FilterChip(
+                        label: Text(_categories[index],
                             style: TextStyle(
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 10),
-                      Text(
-                        "Cuisine: ${restaurant.cuisineType} 🍽️",
-                        style: const TextStyle(fontSize: 16),
+                              color: _selectedCategory == _categories[index]
+                                  ? Colors.white
+                                  : Colors.black87,
+                              fontWeight:
+                              _selectedCategory == _categories[index]
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              fontSize: 13,
+                            )),
+                        selected: _selectedCategory == _categories[index],
+                        onSelected: (bool selected) {
+                          setState(() {
+                            _selectedCategory =
+                            selected ? _categories[index] : 'All';
+                          });
+                        },
+                        backgroundColor: Colors.white,
+                        selectedColor: Colors.deepOrange.shade400,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20.0),
+                            side: BorderSide(color: Colors.grey[300]!)),
+                        elevation: 0,
+                        pressElevation: 2,
+                        padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
-                      Text(
-                        "Average Meal Price: ₹${restaurant.averageMealPrice} 💰",
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 16),
+                    );
+                  },
+                ),
+              ),
 
-                      // Contact Information Section
-                      const Text(
-                        "Contact Information:",
+              const SizedBox(height: 16),
+
+              // Results count text
+              Padding(
+                padding: const EdgeInsets.only(left: 4.0, bottom: 12.0),
+                child: RichText(
+                  text: TextSpan(
+                    text: 'See what ',
+                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500, fontSize: 18),
+                    children: [
+                      TextSpan(
+                        text: 'Navi Mumbai ',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                            color: Theme.of(context).primaryColor,
+                            fontWeight: FontWeight.bold, fontSize: 18),
                       ),
-                      const SizedBox(height: 8),
-                      Text("📞 ${restaurant.contactPhone}"),
-                      Text("✉️ ${restaurant.contactEmail}"),
-                      Text("📍 ${restaurant.address}"),
-
-                      if (restaurant.membershipBenefits.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 16),
-                            const Text(
-                              "Membership Benefits: 🎁",
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            ...restaurant.membershipBenefits
-                                .map((benefit) => Text(
-                                      "• $benefit",
-                                      style: const TextStyle(fontSize: 15),
-                                    ))
-                                .toList(),
-                          ],
-                        ),
-                      const SizedBox(height: 20),
+                      const TextSpan(
+                        text: 'locals have uncovered',
+                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+
+              // Grid layout for places
+              Expanded(
+                child: _buildPlaceGrid(),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
+  Widget _buildPlaceGrid() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('NM-Places').snapshots(),
+      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        if (snapshot.hasError) {
+          print('StreamBuilder Error: ${snapshot.error}');
+          return Center(child: Text('Something went wrong: ${snapshot.error}'));
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.deepOrange),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.location_off, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                Text('No places found',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+              ],
+            ),
+          );
+        }
+
+        List<DocumentSnapshot> placesDocs = snapshot.data!.docs;
+
+        List<DocumentSnapshot> filteredPlaces = placesDocs.where((doc) {
+          if (_selectedCategory == 'All') return true;
+          return (doc['category'] as String?)?.toLowerCase() ==
+              _selectedCategory.toLowerCase();
+        }).toList();
+
+        filteredPlaces = filteredPlaces.where((doc) {
+          final name = (doc['name'] as String?)?.toLowerCase() ?? '';
+          return name.contains(_searchQuery.toLowerCase());
+        }).toList();
+
+        // Grid layout with 2 columns
+        return GridView.builder(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.738, // Adjust for card height
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+          ),
+          itemCount: filteredPlaces.length,
+          itemBuilder: (context, index) {
+            DocumentSnapshot document = filteredPlaces[index];
+            Map<String, dynamic> placeData =
+            document.data() as Map<String, dynamic>;
+
+            return PlaceCard(placeData: placeData, documentId: document.id);
+          },
+          // Add this line to improve scrolling physics
+          physics: const BouncingScrollPhysics(),
+        );
+      },
+    );
+  }
+}
+
+class PlaceCard extends StatelessWidget {
+  final Map<String, dynamic> placeData;
+  final String documentId;
+
+  const PlaceCard({super.key, required this.placeData, required this.documentId});
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Image.asset("assets/images/NaviMumbai_Illustration.jpg"),
-        const SizedBox(height: 25),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 15),
-          child: Column(
-            children: [
-              Row(
+    String distanceText = '';
+    if (placeData['distance'] != null) {
+      String distance = placeData['distance'].toString();
+      if (distance.contains('min')) {
+        distanceText = distance;
+      } else if (distance.contains('hr')) {
+        distanceText = distance;
+      } else {
+        distanceText = '${distance} walk';
+      }
+    } else {
+      distanceText = 'Unknown';
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            offset: const Offset(0, 2),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias, // Added for smoother corners
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image with bookmark overlay
+            Stack(
+              children: [
+                AspectRatio(
+                  aspectRatio: 1.0,
+                  child: Image.network(
+                    placeData['imageUrl'] ?? 'https://via.placeholder.com/200',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Colors.grey[300],
+                      child: Center(
+                        child: Icon(Icons.image_not_supported,
+                            color: Colors.grey[500]),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    height: 32,
+                    width: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: const Icon(Icons.bookmark_border,
+                            size: 18, color: Colors.deepOrange),
+                        onPressed: () {
+                          // Add/remove from favorites logic
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                // Category tag at bottom left
+                Positioned(
+                  bottom: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      placeData['category'] ?? 'Place',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // Content area
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Name with ellipsis for long text
                   Text(
-                    "Categories",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                    placeData['name'] ?? 'Place Name',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      height: 1.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+
+                  // Rating and distance row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Rating with star
+                      Row(
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 14),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${placeData['rating'] ?? 0.0}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Distance with walk icon
+                      Row(
+                        children: [
+                          Icon(Icons.directions_walk,
+                              size: 12, color: Colors.grey[600]),
+                          const SizedBox(width: 2),
+                          Text(
+                            distanceText,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        TabBar(
-          controller: _tabController,
-          isScrollable: false,
-          unselectedLabelColor: Colors.grey,
-          labelColor: Theme.of(context).primaryColor,
-          indicatorColor: Theme.of(context).primaryColor,
-          indicatorWeight: 5,
-          tabs: const <Widget>[
-            Tab(text: "Famous Places in Navi Mumbai"),
-            Tab(text: "Tourist destinations in Navi Mumbai"),
+            ),
           ],
         ),
-        const SizedBox(height: 16),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            child: TabBarView(
-              controller: _tabController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: const [
-                FamousPlacesTab(),
-                TouristDestinationsTab(),
-              ],
-            ),
-          ),
-        )
-      ],
+      ),
     );
   }
 }

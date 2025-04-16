@@ -11,6 +11,8 @@ import 'package:navixplore/features/transports/nm_metro/screen/nmm_search_screen
 import 'package:navixplore/features/transports/nm_metro/screen/nmm_upcoming_trains_screen.dart';
 import 'package:navixplore/features/widgets/Skeleton.dart';
 
+enum IconType { icon, asset }
+
 class NMM_Tab extends StatefulWidget {
   const NMM_Tab({Key? key}) : super(key: key);
 
@@ -119,266 +121,480 @@ class _NMM_TabState extends State<NMM_Tab> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search Box
-          GestureDetector(
-            onTap: () => _handleNavigationTap(NMM_SearchPageScreen()),
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                border:
-                    Border.all(width: 1, color: Theme.of(context).primaryColor),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Image.asset("assets/icons/NM_Metro.png", height: 20),
-                  ),
-                  Expanded(
-                    child: Container(
-                      alignment: Alignment.centerLeft,
-                      height: 40,
-                      child: Row(
-                        children: [
-                          Text(
-                            "You are at",
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          AnimatedTextKit(
-                              repeatForever: true,
-                              pause: const Duration(milliseconds: 150),
-                              animatedTexts: _controller
-                                      .allMetroStations.isNotEmpty
-                                  ? [
-                                      for (var station
-                                          in _controller.allMetroStations)
-                                        RotateAnimatedText(
-                                          station["stationName"]["English"],
-                                          textStyle: TextStyle(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                    ]
-                                  : [
-                                      TyperAnimatedText(
-                                        "Loading...",
-                                        textStyle: TextStyle(
-                                          color: Theme.of(context).primaryColor,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ]),
-                        ],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Theme.of(context).primaryColor.withOpacity(0.05),
+            Colors.white,
+          ],
+        ),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Search Box
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GestureDetector(
+                onTap: () => _handleNavigationTap(NMM_SearchPageScreen()),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        spreadRadius: 0,
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
                       ),
-                    ),
+                    ],
                   ),
-                  Icon(
-                    Icons.search,
-                    color: Theme.of(context).primaryColor.withOpacity(0.9),
+                  child: Row(
+                    children: <Widget>[
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Image.asset(
+                          "assets/icons/NM_Metro.png",
+                          height: 24,
+                          width: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "You are at",
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                              ),
+                            ),
+                            SizedBox(
+                              height: 24,
+                              child: AnimatedTextKit(
+                                repeatForever: true,
+                                pause: const Duration(milliseconds: 150),
+                                animatedTexts: _controller.allMetroStations.isNotEmpty
+                                    ? [
+                                  for (var station in _controller.allMetroStations)
+                                    TyperAnimatedText(
+                                      station["stationName"]["English"],
+                                      textStyle: TextStyle(
+                                        color: Theme.of(context).primaryColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                      speed: const Duration(milliseconds: 80),
+                                    ),
+                                ]
+                                    : [
+                                  TyperAnimatedText(
+                                    "Loading...",
+                                    textStyle: TextStyle(
+                                      color: Theme.of(context).primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                    speed: const Duration(milliseconds: 80),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.search_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            // Nearest Metro Station
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader(context, "Nearest Metro Station"),
+
+                  const SizedBox(height: 12),
+
+                  isLoading
+                      ? _buildLoadingSkeleton(context)
+                      : _buildNearestStationCard(context),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            // Metro Services
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader(context, "Metro Services"),
+
+                  const SizedBox(height: 16),
+
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 0.85,
+                    children: [
+                      _buildServiceCard(
+                        context: context,
+                        title: "Fare",
+                        icon: Icons.currency_rupee_rounded,
+                        iconType: IconType.icon,
+                        color: Colors.blue.shade700,
+                        onTap: () => _handleNavigationTap(NMM_FareCalculatorScreen()),
+                      ),
+                      _buildServiceCard(
+                        context: context,
+                        title: "Penalties",
+                        icon: "assets/images/Law.png",
+                        iconType: IconType.asset,
+                        color: Colors.red.shade700,
+                        onTap: () => _handleNavigationTap(const NMM_PenaltiesScreen()),
+                      ),
+                      _buildServiceCard(
+                        context: context,
+                        title: "Map",
+                        icon: "assets/images/Map.png",
+                        iconType: IconType.asset,
+                        color: Colors.green.shade700,
+                        onTap: () => _handleNavigationTap(NMM_MapScreen()),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          const SizedBox(height: 10),
-          // Nearest Metro Station
-          Row(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                margin: EdgeInsets.symmetric(vertical: 15),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-              ),
-              SizedBox(width: 10),
-              const Text(
-                "Nearest Metro Station",
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    letterSpacing: 1.2),
-              ),
-            ],
-          ),
 
-          SizedBox(
-              height: 75,
-              child: isLoading
-                  ? metroStationSkeleton()
-                  : ListView.builder(
-                      itemCount: 1,
-                      itemBuilder: (context, index) {
-                        return ListTile(
-                          onTap: () => _handleNavigationTap(
-                              NMM_UpcomingTrainsScreen(
-                                  lineID: nearestStationsList![index]["lineID"],
-                                  stationID: nearestStationsList![index]
-                                      ["stationID"],
-                                  stationName: nearestStationsList![index]
-                                      ["stationName"]["English"])),
-                          contentPadding:
-                              const EdgeInsets.symmetric(horizontal: 5),
-                          leading: ClipRRect(
-                            borderRadius: BorderRadius.circular(50),
-                            child: Image.asset(
-                              'assets/icons/NM_Metro.png',
-                              width: 50,
-                              height: 50,
-                            ),
-                          ),
-                          title: Text(
-                            nearestStationsList![index]["stationName"]
-                                ["English"],
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Text(
-                            nearestStationsList![index]["stationName"]
-                                ["Marathi"],
-                            style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey),
-                          ),
-                          trailing: Column(
-                            children: [
-                              Text(
-                                calculateTime(
-                                    nearestStationsList![index]["distance"]),
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).primaryColor),
-                              ),
-                              Text(
-                                '~ ${formatDistance(nearestStationsList![index]["distance"])}',
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    )),
+            const SizedBox(height: 30),
 
-          SizedBox(height: 10),
-          // Related to Metro
-          Column(
-            children: [
-              Row(
+            // Metro Information Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildSectionHeader(context, "Metro Information"),
+
+                  const SizedBox(height: 16),
+
                   Container(
-                    width: 10,
-                    height: 10,
-                    margin: EdgeInsets.symmetric(vertical: 15),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(5),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          spreadRadius: 0,
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        _buildInfoItem(
+                          context: context,
+                          title: "Station Facilities",
+                          icon: Icons.accessibility_new_rounded,
+                          onTap: () {
+                            // Navigate to station facilities page
+                          },
+                        ),
+                        _buildDivider(),
+                        _buildInfoItem(
+                          context: context,
+                          title: "Metro Rules",
+                          icon: Icons.rule_rounded,
+                          onTap: () {
+                            // Navigate to metro rules page
+                          },
+                        ),
+                        _buildDivider(),
+                        _buildInfoItem(
+                          context: context,
+                          title: "Working Hours",
+                          icon: Icons.access_time_rounded,
+                          onTap: () {
+                            // Navigate to working hours page
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(width: 10),
-                  const Text("Related to Metro",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          letterSpacing: 1.2)),
                 ],
               ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 120,
-                child: GridView.count(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 10.0,
-                  crossAxisSpacing: 10.0,
-                  padding: const EdgeInsets.all(10.0),
+            ),
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 20,
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade800,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNearestStationCard(BuildContext context) {
+    if (nearestStationsList == null || nearestStationsList!.isEmpty) {
+      return _buildNoStationsCard();
+    }
+
+    final station = nearestStationsList![0];
+    final distance = station["distance"];
+    final travelTime = calculateTime(distance);
+    final formattedDistance = formatDistance(distance);
+
+    return GestureDetector(
+      onTap: () => _handleNavigationTap(
+        NMM_UpcomingTrainsScreen(
+          lineID: station["lineID"],
+          stationID: station["stationID"],
+          stationName: station["stationName"]["English"],
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              spreadRadius: 0,
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Image.asset(
+                'assets/icons/NM_Metro.png',
+                width: 40,
+                height: 40,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    station["stationName"]["English"],
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    station["stationName"]["Marathi"],
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
                   children: [
-                    GestureDetector(
-                      onTap: () =>
-                          _handleNavigationTap(NMM_FareCalculatorScreen()),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(9),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(Icons.currency_rupee_outlined,
-                                size: 40),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            "Fare",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
+                    Icon(
+                      Icons.directions_walk_rounded,
+                      size: 16,
+                      color: Theme.of(context).primaryColor,
                     ),
-                    GestureDetector(
-                      onTap: () =>
-                          _handleNavigationTap(const NMM_PenaltiesScreen()),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(9),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Image.asset("assets/images/Law.png"),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            "Penalties",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _handleNavigationTap(NMM_MapScreen()),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(9),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Image.asset("assets/images/Map.png"),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            "Map",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                    const SizedBox(width: 4),
+                    Text(
+                      travelTime,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  formattedDistance,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoStationsCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            spreadRadius: 0,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              Icons.location_off_rounded,
+              color: Colors.grey,
+              size: 40,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              "No nearby stations found",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingSkeleton(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            spreadRadius: 0,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Skeleton(
+            height: 60,
+            width: 60,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Skeleton(
+                  height: 20,
+                  width: MediaQuery.of(context).size.width * 0.4,
+                ),
+                const SizedBox(height: 8),
+                Skeleton(
+                  height: 16,
+                  width: MediaQuery.of(context).size.width * 0.3,
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Skeleton(
+                height: 20,
+                width: 70,
+              ),
+              const SizedBox(height: 8),
+              Skeleton(
+                height: 16,
+                width: 50,
               ),
             ],
           ),
@@ -387,33 +603,112 @@ class _NMM_TabState extends State<NMM_Tab> {
     );
   }
 
-  Widget metroStationSkeleton() {
-    return Center(
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Skeleton(
-          height: 40,
-          width: 40,
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Skeleton(
-              height: 20,
-              width: MediaQuery.of(context).size.width * 0.5,
-            ),
-            SizedBox(height: 5),
-            Skeleton(
-              height: 15,
-              width: MediaQuery.of(context).size.width * 0.3,
-            ),
-          ],
-        ),
-        Skeleton(
-          height: 30,
-          width: MediaQuery.of(context).size.width * 0.2,
-        ),
-      ]),
-    );
+  Widget _buildServiceCard({
+  required BuildContext context,
+  required String title,
+  required dynamic icon,
+  required IconType iconType,
+  required Color color,
+  required VoidCallback onTap,
+  }) {
+  return GestureDetector(
+  onTap: onTap,
+  child: Container(
+  decoration: BoxDecoration(
+  color: Colors.white,
+  borderRadius: BorderRadius.circular(16),
+  boxShadow: [
+  BoxShadow(
+  color: Colors.black.withOpacity(0.05),
+  spreadRadius: 0,
+  blurRadius: 10,
+  offset: const Offset(0, 2),
+  ),
+  ],
+  ),
+  child: Column(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+  Container(
+  padding: const EdgeInsets.all(14),
+  decoration: BoxDecoration(
+  color: color.withOpacity(0.1),
+  borderRadius: BorderRadius.circular(16),
+  ),
+  child: iconType == IconType.icon
+  ? Icon(icon, size: 32, color: color)
+      : Image.asset(icon, height: 32, width: 32),
+  ),
+  const SizedBox(height: 12),
+  Text(
+  title,
+  textAlign: TextAlign.center,
+  style: TextStyle(
+  fontSize: 14,
+  fontWeight: FontWeight.w600,
+  color: Colors.grey.shade800,
+  ),
+  ),
+  ],
+  ),
+  ),
+  );
+  }
+
+  Widget _buildInfoItem({
+  required BuildContext context,
+  required String title,
+  required IconData icon,
+  required VoidCallback onTap,
+  }) {
+  return InkWell(
+  onTap: onTap,
+  borderRadius: BorderRadius.circular(12),
+  child: Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+  child: Row(
+  children: [
+  Container(
+  padding: const EdgeInsets.all(10),
+  decoration: BoxDecoration(
+  color: Theme.of(context).primaryColor.withOpacity(0.1),
+  borderRadius: BorderRadius.circular(12),
+  ),
+  child: Icon(
+  icon,
+  size: 24,
+  color: Theme.of(context).primaryColor,
+  ),
+  ),
+  const SizedBox(width: 16),
+  Expanded(
+  child: Text(
+  title,
+  style: TextStyle(
+  fontSize: 16,
+  fontWeight: FontWeight.w500,
+  color: Colors.grey.shade800,
+  ),
+  ),
+  ),
+  Icon(
+  Icons.arrow_forward_ios_rounded,
+  size: 16,
+  color: Colors.grey.shade400,
+  ),
+  ],
+  ),
+  ),
+  );
+  }
+
+  Widget _buildDivider() {
+  return Divider(
+  height: 1,
+  thickness: 1,
+  color: Colors.grey.shade200,
+  indent: 16,
+  endIndent: 16,
+  );
   }
 }
