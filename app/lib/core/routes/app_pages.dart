@@ -6,7 +6,7 @@ import 'package:navixplore/features/auth/screen/sign_up_screen.dart';
 import 'package:navixplore/features/auth/screen/user_registration_screen.dart';
 import 'package:navixplore/features/auth_gate.dart';
 import 'package:navixplore/features/drawer/screen/terms_and_conditions_screen.dart';
-import 'package:navixplore/features/explore/screen/explore_screen.dart';
+import 'package:navixplore/features/xplore/screen/xplore_screen.dart';
 import 'package:navixplore/features/main_screen.dart';
 import 'package:navixplore/features/onboarding/screen/onboarding_screen.dart';
 import 'package:navixplore/features/splash_screen.dart';
@@ -18,7 +18,7 @@ class AppPages {
   static final _signUpScreen = SignUpScreen();
   static final _forgotPasswordScreen = ForgotPasswordScreen();
   static const _homeScreen = MainScreen();
-  static const _exploreScreen = ExploreScreen();
+  static const _xploreScreen = XploreScreen();
   static const _xploreFeedScreen = XploreFeedScreen();
   static const _splashScreen = SplashScreen();
   static const _authGate = AuthGate();
@@ -51,8 +51,8 @@ class AppPages {
       preventDuplicates: true,
     ),
     GetPage(
-      name: AppRoutes.EXPLORE,
-      page: () => _exploreScreen,
+      name: AppRoutes.XPLORE,
+      page: () => _xploreScreen,
       preventDuplicates: true,
     ),
     GetPage(
