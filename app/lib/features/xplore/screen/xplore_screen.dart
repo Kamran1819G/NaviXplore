@@ -1,14 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class ExploreScreen extends StatefulWidget {
-  const ExploreScreen({Key? key}) : super(key: key);
+class XploreScreen extends StatefulWidget {
+  const XploreScreen({Key? key}) : super(key: key);
 
   @override
-  State<ExploreScreen> createState() => _ExploreScreenState();
+  State<XploreScreen> createState() => _XploreScreenState();
 }
 
-class _ExploreScreenState extends State<ExploreScreen> {
+class _XploreScreenState extends State<XploreScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'All';
 

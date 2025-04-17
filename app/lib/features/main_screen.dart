@@ -6,9 +6,9 @@ import 'package:navixplore/core/routes/app_routes.dart';
 import 'package:navixplore/features/auth/controller/auth_controller.dart';
 import 'package:navixplore/features/drawer/screen/report_issue_screen.dart';
 import 'package:navixplore/features/drawer/screen/suggest_feature_screen.dart';
-import 'package:navixplore/features/explore/screen/explore_screen.dart';
 import 'package:navixplore/features/profile/screen/user_profile_screen.dart';
 import 'package:navixplore/features/transports/transports_screen.dart';
+import 'package:navixplore/features/xplore/screen/xplore_screen.dart';
 import 'package:navixplore/features/xplorefeed/screen/xplorefeed_screen.dart';
 import 'package:navixplore/features/widgets/webview_screen.dart';
 import 'package:quickalert/quickalert.dart';
@@ -30,7 +30,7 @@ class _MainScreenState extends State<MainScreen> {
 
   static List<Widget> _widgetOptions = [
     TransportsScreen(),
-    ExploreScreen(),
+    XploreScreen(),
     XploreFeedScreen(),
     UserProfileScreen(
         userId: Get.find<AuthController>().currentUser!.uid, isMyProfile: true),
@@ -391,4 +391,6 @@ class _MainScreenState extends State<MainScreen> {
     await analytics.logEvent(
         name: 'bottom_nav_tab_change', parameters: {'tab_name': tabName});
   }
+
+
 }

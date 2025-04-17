@@ -84,11 +84,6 @@ class _FeedWidgetState extends State<FeedWidget>
     setState(() {
       isAnimating = true;
     });
-
-    Get.snackbar(isLiked ? "Unlike" : "Like",
-        isLiked ? "You unliked the post" : "You liked the post",
-        duration: const Duration(milliseconds: 500),
-        snackPosition: SnackPosition.BOTTOM);
   }
 
   void _updateCachedPost(List<String> likeIds) {
